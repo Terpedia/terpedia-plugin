@@ -6,6 +6,8 @@ on:
   pull_request:
     branches: [ main ]
 
+
+permissions:\n  contents: write\n  actions: read\n
 jobs:
   deploy:
     runs-on: ubuntu-latest
