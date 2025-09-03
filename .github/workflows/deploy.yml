@@ -1,0 +1,147 @@
+name: Deploy Terpedia Plugin to Production
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup PHP for version management
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: '8.2'
+        
+    - name: Bump version automatically
+      run: |
+        echo "Current version: $(php version-manager.php current)"
+        new_version=$(php version-manager.php increment patch)
+        echo "New version: $new_version"
+        
+    - name: Commit version bump
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git add terpedia.php VERSION
+        git commit -m "Bump plugin version to $(php version-manager.php current)" || exit 0
+        git push
+      
+    - name: Setup SSH
+      uses: webfactory/ssh-agent@v0.8.0
+      with:
+        ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+        
+    - name: Add SSH known hosts
+      run: |
+        ssh-keyscan -H -p 18765 giow1015.siteground.us >> ~/.ssh/known_hosts
+        
+    - name: Deploy plugin to production
+      run: |
+        # Create deployment package
+        tar -czf terpedia-plugin.tar.gz --exclude='.git' --exclude='.github' --exclude='node_modules' .
+        
+        # Upload to server
+        scp -P 18765 terpedia-plugin.tar.gz ${{ secrets.SSH_USER }}@giow1015.siteground.us:/tmp/
+        
+        # Deploy via SSH
+        ssh -p 18765 ${{ secrets.SSH_USER }}@giow1015.siteground.us << 'EOF'
+          # Navigate to WordPress plugins directory
+          cd ${{ secrets.WP_PLUGINS_PATH }}/terpedia
+          
+          # Log deployment start
+          echo "🚀 Starting plugin deployment at $(date)"
+          
+          # Backup current plugin
+          if [ -d "backup" ]; then rm -rf backup; fi
+          mkdir backup
+          cp -r . backup/ 2>/dev/null || true
+          
+          # Extract new plugin files
+          cd /tmp
+          tar -xzf terpedia-plugin.tar.gz
+          
+          # Remove old plugin files (except backup)
+          cd ${{ secrets.WP_PLUGINS_PATH }}/terpedia
+          find . -maxdepth 1 ! -name 'backup' ! -name '.' -exec rm -rf {} +
+          
+          # Copy new files
+          cp -r /tmp/terpedia-plugin/* .
+          
+          # Set proper permissions
+          find . -type f -exec chmod 644 {} \;
+          find . -type d -exec chmod 755 {} \;
+          
+          # Activate plugin and clear cache if WP-CLI is available
+          if command -v wp &> /dev/null; then
+            wp plugin activate terpedia --path=${{ secrets.WP_ROOT_PATH }} --allow-root
+            wp cache flush --path=${{ secrets.WP_ROOT_PATH }} --allow-root
+            
+            # Flush rewrite rules for custom post types
+            wp rewrite flush --path=${{ secrets.WP_ROOT_PATH }} --allow-root
+          fi
+          
+          # Cleanup
+          rm -f /tmp/terpedia-plugin.tar.gz
+          rm -rf /tmp/terpedia-plugin
+          
+          echo "Plugin deployment completed successfully"
+        EOF
+        
+    - name: Verify deployment
+      run: |
+        ssh -p 18765 ${{ secrets.SSH_USER }}@giow1015.siteground.us << 'EOF'
+          # Check if plugin files exist
+          if [ -f "${{ secrets.WP_PLUGINS_PATH }}/terpedia/terpedia.php" ]; then
+            echo "✅ Plugin files deployed successfully"
+            # Extract version from main plugin file
+            version=$(grep "Version:" "${{ secrets.WP_PLUGINS_PATH }}/terpedia/terpedia.php" | head -1 | cut -d' ' -f3)
+            echo "📦 Plugin version: $version"
+          else
+            echo "❌ Plugin deployment failed"
+            exit 1
+          fi
+          
+          # Check WordPress plugin status if WP-CLI is available
+          if command -v wp &> /dev/null; then
+            plugin_status=$(wp plugin status terpedia --path=${{ secrets.WP_ROOT_PATH }} --allow-root)
+            echo "🔌 Plugin status: $plugin_status"
+            
+            # Check if custom post types are registered
+            post_types=$(wp post-type list --field=name --path=${{ secrets.WP_ROOT_PATH }} --allow-root | grep -E "(terpene|podcast|research)" || echo "No custom post types found")
+            echo "📋 Custom post types: $post_types"
+          fi
+        EOF
+
+    - name: Run plugin health checks
+      run: |
+        ssh -p 18765 ${{ secrets.SSH_USER }}@giow1015.siteground.us << 'EOF'
+          if command -v wp &> /dev/null; then
+            # Check for PHP errors
+            echo "🔍 Checking for PHP errors..."
+            wp eval 'if (function_exists("terpedia_encyclopedia_shortcode")) { echo "✅ Plugin functions loaded\n"; } else { echo "❌ Plugin functions not loaded\n"; }' --path=${{ secrets.WP_ROOT_PATH }} --allow-root
+            
+            # Verify database tables exist (if plugin creates custom tables)
+            echo "🗄️ Checking database integration..."
+            wp eval 'global $wpdb; $tables = $wpdb->get_results("SHOW TABLES LIKE \"%terpedia%\""); echo count($tables) > 0 ? "✅ Database tables present\n" : "ℹ️ No custom tables found\n";' --path=${{ secrets.WP_ROOT_PATH }} --allow-root
+            
+            # Test shortcode functionality
+            echo "📝 Testing shortcode functionality..."
+            wp eval 'echo do_shortcode("[terpedia_encyclopedia]") ? "✅ Shortcodes working\n" : "❌ Shortcode issues\n";' --path=${{ secrets.WP_ROOT_PATH }} --allow-root
+          fi
+        EOF
+
+    - name: Notify deployment status
+      if: always()
+      run: |
+        if [ ${{ job.status }} == 'success' ]; then
+          echo "🚀 Terpedia plugin deployed successfully to production"
+        else
+          echo "❌ Plugin deployment failed"
+        fi
