@@ -77,7 +77,7 @@ jobs:
         # Deploy via SSH using sshpass
         SSHPASS="${{ secrets.SSH_PASSPHRASE }}" sshpass -e ssh -p 18765 ${{ secrets.SSH_USER }}@giow1015.siteground.us << 'EOF'
           # Navigate to WordPress plugins directory
-          cd ${{ secrets.WP_PLUGINS_PATH }}/terpedia
+          cd ${{ secrets.WP_PLUGINS_PATH }}
           
           # Log deployment start
           echo "🚀 Starting plugin deployment at $(date)"
@@ -92,11 +92,11 @@ jobs:
           tar -xzf terpedia-plugin.tar.gz
           
           # Remove old plugin files (except backup)
-          cd ${{ secrets.WP_PLUGINS_PATH }}/terpedia
-          find . -maxdepth 1 ! -name 'backup' ! -name '.' -exec rm -rf {} +
+          cd ${{ secrets.WP_PLUGINS_PATH }}
+          rm -rf terpedia-plugin
           
           # Copy new files
-          cp -r /tmp/terpedia-plugin/* .
+          cp -r /tmp/terpedia-plugin .
           
           # Set proper permissions
           find . -type f -exec chmod 644 {} \;
@@ -122,10 +122,10 @@ jobs:
       run: |
         SSHPASS="${{ secrets.SSH_PASSPHRASE }}" sshpass -e ssh -p 18765 ${{ secrets.SSH_USER }}@giow1015.siteground.us << 'EOF'
           # Check if plugin files exist
-          if [ -f "${{ secrets.WP_PLUGINS_PATH }}/terpedia/terpedia.php" ]; then
+          if [ -f "${{ secrets.WP_PLUGINS_PATH }}/terpedia-plugin/terpedia.php" ]; then
             echo "✅ Plugin files deployed successfully"
             # Extract version from main plugin file
-            version=$(grep "Version:" "${{ secrets.WP_PLUGINS_PATH }}/terpedia/terpedia.php" | head -1 | cut -d' ' -f3)
+            version=$(grep "Version:" "${{ secrets.WP_PLUGINS_PATH }}/terpedia-plugin/terpedia.php" | head -1 | cut -d' ' -f3)
             echo "📦 Plugin version: $version"
           else
             echo "❌ Plugin deployment failed"
