@@ -1,0 +1,551 @@
+/**
+ * Recipe System Styles
+ * Enhanced styling for the Terpedia Recipe management system
+ */
+
+/* Recipe Balancing Controls */
+.recipe-balancing-controls {
+    background: #f9f9f9;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 15px;
+    margin-bottom: 20px;
+}
+
+.recipe-balancing-controls h4 {
+    margin-top: 0;
+    color: #333;
+}
+
+.balance-controls-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+    flex-wrap: wrap;
+}
+
+.balance-controls-row label {
+    font-weight: 600;
+    margin-right: 5px;
+}
+
+.balance-controls-row input,
+.balance-controls-row select {
+    padding: 5px 8px;
+    border: 1px solid #ccc;
+    border-radius: 3px;
+}
+
+.balance-controls-row button {
+    padding: 6px 12px;
+    margin-left: 10px;
+}
+
+.balance-status {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 12px;
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 3px;
+}
+
+#total-percentage-display {
+    font-weight: 600;
+    font-size: 14px;
+}
+
+#total-percentage-display.success {
+    color: #46b450;
+}
+
+#total-percentage-display.warning {
+    color: #ffb900;
+}
+
+#total-percentage-display.error {
+    color: #dc3232;
+}
+
+#balance-status-message {
+    font-size: 12px;
+    font-style: italic;
+}
+
+#balance-status-message.success {
+    color: #46b450;
+}
+
+#balance-status-message.warning {
+    color: #ffb900;
+}
+
+#balance-status-message.error {
+    color: #dc3232;
+}
+
+/* Recipe Formulation Table */
+.rx-ingredients-table-container {
+    overflow-x: auto;
+    margin-bottom: 20px;
+}
+
+.rx-ingredients-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: #fff;
+    border: 1px solid #ddd;
+}
+
+.rx-ingredients-table th,
+.rx-ingredients-table td {
+    padding: 8px 10px;
+    text-align: left;
+    border-bottom: 1px solid #eee;
+    vertical-align: middle;
+}
+
+.rx-ingredients-table th {
+    background: #f1f1f1;
+    font-weight: 600;
+    color: #333;
+    border-bottom: 2px solid #ddd;
+}
+
+.rx-ingredients-table tr:hover {
+    background: #f9f9f9;
+}
+
+.rx-form-control {
+    width: 100%;
+    padding: 4px 6px;
+    border: 1px solid #ccc;
+    border-radius: 3px;
+    font-size: 13px;
+}
+
+.rx-form-control:focus {
+    border-color: #0073aa;
+    box-shadow: 0 0 0 1px #0073aa;
+    outline: none;
+}
+
+.rx-advanced-fields {
+    display: none;
+}
+
+.rx-advanced-fields.show {
+    display: table-cell;
+}
+
+.density-help {
+    display: block;
+    font-size: 10px;
+    color: #666;
+    margin-top: 2px;
+}
+
+/* Actions Column */
+.actions {
+    text-align: center;
+    white-space: nowrap;
+}
+
+.rx-remove-ingredient,
+.rx-calculate-row {
+    background: #dc3232;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    cursor: pointer;
+    font-size: 14px;
+    line-height: 1;
+    margin: 0 2px;
+    display: inline-block;
+}
+
+.rx-calculate-row {
+    background: #0073aa;
+}
+
+.rx-remove-ingredient:hover {
+    background: #a00;
+}
+
+.rx-calculate-row:hover {
+    background: #005a87;
+}
+
+/* Table Actions */
+.rx-table-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 15px;
+    padding: 10px;
+    background: #f9f9f9;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+.rx-total-percentage h4 {
+    margin: 0;
+    color: #333;
+}
+
+.percentage-value {
+    font-weight: 600;
+    color: #0073aa;
+}
+
+/* Versioning Meta Box */
+.rx-versioning-container {
+    padding: 10px 0;
+}
+
+.rx-versioning-container > div {
+    margin-bottom: 15px;
+}
+
+.rx-versioning-container label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 5px;
+    color: #333;
+}
+
+.rx-versioning-container input,
+.rx-versioning-container textarea {
+    width: 100%;
+    padding: 6px 8px;
+    border: 1px solid #ccc;
+    border-radius: 3px;
+}
+
+.rx-versioning-container .description {
+    font-size: 12px;
+    color: #666;
+    margin-top: 3px;
+    font-style: italic;
+}
+
+.version-actions {
+    margin-top: 15px;
+    padding-top: 15px;
+    border-top: 1px solid #eee;
+}
+
+.version-actions button {
+    margin-right: 10px;
+}
+
+/* Recipe Copier */
+.terpedia-recipe-copier {
+    background: #f9f9f9;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 20px;
+    margin: 20px 0;
+}
+
+.recipe-provenance {
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #ddd;
+}
+
+.recipe-provenance h4 {
+    margin-top: 0;
+    color: #333;
+}
+
+.recipe-provenance p {
+    margin: 5px 0;
+    font-size: 14px;
+}
+
+.recipe-copy-interface h4 {
+    margin-top: 0;
+    color: #333;
+}
+
+.copy-form {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+    flex-wrap: wrap;
+}
+
+.copy-form label {
+    font-weight: 600;
+    margin-right: 5px;
+}
+
+.copy-form input {
+    flex: 1;
+    min-width: 200px;
+    padding: 6px 8px;
+    border: 1px solid #ccc;
+    border-radius: 3px;
+}
+
+#copy-status {
+    margin-top: 10px;
+}
+
+#copy-status .success {
+    color: #46b450;
+}
+
+#copy-status .error {
+    color: #dc3232;
+}
+
+/* Frontend Recipe Display */
+.terpedia-rx-display {
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    padding: 20px;
+    margin: 20px 0;
+}
+
+.rx-header {
+    border-bottom: 2px solid #0073aa;
+    padding-bottom: 15px;
+    margin-bottom: 20px;
+}
+
+.rx-header h2 {
+    margin: 0 0 10px 0;
+    color: #333;
+}
+
+.rx-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    align-items: center;
+}
+
+.target-effects {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    align-items: center;
+}
+
+.effect-tag {
+    background: #0073aa;
+    color: white;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.safety-rating {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.safety-very_safe {
+    color: #46b450;
+    font-weight: 600;
+}
+
+.safety-safe {
+    color: #00a32a;
+    font-weight: 600;
+}
+
+.safety-moderate {
+    color: #ffb900;
+    font-weight: 600;
+}
+
+.safety-caution {
+    color: #d63638;
+    font-weight: 600;
+}
+
+.safety-unsafe {
+    color: #dc3232;
+    font-weight: 600;
+}
+
+/* Recipe Content Sections */
+.rx-content > div {
+    margin-bottom: 25px;
+}
+
+.rx-content h3 {
+    color: #333;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 8px;
+    margin-bottom: 15px;
+}
+
+.ingredients-list {
+    display: grid;
+    gap: 10px;
+}
+
+.ingredient-item {
+    background: #f9f9f9;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 12px;
+}
+
+.ingredient-name {
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 5px;
+}
+
+.ingredient-details {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 5px;
+}
+
+.ingredient-type {
+    color: #666;
+    font-size: 14px;
+}
+
+.ingredient-percentage {
+    background: #0073aa;
+    color: white;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.ingredient-notes {
+    color: #666;
+    font-size: 13px;
+    font-style: italic;
+}
+
+/* Recipe List */
+.terpedia-rx-list {
+    margin: 20px 0;
+}
+
+.rx-filters {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+}
+
+.rx-filters select {
+    padding: 6px 8px;
+    border: 1px solid #ccc;
+    border-radius: 3px;
+    min-width: 150px;
+}
+
+.rx-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 20px;
+}
+
+.rx-item {
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    padding: 15px;
+    transition: box-shadow 0.2s ease;
+}
+
+.rx-item:hover {
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.rx-item h3 {
+    margin: 0 0 10px 0;
+    font-size: 16px;
+}
+
+.rx-item h3 a {
+    color: #333;
+    text-decoration: none;
+}
+
+.rx-item h3 a:hover {
+    color: #0073aa;
+}
+
+.rx-item .rx-meta {
+    margin-bottom: 10px;
+}
+
+.rx-item .rx-excerpt {
+    color: #666;
+    font-size: 14px;
+    line-height: 1.4;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .balance-controls-row {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .balance-controls-row > * {
+        margin-bottom: 5px;
+    }
+    
+    .rx-table-actions {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .copy-form {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .rx-meta {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .rx-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .rx-filters {
+        flex-direction: column;
+    }
+}
+
+/* Print Styles */
+@media print {
+    .recipe-balancing-controls,
+    .version-actions,
+    .recipe-copy-interface {
+        display: none;
+    }
+    
+    .rx-ingredients-table {
+        font-size: 12px;
+    }
+    
+    .terpedia-rx-display {
+        border: none;
+        box-shadow: none;
+    }
+}
