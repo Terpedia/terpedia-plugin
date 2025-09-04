@@ -27,6 +27,9 @@ jobs:
     - name: Test SSH connection
       run: |
         echo "Testing SSH connection..."
+        echo "SSH_AUTH_SOCK: $SSH_AUTH_SOCK"
+        echo "SSH_AGENT_PID: $SSH_AGENT_PID"
+        ssh-add -l
         ssh -p 18765 -o StrictHostKeyChecking=no -o IdentitiesOnly=yes -o PasswordAuthentication=no giow1015@giow1015.siteground.us "echo 'SSH connection successful!'"
     
     - name: Sync plugin to terpedia.com
