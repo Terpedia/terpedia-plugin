@@ -20,6 +20,11 @@ jobs:
       with:
         ssh-private-key: ${{ secrets.TERPEDIA_SSH_PRIVATE_KEY }}
     
+    - name: Setup SSH Key File
+      run: |
+        echo "${{ secrets.TERPEDIA_SSH_PRIVATE_KEY }}" > ~/.ssh/terpedia_key
+        chmod 600 ~/.ssh/terpedia_key
+    
     - name: Add SSH known hosts
       run: |
         ssh-keyscan -H -p 18765 giow1015.siteground.us >> ~/.ssh/known_hosts
@@ -27,7 +32,7 @@ jobs:
     - name: Test SSH connection
       run: |
         echo "Testing SSH connection..."
-        ssh -p 18765 -o StrictHostKeyChecking=no -o IdentitiesOnly=yes -o PasswordAuthentication=no giow1015@giow1015.siteground.us "echo 'SSH connection successful!'"
+        ssh -p 18765 -i ~/.ssh/terpedia_key -o StrictHostKeyChecking=no -o IdentitiesOnly=yes -o PasswordAuthentication=no giow1015@giow1015.siteground.us "echo 'SSH connection successful!'"
     
     - name: Sync plugin to terpedia.com
       run: |
@@ -49,7 +54,7 @@ jobs:
         
         # Sync to production server
         rsync -av --delete \
-          -e "ssh -p 18765 -o StrictHostKeyChecking=no -o IdentitiesOnly=yes -o PasswordAuthentication=no" \
+          -e "ssh -p 18765 -i ~/.ssh/terpedia_key -o StrictHostKeyChecking=no -o IdentitiesOnly=yes -o PasswordAuthentication=no" \
           /tmp/terpedia-plugin-sync/ \
           giow1015@giow1015.siteground.us:./www/terpedia.com/public_html/wp-content/plugins/terpedia-plugin/
         
@@ -60,15 +65,15 @@ jobs:
         echo "🔍 Verifying plugin files on production server..."
         
         # Check if main plugin file exists
-        ssh -p 18765 -o StrictHostKeyChecking=no -o IdentitiesOnly=yes giow1015@giow1015.siteground.us \
+        ssh -p 18765 -i ~/.ssh/terpedia_key -o StrictHostKeyChecking=no -o IdentitiesOnly=yes giow1015@giow1015.siteground.us \
           "test -f ./www/terpedia.com/public_html/wp-content/plugins/terpedia-plugin/terpedia.php && echo '✅ Main plugin file exists' || echo '❌ Main plugin file missing'"
         
         # Check if dashboard widget exists
-        ssh -p 18765 -o StrictHostKeyChecking=no -o IdentitiesOnly=yes giow1015@giow1015.siteground.us \
+        ssh -p 18765 -i ~/.ssh/terpedia_key -o StrictHostKeyChecking=no -o IdentitiesOnly=yes giow1015@giow1015.siteground.us \
           "test -f ./www/terpedia.com/public_html/wp-content/plugins/terpedia-plugin/includes/terpedia-dashboard-widget.php && echo '✅ Dashboard widget exists' || echo '❌ Dashboard widget missing'"
         
         # Check plugin version
-        ssh -p 18765 -o StrictHostKeyChecking=no -o IdentitiesOnly=yes giow1015@giow1015.siteground.us \
+        ssh -p 18765 -i ~/.ssh/terpedia_key -o StrictHostKeyChecking=no -o IdentitiesOnly=yes giow1015@giow1015.siteground.us \
           "grep 'Version:' ./www/terpedia.com/public_html/wp-content/plugins/terpedia-plugin/terpedia.php | head -1"
         
         echo "🎉 Verification completed!"
