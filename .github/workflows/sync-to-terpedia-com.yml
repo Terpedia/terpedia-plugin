@@ -18,7 +18,7 @@ jobs:
     - name: Setup SSH key file
       run: |
         mkdir -p ~/.ssh
-        printf "%s" "${{ secrets.TERPEDIA_SSH_PRIVATE_KEY }}" > ~/.ssh/terpedia_key
+        echo "${{ secrets.TERPEDIA_SSH_PRIVATE_KEY_B64 }}" | base64 -d > ~/.ssh/terpedia_key
         chmod 600 ~/.ssh/terpedia_key
     
     - name: Add SSH known hosts
