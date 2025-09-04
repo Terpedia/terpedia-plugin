@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Terpedia
  * Description: Comprehensive terpene encyclopedia with AI agents and research tools
- * Version: 1.0.0
+ * Version: 2.0.12
  * Author: Terpedia Team
  */
 
