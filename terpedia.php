@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Terpedia
  * Description: Comprehensive terpene encyclopedia with AI agents and research tools
- * Version: 2.0.7
+ * Version: 2.0.3
  * Author: Terpedia Team
  */
 
@@ -26,6 +26,42 @@ class TerpediaPlugin {
         
         // Include enhanced Rx system
         require_once plugin_dir_path(__FILE__) . 'includes/enhanced-rx-system.php';
+        
+        // Include ElevenLabs Voice Integration System
+        if (file_exists(plugin_dir_path(__FILE__) . 'includes/elevenlabs-api-handler.php')) {
+            require_once plugin_dir_path(__FILE__) . 'includes/elevenlabs-api-handler.php';
+        }
+        if (file_exists(plugin_dir_path(__FILE__) . 'includes/elevenlabs-buddypress-integration.php')) {
+            require_once plugin_dir_path(__FILE__) . 'includes/elevenlabs-buddypress-integration.php';
+        }
+        if (file_exists(plugin_dir_path(__FILE__) . 'includes/custom-agent-voices.php')) {
+            require_once plugin_dir_path(__FILE__) . 'includes/custom-agent-voices.php';
+        }
+        if (file_exists(plugin_dir_path(__FILE__) . 'includes/voice-integration-updater.php')) {
+            require_once plugin_dir_path(__FILE__) . 'includes/voice-integration-updater.php';
+        }
+        
+        // Include OpenRouter AI Integration System
+        if (file_exists(plugin_dir_path(__FILE__) . 'includes/openrouter-api-handler.php')) {
+            require_once plugin_dir_path(__FILE__) . 'includes/openrouter-api-handler.php';
+        }
+        if (file_exists(plugin_dir_path(__FILE__) . 'includes/openrouter-admin-settings.php')) {
+            require_once plugin_dir_path(__FILE__) . 'includes/openrouter-admin-settings.php';
+        }
+        if (file_exists(plugin_dir_path(__FILE__) . 'includes/agent-dm-openrouter-integration.php')) {
+            require_once plugin_dir_path(__FILE__) . 'includes/agent-dm-openrouter-integration.php';
+        }
+        
+        // Include RSS Feed Management System
+        if (file_exists(plugin_dir_path(__FILE__) . 'includes/agent-rss-feed-manager.php')) {
+            require_once plugin_dir_path(__FILE__) . 'includes/agent-rss-feed-manager.php';
+        }
+        if (file_exists(plugin_dir_path(__FILE__) . 'includes/google-news-rss-feeds.php')) {
+            require_once plugin_dir_path(__FILE__) . 'includes/google-news-rss-feeds.php';
+        }
+        if (file_exists(plugin_dir_path(__FILE__) . 'includes/rss-admin-interface.php')) {
+            require_once plugin_dir_path(__FILE__) . 'includes/rss-admin-interface.php';
+        }
     }
     
     public function enqueue_assets() {
