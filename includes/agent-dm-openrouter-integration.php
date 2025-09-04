@@ -411,48 +411,7 @@ class TerpediaAgentDMOpenRouter {
             'success' => true,
             'message' => 'Thread history cleared'
         )));
-    }
-    
-    /**
-     * Get agent data by user ID
-     */
-    private function get_agent_data($agent_user_id) {
-        $agent_type = get_user_meta($agent_user_id, 'terpedia_agent_type', true);
-        $terpene_name = get_user_meta($agent_user_id, 'terpedia_terpene_name', true);
-        
-        // Get terpene agent data
-        if ($agent_type === 'terpene' && $terpene_name) {
-            if (class_exists('TerpeneBuddyPressAgents')) {
-                $terpene_agents = new TerpeneBuddyPressAgents();
-                $agents = $terpene_agents->get_terpene_agents();
-                if (isset($agents[$terpene_name])) {
-                    return $agents[$terpene_name];
-                }
-            }
         }
-        
-        // Get expert agent data
-        if ($agent_type === 'expert') {
-            $username = get_userdata($agent_user_id)->user_login;
-            $agent_key = str_replace('terpedia-', '', $username);
-            
-            // Map specific usernames to agent types
-            $username_mappings = array(
-                'molecule-maven' => 'chemist',
-                'pharmakin' => 'pharmacologist', 
-                'citeswell' => 'literature'
-            );
-            
-            $agent_key = isset($username_mappings[$agent_key]) ? $username_mappings[$agent_key] : $agent_key;
-            
-            if (class_exists('TerpediaBuddyPressMessaging')) {
-                $messaging = new TerpediaBuddyPressMessaging();
-                return $messaging->get_agent_personality($agent_key);
-            }
-        }
-        
-        return null;
-    }
     
     /**
      * Get conversation statistics
