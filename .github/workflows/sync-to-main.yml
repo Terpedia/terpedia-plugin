@@ -1,0 +1,72 @@
+name: Sync Plugin Changes to Main Repository
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  sync-to-main:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    
+    steps:
+    - name: Checkout plugin repository
+      uses: actions/checkout@v4
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        
+    - name: Setup Git
+      run: |
+        git config --global user.name "Terpedia Bot"
+        git config --global user.email "bot@terpedia.com"
+        
+    - name: Clone main repository
+      run: |
+        git clone https://github.com/Terpedia/terpedia.com.git main-repo
+        cd main-repo
+        
+        # Configure git for the main repo
+        git config user.name "Terpedia Bot"
+        git config user.email "bot@terpedia.com"
+        
+        # Update the submodule reference
+        git submodule update --init --recursive
+        cd terpedia-plugin
+        git fetch origin
+        git checkout main
+        git pull origin main
+        cd ..
+        
+        # Commit the submodule update
+        git add terpedia-plugin
+        git commit -m "Update terpedia-plugin submodule to latest version" || exit 0
+        
+        # Push changes to main repository
+        git push origin main
+        
+    - name: Create Pull Request (if needed)
+      if: github.event_name == 'workflow_dispatch'
+      run: |
+        cd main-repo
+        
+        # Check if there are changes to push
+        if git diff --quiet HEAD~1 HEAD; then
+          echo "No changes to create PR for"
+        else
+          # Create a pull request
+          gh pr create \
+            --title "Update terpedia-plugin submodule" \
+            --body "Automated update of terpedia-plugin submodule to latest version" \
+            --base main \
+            --head main
+        fi
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        
+    - name: Notify sync completion
+      run: |
+        echo "✅ Plugin changes synced to main terpedia.com repository"
+        echo "📦 Latest plugin version: $(git describe --tags --always)"
