@@ -62,8 +62,14 @@ jobs:
         
     - name: Deploy plugin to production
       run: |
-        # Create deployment package (exclude git and temp files)
-        tar -czf terpedia-plugin.tar.gz --exclude='.git*' --exclude='.github*' --exclude='node_modules' --exclude='*.log' --exclude='*.tmp' .
+        # Create clean deployment directory
+        mkdir -p deploy-temp
+        
+        # Copy only needed files (exclude git, github, node_modules)
+        rsync -av --exclude='.git*' --exclude='.github*' --exclude='node_modules' --exclude='*.log' --exclude='*.tmp' --exclude='deploy-temp' . deploy-temp/
+        
+        # Create deployment package from clean directory
+        tar -czf terpedia-plugin.tar.gz -C deploy-temp .
         
         # Upload to server using sshpass
         SSHPASS="${{ secrets.SSH_PASSPHRASE }}" sshpass -e scp -P 18765 terpedia-plugin.tar.gz ${{ secrets.SSH_USER }}@giow1015.siteground.us:/tmp/
