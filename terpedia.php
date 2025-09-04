@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Terpedia
  * Description: Comprehensive terpene encyclopedia with AI agents and research tools
- * Version: 2.0.11
+ * Version: 1.0.0
  * Author: Terpedia Team
  */
 
@@ -26,23 +26,24 @@ class TerpediaPlugin {
         
         // Include enhanced Rx system
         require_once plugin_dir_path(__FILE__) . 'includes/enhanced-rx-system.php';
+        require_once plugin_dir_path(__FILE__) . "includes/site-setup.php";
         
-        // Include agent dashboard manager
-        require_once plugin_dir_path(__FILE__) . 'includes/agent-dashboard-manager.php';
+        // Include newsletter system
+        require_once plugin_dir_path(__FILE__) . 'includes/newsletter-template-manager.php';
+        require_once plugin_dir_path(__FILE__) . 'includes/newsletter-automation.php';
+        require_once plugin_dir_path(__FILE__) . 'includes/newsletter-data-sources.php';
         
-        // Include ElevenLabs Voice Integration System
-        if (file_exists(plugin_dir_path(__FILE__) . 'includes/elevenlabs-api-handler.php')) {
-            require_once plugin_dir_path(__FILE__) . 'includes/elevenlabs-api-handler.php';
-        }
-        if (file_exists(plugin_dir_path(__FILE__) . 'includes/elevenlabs-buddypress-integration.php')) {
-            require_once plugin_dir_path(__FILE__) . 'includes/elevenlabs-buddypress-integration.php';
-        }
-        if (file_exists(plugin_dir_path(__FILE__) . 'includes/custom-agent-voices.php')) {
-            require_once plugin_dir_path(__FILE__) . 'includes/custom-agent-voices.php';
-        }
-        if (file_exists(plugin_dir_path(__FILE__) . 'includes/voice-integration-updater.php')) {
-            require_once plugin_dir_path(__FILE__) . 'includes/voice-integration-updater.php';
-        }
+        // Include enhanced podcast system
+        require_once plugin_dir_path(__FILE__) . 'includes/enhanced-podcast-system.php';
+        
+        // Include enhanced terproducts system
+        require_once plugin_dir_path(__FILE__) . 'includes/enhanced-terproducts-system.php';
+        
+        // Include dashboard widget
+        require_once plugin_dir_path(__FILE__) . 'includes/terpedia-dashboard-widget.php';
+        
+        // Include RSS feed manager for agents
+        require_once plugin_dir_path(__FILE__) . 'includes/agent-rss-feed-manager.php';
         
         // Include OpenRouter AI Integration System
         if (file_exists(plugin_dir_path(__FILE__) . 'includes/openrouter-api-handler.php')) {
@@ -55,25 +56,32 @@ class TerpediaPlugin {
             require_once plugin_dir_path(__FILE__) . 'includes/agent-dm-openrouter-integration.php';
         }
         
-        // Include RSS Feed Management System
-        if (file_exists(plugin_dir_path(__FILE__) . 'includes/agent-rss-feed-manager.php')) {
-            require_once plugin_dir_path(__FILE__) . 'includes/agent-rss-feed-manager.php';
+        // Include Enhanced Terport Editor
+        if (file_exists(plugin_dir_path(__FILE__) . 'includes/enhanced-terport-editor.php')) {
+            require_once plugin_dir_path(__FILE__) . 'includes/enhanced-terport-editor.php';
         }
-        if (file_exists(plugin_dir_path(__FILE__) . 'includes/google-news-rss-feeds.php')) {
-            require_once plugin_dir_path(__FILE__) . 'includes/google-news-rss-feeds.php';
+        if (file_exists(plugin_dir_path(__FILE__) . 'includes/terport-openrouter-integration.php')) {
+            require_once plugin_dir_path(__FILE__) . 'includes/terport-openrouter-integration.php';
         }
-        if (file_exists(plugin_dir_path(__FILE__) . 'includes/rss-admin-interface.php')) {
-            require_once plugin_dir_path(__FILE__) . 'includes/rss-admin-interface.php';
+        if (file_exists(plugin_dir_path(__FILE__) . 'includes/terport-template-system.php')) {
+            require_once plugin_dir_path(__FILE__) . 'includes/terport-template-system.php';
         }
+        if (file_exists(plugin_dir_path(__FILE__) . 'includes/default-terport-templates.php')) {
+            require_once plugin_dir_path(__FILE__) . 'includes/default-terport-templates.php';
+        }
+        
+        // Initialize OpenRouter admin settings
+        if (class_exists('TerpediaOpenRouterAdminSettings')) {
+            new TerpediaOpenRouterAdminSettings();
+        }
+        
+        // Add main Terpedia admin menu
+        add_action('admin_menu', array($this, 'add_admin_menu'));
     }
     
     public function enqueue_assets() {
-        // Get dynamic version from version manager
-        require_once plugin_dir_path(__FILE__) . 'version-manager.php';
-        $plugin_version = TerpediaPluginVersionManager::getCurrentVersion();
-        
-        wp_enqueue_style('terpedia-css', plugin_dir_url(__FILE__) . 'assets/terpedia.css', array(), $plugin_version);
-        wp_enqueue_script('terpedia-js', plugin_dir_url(__FILE__) . 'assets/terpedia.js', array('jquery'), $plugin_version, true);
+        wp_enqueue_style('terpedia-css', plugin_dir_url(__FILE__) . 'assets/terpedia.css', array(), '1.0.0');
+        wp_enqueue_script('terpedia-js', plugin_dir_url(__FILE__) . 'assets/terpedia.js', array('jquery'), '1.0.0', true);
         
         wp_localize_script('terpedia-js', 'terpedia_ajax', array(
             'ajax_url' => admin_url('admin-ajax.php'),
@@ -104,15 +112,31 @@ class TerpediaPlugin {
             'menu_icon' => 'dashicons-book-alt'
         ));
         
-        register_post_type('podcast', array(
+        register_post_type('terpedia_podcast', array(
             'labels' => array(
                 'name' => 'Podcasts',
-                'singular_name' => 'Podcast'
+                'singular_name' => 'Podcast',
+                'add_new' => 'Add New Podcast',
+                'add_new_item' => 'Add New Podcast Episode',
+                'edit_item' => 'Edit Podcast Episode',
+                'new_item' => 'New Podcast Episode',
+                'view_item' => 'View Podcast Episode',
+                'search_items' => 'Search Podcasts',
+                'not_found' => 'No podcasts found',
+                'not_found_in_trash' => 'No podcasts found in trash',
+                'all_items' => 'All Podcasts',
+                'menu_name' => 'Podcasts'
             ),
             'public' => true,
             'has_archive' => true,
-            'supports' => array('title', 'editor', 'custom-fields', 'thumbnail'),
-            'menu_icon' => 'dashicons-microphone'
+            'supports' => array('title', 'editor', 'author', 'thumbnail', 'excerpt', 'comments', 'custom-fields'),
+            'menu_icon' => 'dashicons-microphone',
+            'menu_position' => 25,
+            'show_in_rest' => true,
+            'capability_type' => 'post',
+            'hierarchical' => false,
+            'rewrite' => array('slug' => 'podcast'),
+            'show_in_menu' => true
         ));
         
         register_post_type('newsletter', array(
@@ -168,6 +192,7 @@ class TerpediaPlugin {
         add_shortcode('terpedia_terpenes', array($this, 'terpenes_shortcode')); // Alias
         add_shortcode('terpedia_podcast', array($this, 'podcast_shortcode'));
         add_shortcode('terpedia_newsletter', array($this, 'newsletter_shortcode'));
+        add_shortcode('terpedia_newsletter_signup', array($this, 'newsletter_signup_shortcode'));
         add_shortcode('terpedia_terports', array($this, 'terports_shortcode'));
     }
     
@@ -269,7 +294,7 @@ class TerpediaPlugin {
     
     public function podcast_shortcode($atts) {
         $podcasts = get_posts(array(
-            'post_type' => 'podcast',
+            'post_type' => 'terpedia_podcast',
             'posts_per_page' => 6
         ));
         
@@ -322,58 +347,122 @@ class TerpediaPlugin {
         return $output;
     }
     
+    /**
+     * Newsletter shortcode
+     */
     public function newsletter_shortcode($atts) {
-        $newsletters = get_posts(array(
-            'post_type' => 'newsletter',
-            'posts_per_page' => 4
-        ));
+        $atts = shortcode_atts(array(
+            'id' => '',
+            'limit' => 5,
+            'template' => ''
+        ), $atts);
         
-        $output = '<div class="terpedia-newsletters" style="margin: 20px 0;"><h3 style="color: #2c5aa0;">📧 Terpene Times Newsletter</h3><div class="newsletter-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px; margin-top: 15px;">';
+        $args = array(
+            'post_type' => 'terpedia_newsletter',
+            'posts_per_page' => intval($atts['limit']),
+            'post_status' => 'publish'
+        );
         
-        if ($newsletters) {
-            foreach ($newsletters as $post) {
-                $issue_number = get_post_meta($post->ID, 'issue_number', true) ?: '1';
-                $publish_date = get_post_meta($post->ID, 'publish_date', true) ?: date('Y-m-d');
-                $subscriber_count = get_post_meta($post->ID, 'subscriber_count', true) ?: '2,847';
-                
-                $output .= '<div class="newsletter-card" style="border: 1px solid #ddd; border-radius: 8px; padding: 20px; background: linear-gradient(135deg, #ffeaa7 0%, #fab1a0 100%);">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                        <span style="background: rgba(0,0,0,0.1); padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold;">Issue #' . esc_html($issue_number) . '</span>
-                        <span style="font-size: 12px; opacity: 0.8;">' . date('M j, Y', strtotime($publish_date)) . '</span>
-                    </div>
-                    <h4 style="margin: 10px 0; color: #2d3436;"><a href="' . get_permalink($post->ID) . '" style="color: #2d3436; text-decoration: none;">' . esc_html($post->post_title) . '</a></h4>
-                    <p style="color: #636e72; font-size: 14px; margin: 10px 0;">' . wp_trim_words($post->post_content, 18) . '</p>
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 15px;">
-                        <span style="font-size: 12px; color: #636e72;">📊 ' . esc_html($subscriber_count) . ' subscribers</span>
-                        <button style="background: #2d3436; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer;">📖 Read</button>
-                    </div>
-                </div>';
-            }
-        } else {
-            // Default newsletter issues
-            $default_issues = array(
-                array('title' => 'Breakthrough: Myrcene Shows 89% Success Rate', 'issue' => '49', 'date' => '2024-12-15', 'subscribers' => '3,247', 'desc' => 'Clinical trial results show unprecedented success rates for myrcene in chronic pain management.'),
-                array('title' => 'Cannabis Industry Report: Terpene Market Surge', 'issue' => '48', 'date' => '2024-12-08', 'subscribers' => '3,198', 'desc' => 'Market analysis reveals 340% growth in terpene isolate demand over the past year.'),
-                array('title' => 'New Research: Pinene and Cognitive Function', 'issue' => '47', 'date' => '2024-12-01', 'subscribers' => '3,156', 'desc' => 'Stanford study demonstrates pinene\'s potential in treating age-related cognitive decline.')
+        if ($atts['id']) {
+            $args['p'] = intval($atts['id']);
+        }
+        
+        if ($atts['template']) {
+            $args['meta_query'] = array(
+                array(
+                    'key' => '_newsletter_template_id',
+                    'value' => intval($atts['template']),
+                    'compare' => '='
+                )
             );
+        }
+        
+        $newsletters = get_posts($args);
+        
+        if (empty($newsletters)) {
+            return '<div class="terpedia-newsletter-widget"><p>No newsletters found.</p></div>';
+        }
+        
+        $output = '<div class="terpedia-newsletter-widget" style="margin: 20px 0;">';
+        $output .= '<h3 style="color: #2c5aa0;">📧 Terpedia Newsletters</h3>';
+        $output .= '<div class="newsletter-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin-top: 15px;">';
+        
+        foreach ($newsletters as $newsletter) {
+            $template_id = get_post_meta($newsletter->ID, '_newsletter_template_id', true);
+            $generated_date = get_post_meta($newsletter->ID, '_newsletter_generated_date', true);
             
-            foreach ($default_issues as $issue) {
-                $output .= '<div class="newsletter-card" style="border: 1px solid #ddd; border-radius: 8px; padding: 20px; background: linear-gradient(135deg, #ffeaa7 0%, #fab1a0 100%);">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                        <span style="background: rgba(0,0,0,0.1); padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold;">Issue #' . esc_html($issue['issue']) . '</span>
-                        <span style="font-size: 12px; opacity: 0.8;">' . date('M j, Y', strtotime($issue['date'])) . '</span>
-                    </div>
-                    <h4 style="margin: 10px 0; color: #2d3436;">' . esc_html($issue['title']) . '</h4>
-                    <p style="color: #636e72; font-size: 14px; margin: 10px 0;">' . esc_html($issue['desc']) . '</p>
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 15px;">
-                        <span style="font-size: 12px; color: #636e72;">📊 ' . esc_html($issue['subscribers']) . ' subscribers</span>
-                        <button style="background: #2d3436; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer;">📖 Read</button>
-                    </div>
-                </div>';
-            }
+            $output .= '<div class="newsletter-card" style="border: 1px solid #ddd; border-radius: 8px; padding: 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">';
+            $output .= '<h4 style="margin: 0 0 10px 0; color: white;"><a href="' . get_permalink($newsletter->ID) . '" style="color: white; text-decoration: none;">' . esc_html($newsletter->post_title) . '</a></h4>';
+            $output .= '<p style="opacity: 0.9; font-size: 14px; margin: 10px 0;">' . wp_trim_words($newsletter->post_content, 20) . '</p>';
+            $output .= '<div style="display: flex; justify-content: space-between; align-items: center; margin-top: 15px;">';
+            $output .= '<span style="font-size: 12px;">📅 ' . get_the_date('M j, Y', $newsletter->ID) . '</span>';
+            $output .= '<a href="' . get_permalink($newsletter->ID) . '" style="background: rgba(255,255,255,0.2); color: white; text-decoration: none; padding: 6px 12px; border-radius: 4px; font-size: 12px;">Read More</a>';
+            $output .= '</div>';
+            $output .= '</div>';
         }
         
         $output .= '</div></div>';
+        return $output;
+    }
+    
+    /**
+     * Newsletter signup shortcode
+     */
+    public function newsletter_signup_shortcode($atts) {
+        $atts = shortcode_atts(array(
+            'title' => 'Subscribe to Terpedia Newsletter',
+            'description' => 'Get the latest terpene research, industry news, and insights delivered to your inbox.',
+            'button_text' => 'Subscribe Now'
+        ), $atts);
+        
+        $output = '<div class="terpedia-newsletter-signup" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; border-radius: 8px; text-align: center; margin: 20px 0;">';
+        $output .= '<h3 style="margin: 0 0 15px 0; color: white;">' . esc_html($atts['title']) . '</h3>';
+        $output .= '<p style="margin: 0 0 20px 0; opacity: 0.9;">' . esc_html($atts['description']) . '</p>';
+        $output .= '<form id="terpedia-newsletter-signup-form" style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">';
+        $output .= '<input type="email" name="email" placeholder="Enter your email address" required style="padding: 12px 16px; border: none; border-radius: 4px; min-width: 250px; font-size: 14px;">';
+        $output .= '<button type="submit" style="background: rgba(255,255,255,0.2); color: white; border: 2px solid white; padding: 12px 24px; border-radius: 4px; cursor: pointer; font-size: 14px; font-weight: bold;">' . esc_html($atts['button_text']) . '</button>';
+        $output .= '</form>';
+        $output .= '<div id="newsletter-signup-message" style="margin-top: 15px; font-size: 14px;"></div>';
+        $output .= '</div>';
+        
+        // Add JavaScript for form handling
+        $output .= '<script>
+        jQuery(document).ready(function($) {
+            $("#terpedia-newsletter-signup-form").submit(function(e) {
+                e.preventDefault();
+                var email = $(this).find("input[name=email]").val();
+                var button = $(this).find("button[type=submit]");
+                var message = $("#newsletter-signup-message");
+                
+                button.prop("disabled", true).text("Subscribing...");
+                
+                $.ajax({
+                    url: "' . admin_url('admin-ajax.php') . '",
+                    type: "POST",
+                    data: {
+                        action: "terpedia_newsletter_signup",
+                        email: email,
+                        nonce: "' . wp_create_nonce('terpedia_newsletter_signup') . '"
+                    },
+                    success: function(response) {
+                        if (response.success) {
+                            message.html("<span style=\"color: #90EE90;\">✅ " + response.data + "</span>");
+                            $("#terpedia-newsletter-signup-form")[0].reset();
+                        } else {
+                            message.html("<span style=\"color: #FFB6C1;\">❌ " + response.data + "</span>");
+                        }
+                    },
+                    error: function() {
+                        message.html("<span style=\"color: #FFB6C1;\">❌ An error occurred. Please try again.</span>");
+                    },
+                    complete: function() {
+                        button.prop("disabled", false).text("' . esc_js($atts['button_text']) . '");
+                    }
+                });
+            });
+        });
+        </script>';
+        
         return $output;
     }
     
@@ -462,7 +551,10 @@ class TerpediaPlugin {
         $agents = $this->get_ai_agents();
         
         foreach ($agents as $agent) {
-            if (!username_exists($agent['username'])) {
+            $user = get_user_by('login', $agent['username']);
+            
+            if (!$user) {
+                // Create new agent user
                 $user_id = wp_create_user($agent['username'], wp_generate_password(), $agent['email']);
                 if (!is_wp_error($user_id)) {
                     wp_update_user(array(
@@ -473,7 +565,19 @@ class TerpediaPlugin {
                     
                     update_user_meta($user_id, 'terpedia_agent', true);
                     update_user_meta($user_id, 'agent_specialty', $agent['specialty']);
+                    update_user_meta($user_id, 'terpedia_agent_type', 'expert');
+                    update_user_meta($user_id, 'terpedia_post_frequency', 'daily');
+                    update_user_meta($user_id, 'terpedia_agent_id', $agent['id']);
+                    update_user_meta($user_id, 'terpedia_agent_openrouter_enabled', true);
                 }
+            } else {
+                // Update existing agent with DM integration metadata
+                $user_id = $user->ID;
+                update_user_meta($user_id, 'terpedia_agent', true);
+                update_user_meta($user_id, 'agent_specialty', $agent['specialty']);
+                update_user_meta($user_id, 'terpedia_agent_type', 'expert');
+                update_user_meta($user_id, 'terpedia_agent_id', $agent['id']);
+                update_user_meta($user_id, 'terpedia_agent_openrouter_enabled', true);
             }
         }
     }
@@ -482,6 +586,12 @@ class TerpediaPlugin {
         $this->register_post_types();
         flush_rewrite_rules();
         $this->create_sample_content();
+        
+        // Initialize RSS feed manager to create tables
+        if (class_exists('TerpediaAgentRSSManager')) {
+            $rss_manager = new TerpediaAgentRSSManager();
+            // This will trigger the table creation
+        }
     }
     
     public function create_sample_content() {
@@ -677,6 +787,7 @@ class TerpediaPlugin {
         // Load WordPress template functions if not available
         if (!function_exists('get_header')) {
             require_once(ABSPATH . 'wp-includes/general-template.php');
+require_once plugin_dir_path(__FILE__) . "includes/site-setup.php";
         }
         
         get_header();
@@ -895,9 +1006,49 @@ class TerpediaPlugin {
     public function get_scientific_keywords() {
         return array('myrcene', 'limonene', 'pinene', 'caryophyllene', 'linalool', 'humulene', 'terpinolene', 'ocimene', 'cannabinoid', 'THC', 'CBD', 'terpene', 'monoterpene', 'sesquiterpene', 'entourage effect', 'cannabis', 'hemp', 'essential oil', 'aromatherapy', 'therapeutic', 'analgesic', 'anti-inflammatory', 'anxiolytic', 'sedative', 'bronchodilator', 'neuroprotective', 'antioxidant');
     }
+    
+    /**
+     * Add admin menu
+     */
+    public function add_admin_menu() {
+        add_menu_page(
+            'Terpedia Settings',
+            'Terpedia',
+            'manage_options',
+            'terpedia-settings',
+            array($this, 'admin_page'),
+            'dashicons-analytics',
+            30
+        );
+    }
+    
+    /**
+     * Admin page callback
+     */
+    public function admin_page() {
+        echo '<div class="wrap">';
+        echo '<h1>Terpedia Settings</h1>';
+        echo '<p>Welcome to Terpedia! Your comprehensive terpene encyclopedia with AI agents.</p>';
+        echo '<h2>Available Features:</h2>';
+        echo '<ul>';
+        echo '<li>✅ Terpene Encyclopedia (/cyc)</li>';
+        echo '<li>✅ AI Expert Agents (/agents)</li>';
+        echo '<li>✅ Research Terports (/terports)</li>';
+        echo '<li>✅ OpenRouter AI Integration</li>';
+        echo '<li>✅ RSS Feed Management</li>';
+        echo '</ul>';
+        echo '<p><a href="' . admin_url('admin.php?page=terpedia-openrouter-settings') . '" class="button button-primary">Configure OpenRouter API</a></p>';
+        echo '</div>';
+    }
 }
 
 new TerpediaPlugin();
+
+// Initialize the enhanced Rx system
+new Terpedia_Enhanced_Rx_System();
+
+// Initialize the RSS feed manager for agents
+new TerpediaAgentRSSManager();
 
 // AJAX handler for agent consultation
 add_action('wp_ajax_consult_agent', 'terpedia_consult_agent');
@@ -924,5 +1075,68 @@ function terpedia_consult_agent() {
         'response' => $response,
         'timestamp' => current_time('mysql')
     ));
+}
+
+// AJAX handler for newsletter signup
+add_action('wp_ajax_terpedia_newsletter_signup', 'terpedia_newsletter_signup');
+add_action('wp_ajax_nopriv_terpedia_newsletter_signup', 'terpedia_newsletter_signup');
+
+function terpedia_newsletter_signup() {
+    check_ajax_referer('terpedia_newsletter_signup', 'nonce');
+    
+    $email = sanitize_email($_POST['email']);
+    
+    if (!is_email($email)) {
+        wp_send_json_error('Please enter a valid email address.');
+    }
+    
+    // Store email in database or send to email service
+    global $wpdb;
+    $table_name = $wpdb->prefix . 'terpedia_newsletter_subscribers';
+    
+    // Create table if it doesn't exist
+    $charset_collate = $wpdb->get_charset_collate();
+    $sql = "CREATE TABLE IF NOT EXISTS $table_name (
+        id int(11) NOT NULL AUTO_INCREMENT,
+        email varchar(255) NOT NULL,
+        status varchar(20) DEFAULT 'active',
+        subscribed_at datetime DEFAULT CURRENT_TIMESTAMP,
+        PRIMARY KEY (id),
+        UNIQUE KEY email (email)
+    ) $charset_collate;";
+    
+    require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
+    dbDelta($sql);
+    
+    // Check if email already exists
+    $existing = $wpdb->get_var($wpdb->prepare(
+        "SELECT id FROM $table_name WHERE email = %s",
+        $email
+    ));
+    
+    if ($existing) {
+        wp_send_json_error('This email is already subscribed to our newsletter.');
+    }
+    
+    // Insert new subscriber
+    $result = $wpdb->insert(
+        $table_name,
+        array(
+            'email' => $email,
+            'status' => 'active',
+            'subscribed_at' => current_time('mysql')
+        )
+    );
+    
+    if ($result) {
+        // Send welcome email (optional)
+        $subject = 'Welcome to Terpedia Newsletter!';
+        $message = 'Thank you for subscribing to the Terpedia newsletter. You will receive the latest terpene research, industry news, and insights delivered to your inbox.';
+        wp_mail($email, $subject, $message);
+        
+        wp_send_json_success('Thank you for subscribing! You will receive our newsletter updates.');
+    } else {
+        wp_send_json_error('An error occurred while subscribing. Please try again.');
+    }
 }
 ?>
