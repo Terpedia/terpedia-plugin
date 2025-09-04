@@ -1,0 +1,522 @@
+/**
+ * Enhanced Terport Editor Styles
+ * 
+ * @package Terpedia
+ */
+
+.terpedia-terport-editor {
+    max-width: 100%;
+    margin: 20px 0;
+}
+
+.terport-ai-section {
+    background: #f8f9fa;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.terport-ai-section h3 {
+    margin: 0 0 15px 0;
+    color: #2c5aa0;
+    font-size: 16px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.terport-field-row {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 15px;
+    align-items: flex-end;
+}
+
+.terport-field {
+    flex: 1;
+}
+
+.terport-field label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 5px;
+    color: #495057;
+    font-size: 14px;
+}
+
+.terport-field input,
+.terport-field select,
+.terport-field textarea {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+    font-size: 14px;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.terport-field input:focus,
+.terport-field select:focus,
+.terport-field textarea:focus {
+    outline: none;
+    border-color: #007cba;
+    box-shadow: 0 0 0 2px rgba(0, 124, 186, 0.1);
+}
+
+.terport-field textarea {
+    min-height: 80px;
+    resize: vertical;
+    font-family: inherit;
+}
+
+.terport-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 15px;
+    flex-wrap: wrap;
+}
+
+.terport-btn {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 4px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    text-decoration: none;
+}
+
+.terport-btn-primary {
+    background: #007cba;
+    color: white;
+}
+
+.terport-btn-primary:hover {
+    background: #005a87;
+    color: white;
+}
+
+.terport-btn-secondary {
+    background: #6c757d;
+    color: white;
+}
+
+.terport-btn-secondary:hover {
+    background: #545b62;
+    color: white;
+}
+
+.terport-btn-success {
+    background: #28a745;
+    color: white;
+}
+
+.terport-btn-success:hover {
+    background: #218838;
+    color: white;
+}
+
+.terport-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.terport-status {
+    margin-top: 10px;
+    padding: 12px 15px;
+    border-radius: 4px;
+    display: none;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.terport-status.loading {
+    background: #d1ecf1;
+    border: 1px solid #bee5eb;
+    color: #0c5460;
+}
+
+.terport-status.success {
+    background: #d4edda;
+    border: 1px solid #c3e6cb;
+    color: #155724;
+}
+
+.terport-status.error {
+    background: #f8d7da;
+    border: 1px solid #f5c6cb;
+    color: #721c24;
+}
+
+.terport-image-preview {
+    margin-top: 15px;
+    text-align: center;
+    padding: 15px;
+    background: #f8f9fa;
+    border: 1px solid #e9ecef;
+    border-radius: 4px;
+}
+
+.terport-image-preview img {
+    max-width: 300px;
+    max-height: 200px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.terport-template-info {
+    background: #e7f3ff;
+    border: 1px solid #b3d9ff;
+    border-radius: 4px;
+    padding: 12px;
+    margin-top: 10px;
+    font-size: 13px;
+    color: #0066cc;
+    line-height: 1.4;
+}
+
+.terport-template-info strong {
+    color: #004085;
+}
+
+/* Template Sidebar Styles */
+.terport-template-sidebar {
+    background: #f8f9fa;
+    border: 1px solid #e9ecef;
+    border-radius: 4px;
+    padding: 15px;
+}
+
+.terport-template-sidebar h4 {
+    margin: 0 0 10px 0;
+    color: #495057;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.template-details {
+    margin-bottom: 15px;
+}
+
+.template-details p {
+    margin: 0 0 8px 0;
+    font-size: 13px;
+    line-height: 1.4;
+}
+
+.template-details strong {
+    color: #495057;
+}
+
+.template-actions {
+    margin-top: 15px;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .terport-field-row {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .terport-actions {
+        flex-direction: column;
+    }
+    
+    .terport-btn {
+        width: 100%;
+        justify-content: center;
+    }
+}
+
+/* Loading Animation */
+.terport-status.loading::before {
+    content: '';
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    border: 2px solid #0c5460;
+    border-radius: 50%;
+    border-top-color: transparent;
+    animation: terport-spin 1s linear infinite;
+    margin-right: 8px;
+}
+
+@keyframes terport-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* Success Animation */
+.terport-status.success::before {
+    content: '✓';
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    background: #155724;
+    color: white;
+    border-radius: 50%;
+    text-align: center;
+    line-height: 16px;
+    font-size: 12px;
+    margin-right: 8px;
+}
+
+/* Error Animation */
+.terport-status.error::before {
+    content: '✗';
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    background: #721c24;
+    color: white;
+    border-radius: 50%;
+    text-align: center;
+    line-height: 16px;
+    font-size: 12px;
+    margin-right: 8px;
+}
+
+/* Template Management Styles */
+.terport-template-management {
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 20px;
+}
+
+.template-actions {
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #eee;
+}
+
+.wp-list-table th {
+    background: #f9f9f9;
+    font-weight: 600;
+}
+
+.wp-list-table td {
+    vertical-align: middle;
+}
+
+.dashicons-yes-alt {
+    color: #28a745 !important;
+}
+
+.dashicons-warning {
+    color: #ffc107 !important;
+}
+
+/* Template Editor Styles */
+.terport-template-editor {
+    max-width: 1400px;
+    margin: 20px 0;
+}
+
+.template-editor-header {
+    display: flex;
+    gap: 20px;
+    margin-bottom: 20px;
+    padding: 20px;
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.template-title-section,
+.template-type-section {
+    flex: 1;
+}
+
+.template-title-label,
+.template-type-label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 5px;
+    color: #495057;
+}
+
+.template-title-input,
+.template-type-select {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+.template-actions {
+    display: flex;
+    gap: 10px;
+    align-items: flex-end;
+}
+
+.template-editor-main {
+    display: flex;
+    gap: 20px;
+    min-height: 600px;
+}
+
+.template-editor-sidebar {
+    width: 350px;
+    flex-shrink: 0;
+}
+
+.schema-panel,
+.sections-panel {
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    margin-bottom: 20px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.schema-panel h3,
+.sections-panel h3 {
+    margin: 0;
+    padding: 15px;
+    background: #f9f9f9;
+    border-bottom: 1px solid #ddd;
+    font-size: 14px;
+    font-weight: 600;
+    color: #495057;
+}
+
+.schema-info {
+    padding: 15px;
+}
+
+.schema-preview {
+    background: #f8f9fa;
+    border: 1px solid #e9ecef;
+    border-radius: 4px;
+    padding: 10px;
+    margin: 10px 0;
+    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+    font-size: 12px;
+    max-height: 200px;
+    overflow-y: auto;
+    white-space: pre-wrap;
+}
+
+.sections-list {
+    padding: 15px;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.section-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.section-item:last-child {
+    border-bottom: none;
+}
+
+.section-name {
+    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+    font-size: 12px;
+    color: #0073aa;
+    background: #f0f0f0;
+    padding: 2px 6px;
+    border-radius: 3px;
+}
+
+.template-editor-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.editor-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.editor-label {
+    font-weight: 600;
+    font-size: 14px;
+    color: #495057;
+}
+
+.editor-controls {
+    display: flex;
+    gap: 10px;
+}
+
+.codemirror-wrapper {
+    flex: 1;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.CodeMirror {
+    height: 500px;
+    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+.editor-footer {
+    margin-top: 10px;
+    padding: 10px;
+    background: #f9f9f9;
+    border-radius: 4px;
+    border: 1px solid #e9ecef;
+}
+
+.editor-footer .description {
+    margin: 0;
+    font-size: 13px;
+    color: #6c757d;
+    line-height: 1.4;
+}
+
+.editor-footer code {
+    background: #e9ecef;
+    padding: 2px 4px;
+    border-radius: 3px;
+    font-size: 12px;
+    color: #495057;
+}
+
+/* Responsive Template Editor */
+@media (max-width: 1200px) {
+    .template-editor-main {
+        flex-direction: column;
+    }
+    
+    .template-editor-sidebar {
+        width: 100%;
+    }
+}
+
+@media (max-width: 768px) {
+    .template-editor-header {
+        flex-direction: column;
+        gap: 15px;
+    }
+    
+    .template-actions {
+        justify-content: center;
+    }
+}

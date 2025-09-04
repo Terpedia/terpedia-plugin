@@ -1,0 +1,690 @@
+/**
+ * Enhanced Terproducts System - Frontend Styles
+ * Mobile-optimized styling for product capture and analysis
+ */
+
+/* Mobile-First Responsive Design */
+.terpedia-terproduct-display,
+.terpedia-terproduct-scanner,
+.terpedia-terproduct-list {
+    max-width: 100%;
+    margin: 0 auto;
+    padding: 20px;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+/* Photo Capture Interface */
+.terproduct-photo-capture-container {
+    background: #f9f9f9;
+    border: 2px dashed #ddd;
+    border-radius: 12px;
+    padding: 20px;
+    margin: 20px 0;
+}
+
+.mobile-camera-interface {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.mobile-camera-interface h4 {
+    color: #333;
+    margin-bottom: 15px;
+    font-size: 18px;
+}
+
+.camera-controls {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.camera-controls button {
+    background: #0073aa;
+    color: white;
+    border: none;
+    padding: 12px 20px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background 0.3s ease;
+}
+
+.camera-controls button:hover {
+    background: #005a87;
+}
+
+.camera-controls button:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+}
+
+#product-camera-input {
+    display: none;
+}
+
+.camera-preview {
+    margin-top: 15px;
+    min-height: 200px;
+    border: 2px dashed #ccc;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #fafafa;
+}
+
+.camera-preview img {
+    max-width: 100%;
+    max-height: 300px;
+    border-radius: 8px;
+}
+
+/* Photo Gallery */
+.product-photos-gallery h4 {
+    color: #333;
+    margin-bottom: 15px;
+    font-size: 16px;
+}
+
+.photos-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 15px;
+    margin-top: 15px;
+}
+
+.photo-item {
+    position: relative;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    transition: transform 0.3s ease;
+}
+
+.photo-item:hover {
+    transform: translateY(-2px);
+}
+
+.photo-item.main-photo {
+    border: 3px solid #0073aa;
+}
+
+.photo-item img {
+    width: 100%;
+    height: 150px;
+    object-fit: cover;
+    display: block;
+}
+
+.photo-actions {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    display: flex;
+    gap: 5px;
+}
+
+.photo-actions button {
+    background: rgba(0,0,0,0.7);
+    color: white;
+    border: none;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.3s ease;
+}
+
+.photo-actions button:hover {
+    background: rgba(0,0,0,0.9);
+}
+
+.no-photos {
+    text-align: center;
+    color: #666;
+    font-style: italic;
+    padding: 40px 20px;
+    background: #f9f9f9;
+    border-radius: 8px;
+}
+
+/* Product Information */
+.terproduct-basic-info-container {
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 20px;
+}
+
+.info-row {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 15px;
+    flex-wrap: wrap;
+}
+
+.info-field {
+    flex: 1;
+    min-width: 200px;
+}
+
+.info-field.full-width {
+    flex: 100%;
+}
+
+.info-field label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: 600;
+    color: #333;
+}
+
+.info-field input,
+.info-field select,
+.info-field textarea {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+    box-sizing: border-box;
+}
+
+.info-field input:focus,
+.info-field select:focus,
+.info-field textarea:focus {
+    border-color: #0073aa;
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(0,115,170,0.2);
+}
+
+/* Ingredients Analysis */
+.terproduct-ingredients-container {
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 20px;
+    margin: 20px 0;
+}
+
+.ingredients-input-section {
+    margin-bottom: 20px;
+}
+
+.ingredients-input-section h4 {
+    color: #333;
+    margin-bottom: 10px;
+}
+
+.ingredients-input-section textarea {
+    width: 100%;
+    min-height: 120px;
+    padding: 15px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    font-size: 14px;
+    line-height: 1.5;
+    resize: vertical;
+    box-sizing: border-box;
+}
+
+#analyze-ingredients-btn {
+    background: #28a745;
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    margin-top: 10px;
+    transition: background 0.3s ease;
+}
+
+#analyze-ingredients-btn:hover {
+    background: #218838;
+}
+
+#analyze-ingredients-btn:disabled {
+    background: #6c757d;
+    cursor: not-allowed;
+}
+
+.analysis-status {
+    margin-top: 20px;
+    padding: 15px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    border-left: 4px solid #0073aa;
+}
+
+.spinner {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border: 3px solid #f3f3f3;
+    border-top: 3px solid #0073aa;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-right: 10px;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Detected Terpenes */
+.detected-terpenes {
+    margin: 20px 0;
+}
+
+.detected-terpenes h5 {
+    color: #333;
+    margin-bottom: 10px;
+}
+
+.terpenes-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 10px;
+}
+
+.terpene-item {
+    background: #e3f2fd;
+    border: 1px solid #2196f3;
+    border-radius: 6px;
+    padding: 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.terpene-name {
+    font-weight: 600;
+    color: #1976d2;
+}
+
+.terpene-confidence {
+    background: #4caf50;
+    color: white;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+/* Confidence Meter */
+.confidence-meter {
+    margin: 20px 0;
+}
+
+.confidence-bar {
+    position: relative;
+    background: #e0e0e0;
+    height: 20px;
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.confidence-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #f44336 0%, #ff9800 50%, #4caf50 100%);
+    transition: width 0.3s ease;
+}
+
+.confidence-text {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: white;
+    font-weight: 600;
+    font-size: 12px;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+}
+
+/* Terpene Insights */
+.terproduct-terpene-insights-container {
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 20px;
+    margin: 20px 0;
+}
+
+.insights-generation-section {
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+#generate-insights-btn {
+    background: #6f42c1;
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background 0.3s ease;
+}
+
+#generate-insights-btn:hover {
+    background: #5a32a3;
+}
+
+.terpene-insights-section,
+.terpene-recommendations-section,
+.enhancement-suggestions-section,
+.therapeutic-benefits-section {
+    margin: 20px 0;
+    padding: 15px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    border-left: 4px solid #6f42c1;
+}
+
+.terpene-insights-section h4,
+.terpene-recommendations-section h4,
+.enhancement-suggestions-section h4,
+.therapeutic-benefits-section h4 {
+    color: #333;
+    margin-bottom: 10px;
+}
+
+.insights-content,
+.recommendations-content,
+.enhancement-content,
+.benefits-content {
+    line-height: 1.6;
+    color: #555;
+}
+
+/* Product Scanner */
+.terpedia-terproduct-scanner {
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 12px;
+    padding: 30px;
+    margin: 20px 0;
+    text-align: center;
+}
+
+.scanner-header h3 {
+    color: #333;
+    margin-bottom: 10px;
+    font-size: 24px;
+}
+
+.scanner-header p {
+    color: #666;
+    margin-bottom: 30px;
+}
+
+.scanner-interface {
+    max-width: 500px;
+    margin: 0 auto;
+}
+
+.camera-section,
+.upload-section {
+    margin: 20px 0;
+    padding: 20px;
+    background: #f9f9f9;
+    border-radius: 8px;
+}
+
+.scanner-results {
+    margin-top: 30px;
+    padding: 20px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    min-height: 100px;
+}
+
+.scanner-analysis {
+    text-align: left;
+}
+
+.terpene-tags {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin: 10px 0;
+}
+
+.terpene-tag {
+    background: #e3f2fd;
+    color: #1976d2;
+    padding: 4px 12px;
+    border-radius: 16px;
+    font-size: 12px;
+    font-weight: 600;
+    border: 1px solid #2196f3;
+}
+
+/* Product List */
+.terpedia-terproduct-list {
+    margin: 20px 0;
+}
+
+.terproduct-filters {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 30px;
+    flex-wrap: wrap;
+}
+
+.terproduct-filters select {
+    padding: 10px 15px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 14px;
+    min-width: 200px;
+}
+
+.terproducts-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 20px;
+}
+
+.terproduct-item {
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 12px;
+    padding: 20px;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.terproduct-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.terproduct-photo {
+    margin-bottom: 15px;
+}
+
+.terproduct-photo img {
+    width: 100%;
+    height: 200px;
+    object-fit: cover;
+    border-radius: 8px;
+}
+
+.terproduct-info h3 {
+    margin-bottom: 10px;
+    font-size: 18px;
+}
+
+.terproduct-info h3 a {
+    color: #333;
+    text-decoration: none;
+}
+
+.terproduct-info h3 a:hover {
+    color: #0073aa;
+}
+
+.terproduct-meta {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 10px;
+    flex-wrap: wrap;
+}
+
+.terproduct-meta span {
+    background: #f0f0f0;
+    color: #666;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+}
+
+.detected-terpenes {
+    margin: 10px 0;
+}
+
+.detected-terpenes strong {
+    color: #333;
+    font-size: 14px;
+}
+
+.terproduct-excerpt {
+    color: #666;
+    font-size: 14px;
+    line-height: 1.5;
+    margin-top: 10px;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .terpedia-terproduct-display,
+    .terpedia-terproduct-scanner,
+    .terpedia-terproduct-list {
+        padding: 15px;
+    }
+    
+    .info-row {
+        flex-direction: column;
+    }
+    
+    .info-field {
+        min-width: auto;
+    }
+    
+    .camera-controls {
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    .photos-grid {
+        grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+        gap: 10px;
+    }
+    
+    .terpenes-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .terproducts-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .terproduct-filters {
+        flex-direction: column;
+    }
+    
+    .terproduct-filters select {
+        min-width: auto;
+    }
+}
+
+@media (max-width: 480px) {
+    .mobile-camera-interface h4 {
+        font-size: 16px;
+    }
+    
+    .camera-controls button {
+        padding: 10px 16px;
+        font-size: 13px;
+    }
+    
+    .photo-item img {
+        height: 120px;
+    }
+    
+    .terproduct-item {
+        padding: 15px;
+    }
+    
+    .terproduct-photo img {
+        height: 150px;
+    }
+}
+
+/* Loading States */
+.loading {
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+.loading::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 20px;
+    height: 20px;
+    margin: -10px 0 0 -10px;
+    border: 2px solid #f3f3f3;
+    border-top: 2px solid #0073aa;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+/* Success/Error States */
+.notice {
+    padding: 12px 20px;
+    margin: 20px 0;
+    border-radius: 6px;
+    border-left: 4px solid;
+}
+
+.notice-success {
+    background: #d4edda;
+    border-left-color: #28a745;
+    color: #155724;
+}
+
+.notice-error {
+    background: #f8d7da;
+    border-left-color: #dc3545;
+    color: #721c24;
+}
+
+.notice-info {
+    background: #d1ecf1;
+    border-left-color: #17a2b8;
+    color: #0c5460;
+}
+
+.notice-dismiss {
+    float: right;
+    background: none;
+    border: none;
+    font-size: 16px;
+    cursor: pointer;
+    color: inherit;
+    opacity: 0.7;
+}
+
+.notice-dismiss:hover {
+    opacity: 1;
+}
