@@ -24,40 +24,29 @@ jobs:
       run: |
         ssh-keyscan -H -p 18765 giow1015.siteground.us >> ~/.ssh/known_hosts
     
-    - name: Debug SSH Key
-      run: |
-        echo "=== SSH Agent Debug Info ==="
-        echo "SSH_AUTH_SOCK: $SSH_AUTH_SOCK"
-        echo "SSH_AGENT_PID: $SSH_AGENT_PID"
-        echo "Keys in agent:"
-        ssh-add -l
-        echo "Public keys in agent:"
-        ssh-add -L
-        echo "=== End Debug Info ==="
-    
     - name: Sync plugin to terpedia.com
       run: |
         echo "🚀 Syncing Terpedia Plugin to terpedia.com..."
-        echo "DEBUG: Temporarily disabled sync to debug SSH key issue"
+        
         # Create temporary directory
-        # mkdir -p /tmp/terpedia-plugin-sync
+        mkdir -p /tmp/terpedia-plugin-sync
         
         # Copy all plugin files
-        # rsync -av --delete \
-        #   --exclude='.git' \
-        #   --exclude='.github' \
-        #   --exclude='*.md' \
-        #   --exclude='issues/' \
-        #   --exclude='specifications.csv' \
-        #   --exclude='terpedia-replit-bridge.php' \
-        #   --exclude='terpedia.php.bak' \
-        #   ./ /tmp/terpedia-plugin-sync/
+        rsync -av --delete \
+          --exclude='.git' \
+          --exclude='.github' \
+          --exclude='*.md' \
+          --exclude='issues/' \
+          --exclude='specifications.csv' \
+          --exclude='terpedia-replit-bridge.php' \
+          --exclude='terpedia.php.bak' \
+          ./ /tmp/terpedia-plugin-sync/
         
         # Sync to production server
-        # rsync -av --delete \
-        #   -e "ssh -p 18765 -o StrictHostKeyChecking=no -o IdentitiesOnly=yes -o PasswordAuthentication=no" \
-        #   /tmp/terpedia-plugin-sync/ \
-        #   giow1015@giow1015.siteground.us:./www/terpedia.com/public_html/wp-content/plugins/terpedia-plugin/
+        rsync -av --delete \
+          -e "ssh -p 18765 -o StrictHostKeyChecking=no -o IdentitiesOnly=yes -o PasswordAuthentication=no" \
+          /tmp/terpedia-plugin-sync/ \
+          giow1015@giow1015.siteground.us:./www/terpedia.com/public_html/wp-content/plugins/terpedia-plugin/
         
         echo "✅ Plugin sync completed successfully!"
     
