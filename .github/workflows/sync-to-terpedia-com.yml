@@ -24,6 +24,11 @@ jobs:
       run: |
         ssh-keyscan -H -p 18765 giow1015.siteground.us >> ~/.ssh/known_hosts
     
+    - name: Test SSH connection
+      run: |
+        echo "Testing SSH connection..."
+        ssh -p 18765 -o StrictHostKeyChecking=no -o IdentitiesOnly=yes -o PasswordAuthentication=no giow1015@giow1015.siteground.us "echo 'SSH connection successful!'"
+    
     - name: Sync plugin to terpedia.com
       run: |
         echo "🚀 Syncing Terpedia Plugin to terpedia.com..."
