@@ -1,0 +1,356 @@
+/* Terpedia Agent Dashboard Styles */
+
+.terpedia-dashboard-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px;
+    margin: 20px 0;
+}
+
+.terpedia-card {
+    background: #fff;
+    border: 1px solid #ccd0d4;
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.terpedia-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+}
+
+.terpedia-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.terpedia-card-header h3 {
+    margin: 0;
+    color: #1d2327;
+    font-size: 18px;
+}
+
+.terpedia-count {
+    background: #0073aa;
+    color: white;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-weight: bold;
+    font-size: 14px;
+}
+
+.terpedia-actions {
+    margin: 20px 0;
+    padding: 15px;
+    background: #f1f1f1;
+    border-left: 4px solid #0073aa;
+    border-radius: 4px;
+}
+
+.terpedia-actions .button {
+    margin-right: 10px;
+}
+
+.terpedia-agents-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    gap: 20px;
+    margin: 20px 0;
+}
+
+.terpedia-agent-card {
+    background: #fff;
+    border: 1px solid #ccd0d4;
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    transition: all 0.2s ease;
+    position: relative;
+}
+
+.terpedia-agent-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.terpedia-agent-avatar {
+    position: relative;
+    display: inline-block;
+    margin-bottom: 15px;
+}
+
+.terpedia-agent-avatar img {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 3px solid #fff;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.terpedia-avatar-placeholder {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: bold;
+    font-size: 18px;
+    border: 3px solid #fff;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.terpedia-agent-status {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    border: 2px solid #fff;
+}
+
+.terpedia-agent-status.active {
+    background: #00a32a;
+}
+
+.terpedia-agent-status.inactive {
+    background: #d63638;
+}
+
+.terpedia-agent-info h3 {
+    margin: 0 0 8px 0;
+    color: #1d2327;
+    font-size: 18px;
+}
+
+.terpedia-agent-type {
+    margin: 0 0 10px 0;
+    color: #646970;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.terpedia-agent-description {
+    margin: 0 0 15px 0;
+    color: #50575e;
+    font-size: 14px;
+    line-height: 1.4;
+}
+
+.terpedia-agent-stats {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 15px;
+}
+
+.terpedia-stat {
+    font-size: 12px;
+    color: #646970;
+}
+
+.terpedia-stat strong {
+    color: #1d2327;
+    font-size: 14px;
+}
+
+.terpedia-agent-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.terpedia-agent-actions .button {
+    font-size: 12px;
+    padding: 4px 8px;
+    height: auto;
+    line-height: 1.4;
+}
+
+/* Modal Styles */
+.terpedia-modal {
+    position: fixed;
+    z-index: 100000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.terpedia-modal-content {
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    max-width: 600px;
+    width: 90%;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+.terpedia-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px;
+    border-bottom: 1px solid #ccd0d4;
+}
+
+.terpedia-modal-header h2 {
+    margin: 0;
+    color: #1d2327;
+}
+
+.terpedia-modal-close {
+    font-size: 24px;
+    font-weight: bold;
+    color: #646970;
+    cursor: pointer;
+    line-height: 1;
+}
+
+.terpedia-modal-close:hover {
+    color: #d63638;
+}
+
+.terpedia-modal-body {
+    padding: 20px;
+}
+
+.terpedia-modal-footer {
+    padding: 20px;
+    border-top: 1px solid #ccd0d4;
+    text-align: right;
+}
+
+.terpedia-modal-footer .button {
+    margin-left: 10px;
+}
+
+/* Activity Section */
+.terpedia-activity-section {
+    background: #fff;
+    border: 1px solid #ccd0d4;
+    border-radius: 8px;
+    padding: 20px;
+    margin: 20px 0;
+}
+
+.terpedia-activity-section h2 {
+    margin-top: 0;
+    color: #1d2327;
+}
+
+.terpedia-activity-feed {
+    background: #f9f9f9;
+    border-radius: 4px;
+    padding: 20px;
+    text-align: center;
+    color: #646970;
+}
+
+/* Form Styles */
+.terpedia-modal-body .form-table th {
+    width: 150px;
+    padding: 15px 10px 15px 0;
+    vertical-align: top;
+}
+
+.terpedia-modal-body .form-table td {
+    padding: 15px 0;
+}
+
+.terpedia-modal-body .regular-text,
+.terpedia-modal-body .large-text {
+    width: 100%;
+    max-width: 400px;
+}
+
+.terpedia-modal-body .large-text {
+    max-width: 500px;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .terpedia-dashboard-cards {
+        grid-template-columns: 1fr;
+    }
+    
+    .terpedia-agents-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .terpedia-agent-actions {
+        flex-direction: column;
+    }
+    
+    .terpedia-agent-actions .button {
+        width: 100%;
+        text-align: center;
+    }
+    
+    .terpedia-modal-content {
+        width: 95%;
+        margin: 20px;
+    }
+}
+
+/* Loading States */
+.terpedia-loading {
+    text-align: center;
+    padding: 40px;
+    color: #646970;
+}
+
+.terpedia-loading::after {
+    content: '';
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border: 2px solid #f3f3f3;
+    border-top: 2px solid #0073aa;
+    border-radius: 50%;
+    animation: terpedia-spin 1s linear infinite;
+    margin-left: 10px;
+}
+
+@keyframes terpedia-spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Success/Error Messages */
+.terpedia-notice {
+    padding: 12px;
+    margin: 15px 0;
+    border-radius: 4px;
+    border-left: 4px solid;
+}
+
+.terpedia-notice.success {
+    background: #d1e7dd;
+    border-left-color: #00a32a;
+    color: #0f5132;
+}
+
+.terpedia-notice.error {
+    background: #f8d7da;
+    border-left-color: #d63638;
+    color: #721c24;
+}
+
+.terpedia-notice.warning {
+    background: #fff3cd;
+    border-left-color: #dba617;
+    color: #664d03;
+}

@@ -27,6 +27,9 @@ class TerpediaPlugin {
         // Include enhanced Rx system
         require_once plugin_dir_path(__FILE__) . 'includes/enhanced-rx-system.php';
         
+        // Include agent dashboard manager
+        require_once plugin_dir_path(__FILE__) . 'includes/agent-dashboard-manager.php';
+        
         // Include ElevenLabs Voice Integration System
         if (file_exists(plugin_dir_path(__FILE__) . 'includes/elevenlabs-api-handler.php')) {
             require_once plugin_dir_path(__FILE__) . 'includes/elevenlabs-api-handler.php';
