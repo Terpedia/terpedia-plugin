@@ -17,6 +17,7 @@ jobs:
     
     - name: Setup SSH Key File
       run: |
+        mkdir -p ~/.ssh
         echo "${{ secrets.TERPEDIA_SSH_PRIVATE_KEY }}" > ~/.ssh/terpedia_key
         chmod 600 ~/.ssh/terpedia_key
         echo "${{ secrets.TERPEDIA_SSH_PASSPHRASE }}" > ~/.ssh/passphrase
