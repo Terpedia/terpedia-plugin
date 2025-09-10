@@ -2,6 +2,38 @@
 
 All notable changes to the Terpedia WordPress plugin will be documented in this file.
 
+## [3.9.1] - 2025-09-10
+
+### Added
+- **Plugin Version Display**: Added version information to Terpedia Dashboard System Status section
+- **Automated User Maintenance**: Daily maintenance system that creates and manages all Tersonae and Expert users
+- **Terproducts Custom Post Type**: Complete product management system with:
+  - Label scanning functionality
+  - Ingredient analysis with AI-powered detection
+  - Database linking to major knowledge bases
+  - Terpene profile detection and analysis
+- **Database Integration**: Automatic linking to external databases:
+  - ChEBI (Chemical Entities of Biological Interest)
+  - PubChem (NCBI chemical compound database)
+  - /cyc (Cyc Knowledge Base concepts)
+  - RHEA (Biochemical reaction database)
+  - UniProt (Protein and enzyme information)
+  - Terpedia Encyclopedia (Internal knowledge base)
+- **Secure Update System**: Added secure theme and plugin update functionality from GitHub
+- **Enhanced Admin Interface**: Improved Terpedia admin dashboard with management tools
+
+### Security
+- Implemented secure admin-post handlers with nonce verification
+- Added proper capability checks for all admin operations
+- Removed hardcoded secrets from UI and implemented secure storage
+- Added CSRF protection for all state-changing operations
+
+### User Management
+- **Expert Users**: Automated creation of medical, research, and specialized expert agents
+- **Tersonae**: Automated creation of individual terpene persona users
+- **BuddyPress Integration**: Full profile synchronization with comprehensive metadata
+- **Role Assignment**: Proper WordPress roles and capabilities for different agent types
+
 ## [1.0.0] - 2025-09-03
 
 ### Added
