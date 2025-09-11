@@ -35,7 +35,7 @@ function wp_enqueue_style($handle, $src, $deps = array(), $ver = false, $media =
 }
 
 function admin_url($path) {
-    return 'http://localhost:5000/admin-ajax.php';
+    return 'http://localhost:5000/ajax-handler.php';
 }
 
 function wp_create_nonce($action) {
@@ -129,8 +129,22 @@ $terproducts = new Terpedia_Enhanced_Terproducts_System();
         </div>
 
         <div class="demo-section">
-            <h3>📱 Photo Capture & Product Scanner</h3>
-            <p>Test the mobile camera interface and photo upload functionality:</p>
+            <h3>🔧 Development Configuration</h3>
+            <div style="background: #fff3cd; border: 1px solid #ffeaa7; padding: 15px; border-radius: 5px; margin-bottom: 20px;">
+                <h4>📋 OpenRouter API Setup:</h4>
+                <p><strong>API Key Status:</strong> <span style="color: #856404;">⚠️ Development Mock Mode</span></p>
+                <p><strong>Vision Model:</strong> meta-llama/llama-3.2-11b-vision-instruct:free</p>
+                <p><strong>Features Available:</strong> Photo Analysis, Ingredient Extraction, Terpene Detection</p>
+                <p style="font-size: 12px; color: #666;">
+                    <strong>Note:</strong> In this demo, image analysis responses are simulated. 
+                    To use real OpenRouter AI vision analysis, set OPENROUTER_API_KEY environment variable.
+                </p>
+            </div>
+        </div>
+
+        <div class="demo-section">
+            <h3>📱 Photo Capture & AI Analysis</h3>
+            <p>Capture product photos and automatically extract ingredients using AI vision:</p>
             
             <div class="terproduct-photo-capture-container">
                 <div class="mobile-camera-interface">

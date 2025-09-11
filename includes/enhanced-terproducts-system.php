@@ -20,6 +20,8 @@ class Terpedia_Enhanced_Terproducts_System {
         add_action('wp_ajax_analyze_product_ingredients', array($this, 'analyze_product_ingredients'));
         add_action('wp_ajax_generate_terpene_insights', array($this, 'generate_terpene_insights'));
         add_action('wp_ajax_capture_product_photo', array($this, 'capture_product_photo'));
+        add_action('wp_ajax_analyze_photo_ingredients', array($this, 'analyze_photo_ingredients'));
+        add_action('wp_ajax_nopriv_analyze_photo_ingredients', array($this, 'analyze_photo_ingredients'));
         add_shortcode('terpedia_terproduct_display', array($this, 'terproduct_display_shortcode'));
         add_shortcode('terpedia_terproduct_scanner', array($this, 'terproduct_scanner_shortcode'));
         add_shortcode('terpedia_terproduct_list', array($this, 'terproduct_list_shortcode'));
@@ -649,6 +651,243 @@ class Terpedia_Enhanced_Terproducts_System {
         }
         
         wp_send_json_error('Failed to save captured photo');
+    }
+    
+    /**
+     * Analyze product photos using OpenRouter vision AI
+     */
+    public function analyze_photo_ingredients() {
+        check_ajax_referer('terpedia_terproducts_nonce', 'nonce');
+        
+        if (!current_user_can('upload_files')) {
+            wp_send_json_error('Insufficient permissions');
+        }
+        
+        $image_urls = $_POST['image_urls'] ?? array();
+        $post_id = intval($_POST['post_id'] ?? 0);
+        $additional_context = sanitize_textarea_field($_POST['additional_context'] ?? '');
+        
+        if (empty($image_urls)) {
+            wp_send_json_error('No images provided for analysis');
+        }
+        
+        // Get OpenRouter handler
+        if (!class_exists('TerpediaOpenRouterHandler')) {
+            wp_send_json_error('OpenRouter AI not available');
+        }
+        
+        $openrouter = new TerpediaOpenRouterHandler();
+        
+        // Sanitize image URLs
+        $image_urls = array_map('esc_url_raw', (array) $image_urls);
+        
+        // Analyze the images
+        if (count($image_urls) === 1) {
+            $result = $openrouter->analyze_product_image($image_urls[0], $additional_context);
+        } else {
+            $result = $openrouter->analyze_multiple_product_images($image_urls, $additional_context);
+        }
+        
+        if (is_wp_error($result)) {
+            wp_send_json_error('Image analysis failed: ' . $result->get_error_message());
+        }
+        
+        // Extract the response content
+        $analysis_content = '';
+        if (isset($result['choices'][0]['message']['content'])) {
+            $analysis_content = $result['choices'][0]['message']['content'];
+        }
+        
+        // Parse the analysis to extract structured data
+        $parsed_data = $this->parse_vision_analysis($analysis_content);
+        
+        // Save results to post meta if post_id provided
+        if ($post_id > 0) {
+            update_post_meta($post_id, '_vision_analysis_raw', $analysis_content);
+            update_post_meta($post_id, '_vision_analysis_parsed', $parsed_data);
+            update_post_meta($post_id, '_vision_analysis_date', current_time('mysql'));
+            update_post_meta($post_id, '_vision_analysis_model', $result['model'] ?? 'unknown');
+            
+            // Update ingredients list if extracted
+            if (!empty($parsed_data['ingredients'])) {
+                $ingredients_text = implode(', ', $parsed_data['ingredients']);
+                update_post_meta($post_id, '_ingredients_list', $ingredients_text);
+            }
+            
+            // Update product info if extracted
+            if (!empty($parsed_data['product_name'])) {
+                update_post_meta($post_id, '_extracted_product_name', $parsed_data['product_name']);
+            }
+            if (!empty($parsed_data['brand'])) {
+                update_post_meta($post_id, '_extracted_brand', $parsed_data['brand']);
+            }
+        }
+        
+        wp_send_json_success(array(
+            'raw_analysis' => $analysis_content,
+            'parsed_data' => $parsed_data,
+            'model_used' => $result['model'] ?? 'unknown',
+            'image_count' => count($image_urls),
+            'confidence' => $this->calculate_analysis_confidence($parsed_data),
+            'post_updated' => $post_id > 0
+        ));
+    }
+    
+    /**
+     * Parse vision analysis to extract structured product data
+     */
+    private function parse_vision_analysis($analysis_text) {
+        $parsed = array(
+            'product_name' => '',
+            'brand' => '',
+            'ingredients' => array(),
+            'terpenes' => array(),
+            'nutritional_info' => array(),
+            'warnings' => array(),
+            'concentrations' => array(),
+            'extracted_text' => array()
+        );
+        
+        // Extract product name and brand
+        if (preg_match('/(?:Product(?:\s+Name)?|Title):\s*([^\n\r]+)/i', $analysis_text, $matches)) {
+            $parsed['product_name'] = trim($matches[1]);
+        }
+        
+        if (preg_match('/Brand:\s*([^\n\r]+)/i', $analysis_text, $matches)) {
+            $parsed['brand'] = trim($matches[1]);
+        }
+        
+        // Extract ingredients list - look for various patterns
+        $ingredient_patterns = array(
+            '/(?:Ingredients?|Components?):\s*([^\n\r]+(?:\n[^\n\r:]+)*)/i',
+            '/INGREDIENTS:\s*([^\n\r]+(?:\n[^\n\r:]+)*)/i',
+            '/Ingredient List:\s*([^\n\r]+(?:\n[^\n\r:]+)*)/i'
+        );
+        
+        foreach ($ingredient_patterns as $pattern) {
+            if (preg_match($pattern, $analysis_text, $matches)) {
+                $ingredients_text = $matches[1];
+                // Split by common separators and clean up
+                $ingredients = preg_split('/[,;]\s*/', $ingredients_text);
+                $ingredients = array_map('trim', $ingredients);
+                $ingredients = array_filter($ingredients, function($ingredient) {
+                    return !empty($ingredient) && strlen($ingredient) > 2;
+                });
+                $parsed['ingredients'] = array_merge($parsed['ingredients'], $ingredients);
+                break;
+            }
+        }
+        
+        // Extract terpenes and essential oils
+        $terpene_patterns = array(
+            'limonene', 'linalool', 'myrcene', 'pinene', 'caryophyllene', 'humulene', 
+            'terpinolene', 'ocimene', 'camphene', 'valencene', 'geraniol', 'citronellol',
+            'eucalyptol', 'menthol', 'camphor', 'borneol', 'α-pinene', 'β-pinene',
+            'lavender', 'eucalyptus', 'tea tree', 'peppermint', 'lemon', 'orange',
+            'bergamot', 'frankincense', 'ylang ylang', 'rosemary', 'thyme'
+        );
+        
+        foreach ($terpene_patterns as $terpene) {
+            if (stripos($analysis_text, $terpene) !== false) {
+                // Try to extract concentration if present
+                $concentration_pattern = '/' . preg_quote($terpene, '/') . '[^\d]*(\d+(?:\.\d+)?)\s*%/i';
+                if (preg_match($concentration_pattern, $analysis_text, $matches)) {
+                    $parsed['terpenes'][] = array(
+                        'name' => ucwords($terpene),
+                        'concentration' => $matches[1] . '%',
+                        'source' => 'vision_analysis'
+                    );
+                } else {
+                    $parsed['terpenes'][] = array(
+                        'name' => ucwords($terpene),
+                        'concentration' => 'Present',
+                        'source' => 'vision_analysis'
+                    );
+                }
+            }
+        }
+        
+        // Extract nutritional information
+        $nutrition_patterns = array(
+            '/(?:Calories?|Energy):\s*(\d+)/i',
+            '/(?:Protein):\s*(\d+(?:\.\d+)?)\s*g/i',
+            '/(?:Fat|Lipids?):\s*(\d+(?:\.\d+)?)\s*g/i',
+            '/(?:Carbohydrates?|Carbs?):\s*(\d+(?:\.\d+)?)\s*g/i',
+            '/(?:Sugar):\s*(\d+(?:\.\d+)?)\s*g/i',
+            '/(?:Sodium):\s*(\d+(?:\.\d+)?)\s*mg/i'
+        );
+        
+        foreach ($nutrition_patterns as $pattern) {
+            if (preg_match($pattern, $analysis_text, $matches)) {
+                $parsed['nutritional_info'][] = $matches[0];
+            }
+        }
+        
+        // Extract warnings and cautions
+        $warning_patterns = array(
+            '/(?:Warning|Caution|Important|Note):\s*([^\n\r]+(?:\n[^\n\r:]+)*)/i',
+            '/⚠️[^\n\r]+/i',
+            '/\*[^\n\r]*(?:warning|caution)[^\n\r]*/i'
+        );
+        
+        foreach ($warning_patterns as $pattern) {
+            if (preg_match_all($pattern, $analysis_text, $matches)) {
+                foreach ($matches[0] as $warning) {
+                    $parsed['warnings'][] = trim($warning);
+                }
+            }
+        }
+        
+        // Extract any percentage concentrations
+        if (preg_match_all('/(\w+[^:]*?):\s*(\d+(?:\.\d+)?)\s*%/i', $analysis_text, $matches, PREG_SET_ORDER)) {
+            foreach ($matches as $match) {
+                $parsed['concentrations'][] = array(
+                    'component' => trim($match[1]),
+                    'percentage' => $match[2] . '%'
+                );
+            }
+        }
+        
+        return $parsed;
+    }
+    
+    /**
+     * Calculate confidence score based on extracted data
+     */
+    private function calculate_analysis_confidence($parsed_data) {
+        $score = 0;
+        $max_score = 100;
+        
+        // Product name found
+        if (!empty($parsed_data['product_name'])) {
+            $score += 20;
+        }
+        
+        // Brand found
+        if (!empty($parsed_data['brand'])) {
+            $score += 15;
+        }
+        
+        // Ingredients found
+        if (!empty($parsed_data['ingredients'])) {
+            $score += 30 + min(20, count($parsed_data['ingredients']) * 2);
+        }
+        
+        // Terpenes found
+        if (!empty($parsed_data['terpenes'])) {
+            $score += 15 + min(10, count($parsed_data['terpenes']) * 2);
+        }
+        
+        // Additional data found
+        if (!empty($parsed_data['concentrations'])) {
+            $score += 10;
+        }
+        
+        if (!empty($parsed_data['nutritional_info'])) {
+            $score += 5;
+        }
+        
+        return min(100, $score);
     }
     
     public function analyze_product_ingredients() {

@@ -13,6 +13,7 @@ class TerpediaOpenRouterHandler {
     private $api_key;
     private $api_base_url = 'https://openrouter.ai/api/v1';
     private $default_model = 'openai/gpt-oss-120b:free';
+    private $default_vision_model = 'meta-llama/llama-3.2-11b-vision-instruct:free';
     
     public function __construct() {
         $this->api_key = $_ENV['OPENROUTER_API_KEY'] ?? get_option('terpedia_openrouter_api_key', '');
@@ -23,6 +24,10 @@ class TerpediaOpenRouterHandler {
         
         // Register REST API endpoints
         add_action('rest_api_init', array($this, 'register_rest_routes'));
+        
+        // Add AJAX handlers for image analysis
+        add_action('wp_ajax_analyze_product_image', array($this, 'ajax_analyze_product_image'));
+        add_action('wp_ajax_nopriv_analyze_product_image', array($this, 'ajax_analyze_product_image'));
     }
     
     public function init() {
@@ -384,6 +389,229 @@ class TerpediaOpenRouterHandler {
         return $data;
     }
     
+    /**
+     * Analyze product image for ingredients using vision model
+     */
+    public function analyze_product_image($image_url, $additional_context = '') {
+        if (empty($this->api_key)) {
+            return new WP_Error('no_api_key', 'OpenRouter API key not configured');
+        }
+
+        $system_prompt = "You are an expert in analyzing product labels and ingredient lists. When provided with an image of a product, extract all visible ingredient information, brand names, product names, and any nutritional or chemical information visible on the label. Be thorough and accurate, and identify any terpenes or botanical compounds that may be present.";
+
+        $user_prompt = "Please analyze this product image and extract:
+1. Product name and brand
+2. Complete ingredients list (exactly as written on label)
+3. Any terpenes or botanical compounds mentioned
+4. Nutritional information if visible
+5. Any warnings or usage instructions
+6. Concentration percentages if visible
+
+Format your response as structured data that can be parsed easily.";
+
+        if (!empty($additional_context)) {
+            $user_prompt .= "\n\nAdditional context: " . $additional_context;
+        }
+
+        $messages = array(
+            array(
+                'role' => 'system',
+                'content' => $system_prompt
+            ),
+            array(
+                'role' => 'user',
+                'content' => array(
+                    array(
+                        'type' => 'text',
+                        'text' => $user_prompt
+                    ),
+                    array(
+                        'type' => 'image_url',
+                        'image_url' => array(
+                            'url' => $image_url
+                        )
+                    )
+                )
+            )
+        );
+
+        $options = array(
+            'model' => $this->default_vision_model,
+            'max_tokens' => 2000,
+            'temperature' => 0.3  // Lower temperature for more accurate extraction
+        );
+
+        return $this->chat_completion($messages, $options);
+    }
+
+    /**
+     * Extract ingredients from multiple product images
+     */
+    public function analyze_multiple_product_images($image_urls, $additional_context = '') {
+        if (empty($this->api_key)) {
+            return new WP_Error('no_api_key', 'OpenRouter API key not configured');
+        }
+
+        $system_prompt = "You are an expert in analyzing product labels and ingredient lists. You will be provided with multiple images of the same product from different angles or different products. Extract and consolidate all visible ingredient information, brand names, product names, and any nutritional or chemical information. Look for terpenes and botanical compounds.";
+
+        $user_prompt = "Please analyze these product images and extract:
+1. Product name(s) and brand(s)
+2. Complete consolidated ingredients list
+3. Any terpenes or botanical compounds mentioned
+4. Nutritional information if visible
+5. Any warnings or usage instructions
+6. Concentration percentages if visible
+
+If multiple products are shown, list them separately. Format your response as structured data.";
+
+        if (!empty($additional_context)) {
+            $user_prompt .= "\n\nAdditional context: " . $additional_context;
+        }
+
+        // Build content array with text and multiple images
+        $content = array(
+            array(
+                'type' => 'text',
+                'text' => $user_prompt
+            )
+        );
+
+        // Add each image to the content array
+        foreach ($image_urls as $image_url) {
+            $content[] = array(
+                'type' => 'image_url',
+                'image_url' => array(
+                    'url' => $image_url
+                )
+            );
+        }
+
+        $messages = array(
+            array(
+                'role' => 'system',
+                'content' => $system_prompt
+            ),
+            array(
+                'role' => 'user',
+                'content' => $content
+            )
+        );
+
+        $options = array(
+            'model' => $this->default_vision_model,
+            'max_tokens' => 3000,
+            'temperature' => 0.3
+        );
+
+        return $this->chat_completion($messages, $options);
+    }
+
+    /**
+     * AJAX handler for product image analysis
+     */
+    public function ajax_analyze_product_image() {
+        check_ajax_referer('terpedia_terproducts_nonce', 'nonce');
+
+        if (!current_user_can('upload_files')) {
+            wp_send_json_error('Insufficient permissions');
+        }
+
+        $image_urls = $_POST['image_urls'] ?? array();
+        $additional_context = sanitize_textarea_field($_POST['additional_context'] ?? '');
+
+        if (empty($image_urls)) {
+            wp_send_json_error('No images provided for analysis');
+        }
+
+        // Sanitize image URLs
+        $image_urls = array_map('esc_url_raw', (array) $image_urls);
+
+        if (count($image_urls) === 1) {
+            $result = $this->analyze_product_image($image_urls[0], $additional_context);
+        } else {
+            $result = $this->analyze_multiple_product_images($image_urls, $additional_context);
+        }
+
+        if (is_wp_error($result)) {
+            wp_send_json_error($result->get_error_message());
+        }
+
+        // Extract the response content
+        $analysis_content = '';
+        if (isset($result['choices'][0]['message']['content'])) {
+            $analysis_content = $result['choices'][0]['message']['content'];
+        }
+
+        // Parse the analysis to extract structured data
+        $parsed_data = $this->parse_ingredient_analysis($analysis_content);
+
+        wp_send_json_success(array(
+            'raw_analysis' => $analysis_content,
+            'parsed_data' => $parsed_data,
+            'model_used' => $result['model'] ?? $this->default_vision_model,
+            'image_count' => count($image_urls)
+        ));
+    }
+
+    /**
+     * Parse ingredient analysis to extract structured data
+     */
+    private function parse_ingredient_analysis($analysis_text) {
+        $parsed = array(
+            'product_name' => '',
+            'brand' => '',
+            'ingredients' => array(),
+            'terpenes' => array(),
+            'warnings' => array(),
+            'nutritional_info' => array(),
+            'concentrations' => array()
+        );
+
+        // Extract product name (look for patterns like "Product: " or "Product Name: ")
+        if (preg_match('/(?:Product(?:\s+Name)?|Brand):\s*([^\n\r]+)/i', $analysis_text, $matches)) {
+            $parsed['product_name'] = trim($matches[1]);
+        }
+
+        // Extract brand (look for "Brand: ")
+        if (preg_match('/Brand:\s*([^\n\r]+)/i', $analysis_text, $matches)) {
+            $parsed['brand'] = trim($matches[1]);
+        }
+
+        // Extract ingredients list
+        if (preg_match('/(?:Ingredients?|Components?):\s*([^\n\r]+(?:\n[^\n\r:]+)*)/i', $analysis_text, $matches)) {
+            $ingredients_text = $matches[1];
+            // Split by commas and clean up
+            $ingredients = array_map('trim', preg_split('/[,\n]+/', $ingredients_text));
+            $parsed['ingredients'] = array_filter($ingredients);
+        }
+
+        // Extract terpenes (look for common terpene names)
+        $terpene_names = array('limonene', 'linalool', 'myrcene', 'pinene', 'caryophyllene', 'humulene', 'terpinolene', 'ocimene', 'camphene', 'valencene');
+        foreach ($terpene_names as $terpene) {
+            if (stripos($analysis_text, $terpene) !== false) {
+                // Try to extract concentration if present
+                if (preg_match('/' . $terpene . '[^\d]*(\d+(?:\.\d+)?)\s*%/i', $analysis_text, $matches)) {
+                    $parsed['terpenes'][] = array(
+                        'name' => ucfirst($terpene),
+                        'concentration' => $matches[1] . '%'
+                    );
+                } else {
+                    $parsed['terpenes'][] = array(
+                        'name' => ucfirst($terpene),
+                        'concentration' => 'Unknown'
+                    );
+                }
+            }
+        }
+
+        // Extract warnings
+        if (preg_match('/(?:Warning|Caution|Note):\s*([^\n\r]+(?:\n[^\n\r:]+)*)/i', $analysis_text, $matches)) {
+            $parsed['warnings'][] = trim($matches[1]);
+        }
+
+        return $parsed;
+    }
+
     /**
      * Generate terpene-specific content
      */

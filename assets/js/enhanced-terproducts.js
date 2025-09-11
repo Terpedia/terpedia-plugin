@@ -68,8 +68,35 @@ jQuery(document).ready(function($) {
                 // Remove from UI
                 photoItem.remove();
                 
+                // Hide analyze all button if no photos left
+                if (updatedPhotos.length === 0) {
+                    $('#analyze-all-photos-btn').closest('.analyze-all-photos-section').remove();
+                }
+                
                 showMessage('Photo deleted!', 'success');
             }
+        });
+        
+        // Analyze single photo
+        $(document).on('click', '.analyze-photo', function() {
+            const photoItem = $(this).closest('.photo-item');
+            const photoId = photoItem.data('photo-id');
+            const imageUrl = photoItem.find('img').attr('src');
+            
+            analyzePhotoIngredients([imageUrl], 'single');
+        });
+        
+        // Analyze all photos
+        $(document).on('click', '#analyze-all-photos-btn', function() {
+            const photosData = JSON.parse($('#product_photos_data').val() || '[]');
+            const imageUrls = photosData.map(photo => photo.url);
+            
+            if (imageUrls.length === 0) {
+                showMessage('No photos available to analyze.', 'error');
+                return;
+            }
+            
+            analyzePhotoIngredients(imageUrls, 'all');
         });
     }
     
@@ -126,6 +153,7 @@ jQuery(document).ready(function($) {
                 <img src="${photoData.url}" alt="Product Photo" />
                 <div class="photo-actions">
                     <button type="button" class="set-main-photo" title="Set as Main Photo">⭐</button>
+                    <button type="button" class="analyze-photo" title="Analyze for Ingredients">🔍</button>
                     <button type="button" class="delete-photo" title="Delete Photo">🗑️</button>
                 </div>
             </div>
@@ -136,6 +164,26 @@ jQuery(document).ready(function($) {
         }
         
         $('#photos-grid').append(photoHtml);
+        
+        // Show analyze all photos button if we have photos
+        showAnalyzeAllPhotosButton();
+    }
+    
+    function showAnalyzeAllPhotosButton() {
+        const photosData = JSON.parse($('#product_photos_data').val() || '[]');
+        if (photosData.length > 0 && $('#analyze-all-photos-btn').length === 0) {
+            const analyzeAllBtn = `
+                <div class="analyze-all-photos-section" style="margin-top: 15px; text-align: center;">
+                    <button type="button" id="analyze-all-photos-btn" class="button button-primary">
+                        🔍 Analyze All Photos for Ingredients
+                    </button>
+                    <p style="font-size: 12px; color: #666; margin-top: 5px;">
+                        Uses AI to extract ingredients, terpenes, and product info from your photos
+                    </p>
+                </div>
+            `;
+            $('.product-photos-gallery').append(analyzeAllBtn);
+        }
     }
     
     function initIngredientAnalysis() {
@@ -362,6 +410,143 @@ jQuery(document).ready(function($) {
                 item.hide();
             }
         });
+    }
+    
+    function analyzePhotoIngredients(imageUrls, analysisType) {
+        const button = analysisType === 'all' ? $('#analyze-all-photos-btn') : $('.analyze-photo');
+        const originalText = button.text();
+        
+        button.prop('disabled', true).text('🔍 Analyzing...');
+        
+        // Show analysis status
+        let statusContainer = $('#photo-analysis-status');
+        if (statusContainer.length === 0) {
+            statusContainer = $('<div id="photo-analysis-status" class="analysis-status"></div>');
+            $('.product-photos-gallery').append(statusContainer);
+        }
+        
+        statusContainer.html(`
+            <div class="spinner"></div>
+            <p>Analyzing ${imageUrls.length} photo${imageUrls.length > 1 ? 's' : ''} for ingredients and terpenes...</p>
+            <p style="font-size: 12px; color: #666;">This may take 30-60 seconds depending on image complexity.</p>
+        `).show();
+        
+        $.ajax({
+            url: terpediaTerproducts.ajaxurl,
+            type: 'POST',
+            data: {
+                action: 'analyze_photo_ingredients',
+                nonce: terpediaTerproducts.nonce,
+                image_urls: imageUrls,
+                post_id: $('input[name="post_ID"]').val(),
+                additional_context: 'This is a product label photo. Please extract all visible ingredients, terpenes, and product information.'
+            },
+            success: function(response) {
+                if (response.success) {
+                    displayPhotoAnalysisResults(response.data);
+                    
+                    // Update ingredients field if data was extracted
+                    if (response.data.parsed_data.ingredients && response.data.parsed_data.ingredients.length > 0) {
+                        const ingredientsText = response.data.parsed_data.ingredients.join(', ');
+                        $('#ingredients_list').val(ingredientsText).addClass('has-content');
+                        showMessage(`Successfully extracted ${response.data.parsed_data.ingredients.length} ingredients from photos!`, 'success');
+                    } else {
+                        showMessage('Photo analysis completed, but no ingredients were detected in the images.', 'info');
+                    }
+                } else {
+                    showMessage('Photo analysis failed: ' + response.data, 'error');
+                    statusContainer.html('<p style="color: #d63638;">Analysis failed. Please try again or check that the images contain clear ingredient labels.</p>');
+                }
+            },
+            error: function() {
+                showMessage('Photo analysis failed. Please check your internet connection and try again.', 'error');
+                statusContainer.html('<p style="color: #d63638;">Network error. Please try again.</p>');
+            },
+            complete: function() {
+                button.prop('disabled', false).text(originalText);
+            }
+        });
+    }
+    
+    function displayPhotoAnalysisResults(data) {
+        const statusContainer = $('#photo-analysis-status');
+        let html = '<div class="photo-analysis-results">';
+        
+        html += `<h4>📊 AI Analysis Complete (${data.confidence}% confidence)</h4>`;
+        html += `<p><strong>Model:</strong> ${data.model_used} | <strong>Images:</strong> ${data.image_count}</p>`;
+        
+        const parsed = data.parsed_data;
+        
+        // Product information
+        if (parsed.product_name || parsed.brand) {
+            html += '<div class="extracted-product-info">';
+            html += '<h5>🏷️ Product Information:</h5>';
+            if (parsed.product_name) html += `<p><strong>Product:</strong> ${parsed.product_name}</p>`;
+            if (parsed.brand) html += `<p><strong>Brand:</strong> ${parsed.brand}</p>`;
+            html += '</div>';
+        }
+        
+        // Ingredients
+        if (parsed.ingredients && parsed.ingredients.length > 0) {
+            html += '<div class="extracted-ingredients">';
+            html += '<h5>🧪 Extracted Ingredients:</h5>';
+            html += '<ul>';
+            parsed.ingredients.forEach(ingredient => {
+                html += `<li>${ingredient}</li>`;
+            });
+            html += '</ul>';
+            html += '</div>';
+        }
+        
+        // Terpenes
+        if (parsed.terpenes && parsed.terpenes.length > 0) {
+            html += '<div class="extracted-terpenes">';
+            html += '<h5>🌿 Detected Terpenes:</h5>';
+            html += '<div class="terpenes-grid">';
+            parsed.terpenes.forEach(terpene => {
+                html += `
+                    <div class="terpene-item">
+                        <span class="terpene-name">${terpene.name}</span>
+                        <span class="terpene-concentration">${terpene.concentration}</span>
+                    </div>
+                `;
+            });
+            html += '</div></div>';
+        }
+        
+        // Concentrations
+        if (parsed.concentrations && parsed.concentrations.length > 0) {
+            html += '<div class="extracted-concentrations">';
+            html += '<h5>📊 Concentrations:</h5>';
+            html += '<ul>';
+            parsed.concentrations.forEach(conc => {
+                html += `<li>${conc.component}: ${conc.percentage}</li>`;
+            });
+            html += '</ul>';
+            html += '</div>';
+        }
+        
+        // Warnings
+        if (parsed.warnings && parsed.warnings.length > 0) {
+            html += '<div class="extracted-warnings">';
+            html += '<h5>⚠️ Warnings & Notes:</h5>';
+            html += '<ul>';
+            parsed.warnings.forEach(warning => {
+                html += `<li>${warning}</li>`;
+            });
+            html += '</ul>';
+            html += '</div>';
+        }
+        
+        // Raw analysis (collapsible)
+        html += '<details style="margin-top: 15px;">';
+        html += '<summary style="cursor: pointer; font-weight: bold;">📝 View Raw AI Analysis</summary>';
+        html += `<pre style="background: #f5f5f5; padding: 10px; border-radius: 4px; white-space: pre-wrap; font-size: 12px;">${data.raw_analysis}</pre>`;
+        html += '</details>';
+        
+        html += '</div>';
+        
+        statusContainer.html(html);
     }
     
     function showMessage(message, type) {
