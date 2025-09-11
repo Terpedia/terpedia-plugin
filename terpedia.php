@@ -3852,6 +3852,15 @@ if (file_exists(TERPEDIA_AI_PATH . 'includes/cpt-archive-system.php')) {
     });
 }
 
+// Load Frontend Terproduct Creator
+if (file_exists(TERPEDIA_AI_PATH . 'includes/frontend-terproduct-creator.php')) {
+    require_once TERPEDIA_AI_PATH . 'includes/frontend-terproduct-creator.php';
+    // Initialize the frontend creator
+    add_action('plugins_loaded', function() {
+        new Terpedia_Frontend_Terproduct_Creator();
+    });
+}
+
 // Create default content on activation
 register_activation_hook(__FILE__, function() {
     $plugin = new TerpediaAI();
