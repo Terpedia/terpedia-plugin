@@ -3843,6 +3843,15 @@ class TerpediaAI {
 // Initialize the plugin
 new TerpediaAI();
 
+// Load CPT Archive System
+if (file_exists(TERPEDIA_AI_PATH . 'includes/cpt-archive-system.php')) {
+    require_once TERPEDIA_AI_PATH . 'includes/cpt-archive-system.php';
+    // Initialize the archive system
+    add_action('plugins_loaded', function() {
+        new Terpedia_CPT_Archive_System();
+    });
+}
+
 // Create default content on activation
 register_activation_hook(__FILE__, function() {
     $plugin = new TerpediaAI();
