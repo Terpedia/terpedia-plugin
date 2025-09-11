@@ -26,6 +26,12 @@ class Terpedia_Enhanced_Terproducts_System {
         add_shortcode('terpedia_terproduct_scanner', array($this, 'terproduct_scanner_shortcode'));
         add_shortcode('terpedia_terproduct_list', array($this, 'terproduct_list_shortcode'));
         
+        // Product mentions system
+        add_filter('the_content', array($this, 'parse_product_mentions'), 20);
+        add_filter('comment_text', array($this, 'parse_product_mentions'), 20);
+        add_action('wp_ajax_search_terproducts', array($this, 'ajax_search_terproducts'));
+        add_action('wp_ajax_nopriv_search_terproducts', array($this, 'ajax_search_terproducts'));
+        
         // Terproduct categories and terpene analysis
         add_action('init', array($this, 'register_terproduct_taxonomies'));
     }
@@ -888,6 +894,141 @@ class Terpedia_Enhanced_Terproducts_System {
         }
         
         return min(100, $score);
+    }
+    
+    /**
+     * Parse @product mentions in content and convert to links
+     */
+    public function parse_product_mentions($content) {
+        // Find all @product-name mentions
+        $pattern = '/@([a-zA-Z0-9\-_\s]+)/';
+        
+        $content = preg_replace_callback($pattern, array($this, 'convert_mention_to_link'), $content);
+        
+        return $content;
+    }
+    
+    /**
+     * Convert @mention to product link
+     */
+    private function convert_mention_to_link($matches) {
+        $mention_text = trim($matches[1]);
+        
+        // Search for terproduct by title or slug
+        $product = $this->find_terproduct_by_name($mention_text);
+        
+        if ($product) {
+            $product_url = get_permalink($product->ID);
+            $product_title = get_the_title($product->ID);
+            
+            return sprintf(
+                '<a href="%s" class="terproduct-mention" data-product-id="%d" title="View %s">@%s</a>',
+                esc_url($product_url),
+                $product->ID,
+                esc_attr($product_title),
+                esc_html($mention_text)
+            );
+        }
+        
+        // If no product found, return original mention
+        return $matches[0];
+    }
+    
+    /**
+     * Find terproduct by name or slug
+     */
+    private function find_terproduct_by_name($name) {
+        global $wpdb;
+        
+        // Clean up the name
+        $clean_name = sanitize_text_field($name);
+        $slug = sanitize_title($clean_name);
+        
+        // Search by exact title match first
+        $product = get_page_by_title($clean_name, OBJECT, 'terpedia_terproduct');
+        if ($product) {
+            return $product;
+        }
+        
+        // Search by slug
+        $product = get_page_by_path($slug, OBJECT, 'terpedia_terproduct');
+        if ($product) {
+            return $product;
+        }
+        
+        // Search by partial title match
+        $sql = $wpdb->prepare("
+            SELECT ID FROM {$wpdb->posts} 
+            WHERE post_type = 'terpedia_terproduct' 
+            AND post_status = 'publish' 
+            AND (post_title LIKE %s OR post_name LIKE %s)
+            ORDER BY 
+                CASE 
+                    WHEN post_title = %s THEN 1
+                    WHEN post_name = %s THEN 2
+                    WHEN post_title LIKE %s THEN 3
+                    ELSE 4
+                END
+            LIMIT 1
+        ", 
+            '%' . $clean_name . '%',
+            '%' . $slug . '%',
+            $clean_name,
+            $slug,
+            $clean_name . '%'
+        );
+        
+        $post_id = $wpdb->get_var($sql);
+        
+        if ($post_id) {
+            return get_post($post_id);
+        }
+        
+        return null;
+    }
+    
+    /**
+     * AJAX endpoint for searching terproducts (for autocomplete)
+     */
+    public function ajax_search_terproducts() {
+        $query = sanitize_text_field($_GET['q'] ?? $_POST['q'] ?? '');
+        $limit = intval($_GET['limit'] ?? $_POST['limit'] ?? 10);
+        
+        if (empty($query) || strlen($query) < 2) {
+            wp_send_json_error('Query too short');
+        }
+        
+        $args = array(
+            'post_type' => 'terpedia_terproduct',
+            'post_status' => 'publish',
+            's' => $query,
+            'posts_per_page' => $limit,
+            'orderby' => 'relevance',
+            'order' => 'DESC'
+        );
+        
+        $products = get_posts($args);
+        
+        $results = array();
+        foreach ($products as $product) {
+            // Get some metadata
+            $brand = get_post_meta($product->ID, '_extracted_brand', true);
+            $category = wp_get_post_terms($product->ID, 'terproduct_category', array('fields' => 'names'));
+            $main_photo = get_post_meta($product->ID, '_main_product_photo', true);
+            
+            $results[] = array(
+                'id' => $product->ID,
+                'title' => $product->post_title,
+                'slug' => $product->post_name,
+                'url' => get_permalink($product->ID),
+                'brand' => $brand,
+                'category' => !empty($category) ? $category[0] : '',
+                'thumbnail' => $main_photo ? wp_get_attachment_image_url($main_photo, 'thumbnail') : '',
+                'excerpt' => wp_trim_words(strip_tags($product->post_content), 20)
+            );
+        }
+        
+        wp_send_json_success($results);
     }
     
     public function analyze_product_ingredients() {

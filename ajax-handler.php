@@ -163,6 +163,88 @@ Warnings:
         wp_send_json_success($mock_insights);
         break;
         
+    case 'search_terproducts':
+        // Simulate terproduct search for autocomplete
+        $query = sanitize_textarea_field($_GET['q'] ?? $_POST['q'] ?? '');
+        $limit = intval($_GET['limit'] ?? $_POST['limit'] ?? 10);
+        
+        if (empty($query) || strlen($query) < 1) {
+            wp_send_json_error('Query too short');
+        }
+        
+        // Mock search results based on query
+        $mock_products = array();
+        
+        $sample_products = array(
+            array(
+                'id' => 1,
+                'title' => 'Lavender Essential Oil Blend',
+                'slug' => 'lavender-essential-oil-blend',
+                'brand' => 'Terpedia Naturals',
+                'category' => 'Essential Oils',
+                'excerpt' => 'Pure lavender oil with calming linalool terpenes for relaxation and sleep support.'
+            ),
+            array(
+                'id' => 2,
+                'title' => 'Citrus Limonene Extract',
+                'slug' => 'citrus-limonene-extract',
+                'brand' => 'Terpedia Labs',
+                'category' => 'Terpene Isolates',
+                'excerpt' => 'High-purity limonene extract from citrus peels, perfect for mood enhancement.'
+            ),
+            array(
+                'id' => 3,
+                'title' => 'Pine Forest Aromatherapy Blend',
+                'slug' => 'pine-forest-aromatherapy-blend',
+                'brand' => 'Terpedia Naturals',
+                'category' => 'Aromatherapy Blends',
+                'excerpt' => 'Forest-fresh blend with alpha and beta pinene for mental clarity and focus.'
+            ),
+            array(
+                'id' => 4,
+                'title' => 'Eucalyptus Refreshing Oil',
+                'slug' => 'eucalyptus-refreshing-oil',
+                'brand' => 'Terpedia Naturals',
+                'category' => 'Essential Oils',
+                'excerpt' => 'Pure eucalyptus oil rich in eucalyptol for respiratory support and cooling sensation.'
+            ),
+            array(
+                'id' => 5,
+                'title' => 'Lemon Zest Terpene Complex',
+                'slug' => 'lemon-zest-terpene-complex',
+                'brand' => 'Terpedia Labs',
+                'category' => 'Terpene Isolates',
+                'excerpt' => 'Concentrated lemon terpenes including limonene and citral for uplifting effects.'
+            )
+        );
+        
+        // Filter products based on query
+        $results = array();
+        foreach ($sample_products as $product) {
+            if (stripos($product['title'], $query) !== false || 
+                stripos($product['brand'], $query) !== false ||
+                stripos($product['category'], $query) !== false) {
+                
+                $results[] = array(
+                    'id' => $product['id'],
+                    'title' => $product['title'],
+                    'slug' => $product['slug'],
+                    'url' => '/terproduct/' . $product['slug'],
+                    'brand' => $product['brand'],
+                    'category' => $product['category'],
+                    'thumbnail' => '',
+                    'excerpt' => $product['excerpt']
+                );
+                
+                if (count($results) >= $limit) {
+                    break;
+                }
+            }
+        }
+        
+        wp_send_json_success($results);
+        break;
+        
     default:
         wp_send_json_error('Unknown action: ' . $action);
 }

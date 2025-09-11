@@ -582,4 +582,239 @@ jQuery(document).ready(function($) {
         // Fallback for older browsers
         console.log('Camera API not available, using file input fallback');
     }
+    
+    // Initialize product mentions functionality
+    initProductMentions();
 });
+
+/**
+ * Product Mentions System - @product-name autocomplete
+ */
+function initProductMentions() {
+    // Find all text areas and content editable elements
+    const textInputs = $('textarea, input[type="text"], [contenteditable="true"]');
+    
+    textInputs.each(function() {
+        const $input = $(this);
+        
+        // Add autocomplete functionality
+        $input.on('input keyup', function(e) {
+            handleMentionInput.call(this, e);
+        });
+        
+        // Handle keyboard navigation in autocomplete
+        $input.on('keydown', function(e) {
+            if ($('.terproduct-mention-dropdown').is(':visible')) {
+                handleAutocompleteKeydown.call(this, e);
+            }
+        });
+    });
+    
+    // Click outside to close autocomplete
+    $(document).on('click', function(e) {
+        if (!$(e.target).closest('.terproduct-mention-dropdown').length) {
+            $('.terproduct-mention-dropdown').hide();
+        }
+    });
+}
+
+function handleMentionInput(e) {
+    const $input = $(this);
+    const text = $input.val() || $input.text();
+    const cursorPos = this.selectionStart || text.length;
+    
+    // Find @ mentions at cursor position
+    const beforeCursor = text.substring(0, cursorPos);
+    const mentionMatch = beforeCursor.match(/@([a-zA-Z0-9\-_\s]*)$/);
+    
+    if (mentionMatch && mentionMatch[1].length >= 1) {
+        const query = mentionMatch[1];
+        const mentionStart = beforeCursor.lastIndexOf('@');
+        
+        // Store mention context
+        $input.data('mention-start', mentionStart);
+        $input.data('mention-query', query);
+        
+        // Search for products
+        searchTerproducts(query, function(results) {
+            if (results.length > 0) {
+                showAutocompleteDropdown($input, results);
+            } else {
+                hideAutocompleteDropdown();
+            }
+        });
+    } else {
+        hideAutocompleteDropdown();
+    }
+}
+
+function searchTerproducts(query, callback) {
+    if (query.length < 1) {
+        callback([]);
+        return;
+    }
+    
+    // Debounce searches
+    clearTimeout(window.terproductSearchTimeout);
+    window.terproductSearchTimeout = setTimeout(function() {
+        $.ajax({
+            url: terpediaTerproducts.ajaxurl,
+            type: 'GET',
+            data: {
+                action: 'search_terproducts',
+                q: query,
+                limit: 8
+            },
+            success: function(response) {
+                if (response.success) {
+                    callback(response.data);
+                } else {
+                    callback([]);
+                }
+            },
+            error: function() {
+                callback([]);
+            }
+        });
+    }, 300);
+}
+
+function showAutocompleteDropdown($input, results) {
+    // Remove existing dropdown
+    $('.terproduct-mention-dropdown').remove();
+    
+    // Create dropdown
+    const dropdown = $(`
+        <div class="terproduct-mention-dropdown">
+            <div class="dropdown-header">
+                <span class="dropdown-title">🧪 Terproducts</span>
+                <span class="dropdown-count">${results.length} found</span>
+            </div>
+            <div class="dropdown-items"></div>
+        </div>
+    `);
+    
+    // Add items
+    const itemsContainer = dropdown.find('.dropdown-items');
+    results.forEach(function(product, index) {
+        const item = $(`
+            <div class="dropdown-item" data-index="${index}" data-product-title="${product.title}">
+                <div class="product-info">
+                    ${product.thumbnail ? `<img src="${product.thumbnail}" alt="${product.title}" class="product-thumb">` : '<div class="product-thumb-placeholder">🧪</div>'}
+                    <div class="product-details">
+                        <div class="product-title">${product.title}</div>
+                        <div class="product-meta">
+                            ${product.brand ? `<span class="product-brand">${product.brand}</span>` : ''}
+                            ${product.category ? `<span class="product-category">${product.category}</span>` : ''}
+                        </div>
+                        ${product.excerpt ? `<div class="product-excerpt">${product.excerpt}</div>` : ''}
+                    </div>
+                </div>
+            </div>
+        `);
+        
+        item.on('click', function() {
+            selectProduct($input, product);
+        });
+        
+        itemsContainer.append(item);
+    });
+    
+    // Position dropdown
+    const inputOffset = $input.offset();
+    dropdown.css({
+        position: 'absolute',
+        top: inputOffset.top + $input.outerHeight(),
+        left: inputOffset.left,
+        'z-index': 9999
+    });
+    
+    $('body').append(dropdown);
+    
+    // Highlight first item
+    dropdown.find('.dropdown-item:first').addClass('highlighted');
+}
+
+function hideAutocompleteDropdown() {
+    $('.terproduct-mention-dropdown').remove();
+}
+
+function selectProduct($input, product) {
+    const mentionStart = $input.data('mention-start');
+    const currentText = $input.val() || $input.text();
+    
+    // Replace the @query with @product-name
+    const beforeMention = currentText.substring(0, mentionStart);
+    const afterCursor = currentText.substring($input[0].selectionStart || currentText.length);
+    const newText = beforeMention + '@' + product.title + ' ' + afterCursor;
+    
+    if ($input.is('textarea, input')) {
+        $input.val(newText);
+        
+        // Set cursor position after the mention
+        const newCursorPos = beforeMention.length + product.title.length + 2;
+        $input[0].setSelectionRange(newCursorPos, newCursorPos);
+        $input.focus();
+    } else {
+        // For contenteditable elements
+        $input.text(newText);
+    }
+    
+    hideAutocompleteDropdown();
+    
+    // Trigger change event
+    $input.trigger('input');
+}
+
+function handleAutocompleteKeydown(e) {
+    const dropdown = $('.terproduct-mention-dropdown');
+    if (!dropdown.is(':visible')) return;
+    
+    const items = dropdown.find('.dropdown-item');
+    const highlighted = dropdown.find('.dropdown-item.highlighted');
+    
+    switch (e.key) {
+        case 'ArrowDown':
+            e.preventDefault();
+            if (highlighted.length === 0) {
+                items.first().addClass('highlighted');
+            } else {
+                const next = highlighted.next('.dropdown-item');
+                highlighted.removeClass('highlighted');
+                if (next.length > 0) {
+                    next.addClass('highlighted');
+                } else {
+                    items.first().addClass('highlighted');
+                }
+            }
+            break;
+            
+        case 'ArrowUp':
+            e.preventDefault();
+            if (highlighted.length === 0) {
+                items.last().addClass('highlighted');
+            } else {
+                const prev = highlighted.prev('.dropdown-item');
+                highlighted.removeClass('highlighted');
+                if (prev.length > 0) {
+                    prev.addClass('highlighted');
+                } else {
+                    items.last().addClass('highlighted');
+                }
+            }
+            break;
+            
+        case 'Enter':
+        case 'Tab':
+            e.preventDefault();
+            if (highlighted.length > 0) {
+                highlighted.click();
+            }
+            break;
+            
+        case 'Escape':
+            e.preventDefault();
+            hideAutocompleteDropdown();
+            break;
+    }
+}
