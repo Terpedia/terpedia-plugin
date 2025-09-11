@@ -41,7 +41,7 @@ function esc_url_raw($url) {
 }
 
 // Handle different AJAX actions
-$action = $_POST['action'] ?? '';
+$action = $_REQUEST['action'] ?? $_POST['action'] ?? $_GET['action'] ?? '';
 
 switch ($action) {
     case 'analyze_photo_ingredients':

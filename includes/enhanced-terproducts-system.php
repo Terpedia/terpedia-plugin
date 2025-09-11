@@ -900,12 +900,35 @@ class Terpedia_Enhanced_Terproducts_System {
      * Parse @product mentions in content and convert to links
      */
     public function parse_product_mentions($content) {
-        // Find all @product-name mentions
-        $pattern = '/@([a-zA-Z0-9\-_\s]+)/';
+        // Skip if content is inside HTML tags or already has links
+        if (strpos($content, '<') !== false) {
+            // More sophisticated parsing needed for HTML content
+            return $this->parse_mentions_in_html($content);
+        }
+        
+        // Find all @product-name mentions - more restrictive pattern
+        // Only match word-like product names, no spaces, no emails
+        $pattern = '/(?<!\w)@([a-zA-Z0-9\-_]{2,})(?!\w|\@|\.|com|org|net)/';
         
         $content = preg_replace_callback($pattern, array($this, 'convert_mention_to_link'), $content);
         
         return $content;
+    }
+    
+    /**
+     * Parse mentions in HTML content more carefully
+     */
+    private function parse_mentions_in_html($content) {
+        // Skip processing if already inside links or code blocks
+        if (preg_match('/<a[^>]*>.*@.*<\/a>/i', $content) || 
+            preg_match('/<code[^>]*>.*@.*<\/code>/i', $content)) {
+            return $content;
+        }
+        
+        // Only process text nodes, avoid HTML attributes
+        $pattern = '/(?<![<\w])@([a-zA-Z0-9\-_]{2,})(?![>\w@\.])/';
+        
+        return preg_replace_callback($pattern, array($this, 'convert_mention_to_link'), $content);
     }
     
     /**

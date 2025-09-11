@@ -42,8 +42,59 @@ function wp_create_nonce($action) {
     return 'dev_nonce_' . md5($action);
 }
 
-function current_user_can($capability) {
-    return true; // Allow all permissions in dev mode
+// Mock WordPress functions only if they don't exist
+if (!function_exists('add_filter')) {
+    function add_filter($tag, $function_to_add, $priority = 10, $accepted_args = 1) {
+        return true;
+    }
+}
+
+if (!function_exists('add_action')) {
+    function add_action($tag, $function_to_add, $priority = 10, $accepted_args = 1) {
+        return true;
+    }
+}
+
+if (!function_exists('add_shortcode')) {
+    function add_shortcode($tag, $function) {
+        return true;
+    }
+}
+
+if (!function_exists('register_post_type')) {
+    function register_post_type($post_type, $args) {
+        return true;
+    }
+}
+
+if (!function_exists('post_type_exists')) {
+    function post_type_exists($post_type) {
+        return false;
+    }
+}
+
+if (!function_exists('register_taxonomy')) {
+    function register_taxonomy($taxonomy, $object_type, $args) {
+        return true;
+    }
+}
+
+if (!function_exists('term_exists')) {
+    function term_exists($term, $taxonomy) {
+        return false;
+    }
+}
+
+if (!function_exists('wp_insert_term')) {
+    function wp_insert_term($term, $taxonomy, $args = array()) {
+        return array('term_id' => rand(1, 1000));
+    }
+}
+
+if (!function_exists('current_user_can')) {
+    function current_user_can($capability) {
+        return true; // Allow all permissions in dev mode
+    }
 }
 
 function register_post_type($post_type, $args) {

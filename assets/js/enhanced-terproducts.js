@@ -620,32 +620,64 @@ function initProductMentions() {
 
 function handleMentionInput(e) {
     const $input = $(this);
-    const text = $input.val() || $input.text();
-    const cursorPos = this.selectionStart || text.length;
+    const isContentEditable = $input.attr('contenteditable') === 'true';
+    let text, cursorPos;
     
-    // Find @ mentions at cursor position
+    if (isContentEditable) {
+        text = $input.text();
+        cursorPos = getCaretPosition($input[0]) || text.length;
+    } else {
+        text = $input.val();
+        cursorPos = this.selectionStart || text.length;
+    }
+    
+    // Find @ mentions at cursor position - more restrictive pattern
     const beforeCursor = text.substring(0, cursorPos);
-    const mentionMatch = beforeCursor.match(/@([a-zA-Z0-9\-_\s]*)$/);
+    const mentionMatch = beforeCursor.match(/@([a-zA-Z0-9\-_]*)$/);
     
-    if (mentionMatch && mentionMatch[1].length >= 1) {
+    if (mentionMatch && mentionMatch[1].length >= 0) {
         const query = mentionMatch[1];
         const mentionStart = beforeCursor.lastIndexOf('@');
         
         // Store mention context
         $input.data('mention-start', mentionStart);
         $input.data('mention-query', query);
+        $input.data('is-contenteditable', isContentEditable);
         
-        // Search for products
-        searchTerproducts(query, function(results) {
-            if (results.length > 0) {
-                showAutocompleteDropdown($input, results);
-            } else {
-                hideAutocompleteDropdown();
-            }
-        });
+        // Search for products (require at least 1 character for query)
+        if (query.length >= 1) {
+            searchTerproducts(query, function(results) {
+                if (results.length > 0) {
+                    showAutocompleteDropdown($input, results);
+                } else {
+                    hideAutocompleteDropdown();
+                }
+            });
+        } else {
+            hideAutocompleteDropdown();
+        }
     } else {
         hideAutocompleteDropdown();
     }
+}
+
+function getCaretPosition(element) {
+    let caretOffset = 0;
+    const doc = element.ownerDocument || element.document;
+    const win = doc.defaultView || doc.parentWindow;
+    let sel;
+    
+    if (typeof win.getSelection !== 'undefined') {
+        sel = win.getSelection();
+        if (sel.rangeCount > 0) {
+            const range = sel.getRangeAt(0);
+            const preCaretRange = range.cloneRange();
+            preCaretRange.selectNodeContents(element);
+            preCaretRange.setEnd(range.endContainer, range.endOffset);
+            caretOffset = preCaretRange.toString().length;
+        }
+    }
+    return caretOffset;
 }
 
 function searchTerproducts(query, callback) {
@@ -741,29 +773,81 @@ function hideAutocompleteDropdown() {
 
 function selectProduct($input, product) {
     const mentionStart = $input.data('mention-start');
-    const currentText = $input.val() || $input.text();
+    const isContentEditable = $input.data('is-contenteditable');
     
-    // Replace the @query with @product-name
-    const beforeMention = currentText.substring(0, mentionStart);
-    const afterCursor = currentText.substring($input[0].selectionStart || currentText.length);
-    const newText = beforeMention + '@' + product.title + ' ' + afterCursor;
+    // Use proper slug format for mentions
+    const productSlug = product.slug || product.title.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-');
     
-    if ($input.is('textarea, input')) {
+    if (isContentEditable) {
+        replaceInContentEditable($input[0], mentionStart, '@' + productSlug);
+    } else {
+        const currentText = $input.val();
+        const beforeMention = currentText.substring(0, mentionStart);
+        const afterCursor = currentText.substring($input[0].selectionStart || currentText.length);
+        const newText = beforeMention + '@' + productSlug + ' ' + afterCursor;
+        
         $input.val(newText);
         
         // Set cursor position after the mention
-        const newCursorPos = beforeMention.length + product.title.length + 2;
+        const newCursorPos = beforeMention.length + productSlug.length + 2;
         $input[0].setSelectionRange(newCursorPos, newCursorPos);
         $input.focus();
-    } else {
-        // For contenteditable elements
-        $input.text(newText);
     }
     
     hideAutocompleteDropdown();
     
     // Trigger change event
     $input.trigger('input');
+}
+
+function replaceInContentEditable(element, startPos, replacement) {
+    const doc = element.ownerDocument || element.document;
+    const win = doc.defaultView || doc.parentWindow;
+    const sel = win.getSelection();
+    
+    if (sel.rangeCount > 0) {
+        const range = sel.getRangeAt(0);
+        
+        // Find the text node and position
+        let textNode = null;
+        let walker = doc.createTreeWalker(
+            element,
+            NodeFilter.SHOW_TEXT,
+            null,
+            false
+        );
+        
+        let currentPos = 0;
+        while (walker.nextNode()) {
+            const node = walker.currentNode;
+            if (currentPos + node.textContent.length >= startPos) {
+                textNode = node;
+                break;
+            }
+            currentPos += node.textContent.length;
+        }
+        
+        if (textNode) {
+            const nodeStartPos = startPos - currentPos;
+            const currentQuery = textNode.textContent.substring(nodeStartPos);
+            const queryMatch = currentQuery.match(/^@[a-zA-Z0-9\-_]*/);
+            
+            if (queryMatch) {
+                const queryLength = queryMatch[0].length;
+                textNode.textContent = textNode.textContent.substring(0, nodeStartPos) + 
+                                     replacement + ' ' + 
+                                     textNode.textContent.substring(nodeStartPos + queryLength);
+                
+                // Set cursor position
+                range.setStart(textNode, nodeStartPos + replacement.length + 1);
+                range.collapse(true);
+                sel.removeAllRanges();
+                sel.addRange(range);
+            }
+        }
+    }
+    
+    element.focus();
 }
 
 function handleAutocompleteKeydown(e) {
