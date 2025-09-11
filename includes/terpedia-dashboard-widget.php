@@ -148,7 +148,7 @@ class Terpedia_Dashboard_Widget {
         
         return array(
             'name' => $plugin_data['Name'] ?? 'Terpedia',
-            'version' => $plugin_data['Version'] ?? '1.0.0',
+            'version' => $plugin_data['Version'] ?? TERPEDIA_AI_VERSION,
             'description' => $plugin_data['Description'] ?? 'Comprehensive terpene encyclopedia with AI agents and research tools',
             'author' => $plugin_data['Author'] ?? 'Terpedia Team'
         );
