@@ -13,7 +13,7 @@ Preferred communication style: Simple, everyday language.
 ### Plugin Architecture
 - **Core Plugin Structure**: Standard WordPress plugin architecture with modular class-based design
 - **File Organization**: Separated into includes/ for core classes, assets/ for CSS/JS, and theme/ for integrated scientific theme
-- **Version Management**: Currently at version 2.0.12 with automated update system from GitHub
+- **Version Management**: Currently at version 3.9.4 with automated update system from GitHub
 - **Database Integration**: Custom tables for specialized data with WordPress standard post types for content management
 
 ### Custom Post Types System

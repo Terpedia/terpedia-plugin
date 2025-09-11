@@ -17,7 +17,7 @@ if (!defined('ABSPATH')) {
 }
 
 // Define plugin constants
-define('TERPEDIA_AI_VERSION', '3.9.1');
+define('TERPEDIA_AI_VERSION', '3.9.4');
 define('TERPEDIA_AI_URL', plugin_dir_url(__FILE__));
 define('TERPEDIA_AI_PATH', plugin_dir_path(__FILE__));
 
