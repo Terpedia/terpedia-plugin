@@ -130,6 +130,111 @@ require_once __DIR__ . '/includes/enhanced-terproducts-system.php';
 // Initialize the system
 $terproducts = new Terpedia_Enhanced_Terproducts_System();
 
+// Handle special routes
+$request_uri = $_SERVER['REQUEST_URI'] ?? '/';
+$path = parse_url($request_uri, PHP_URL_PATH);
+
+if ($path === '/terproducts' || $path === '/terproducts/') {
+    // Clear buffer and display terproducts archive
+    ob_end_clean();
+    ?>
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Terproducts Archive - Terpedia</title>
+        <link rel="stylesheet" href="/assets/css/enhanced-terproducts.css">
+        <style>
+            body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; margin: 0; padding: 0; background-color: #f0f0f1; line-height: 1.6; }
+            .site-header { background: #fff; border-bottom: 1px solid #e1e1e1; padding: 1rem 0; margin-bottom: 2rem; }
+            .site-header .container { max-width: 1200px; margin: 0 auto; padding: 0 20px; display: flex; justify-content: space-between; align-items: center; }
+            .site-title { font-size: 1.5rem; font-weight: 700; color: #333; text-decoration: none; }
+            .site-nav a { color: #666; text-decoration: none; margin-left: 1.5rem; font-weight: 500; }
+            .site-nav a:hover { color: #007cba; }
+            .content-wrap { max-width: 1200px; margin: 0 auto; padding: 0 20px; min-height: 60vh; }
+            .archive-header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 3rem 0; text-align: center; margin-bottom: 2rem; border-radius: 8px; }
+            .archive-header h1 { margin: 0 0 1rem 0; font-size: 2.5rem; font-weight: 700; }
+            .archive-header p { margin: 0; font-size: 1.1rem; opacity: 0.9; }
+            .add-product-cta { margin-top: 1.5rem; }
+            .add-product-cta a { display: inline-block; background: rgba(255,255,255,0.2); color: white; padding: 0.75rem 2rem; border-radius: 25px; text-decoration: none; font-weight: 600; transition: all 0.3s ease; border: 2px solid rgba(255,255,255,0.3); }
+            .add-product-cta a:hover { background: rgba(255,255,255,0.3); transform: translateY(-2px); }
+            .products-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 2rem; margin: 2rem 0; }
+            .product-card { background: white; border-radius: 8px; padding: 1.5rem; box-shadow: 0 2px 10px rgba(0,0,0,0.1); transition: transform 0.2s ease, box-shadow 0.2s ease; }
+            .product-card:hover { transform: translateY(-2px); box-shadow: 0 4px 20px rgba(0,0,0,0.15); }
+            .product-image { text-align: center; margin-bottom: 1rem; }
+            .placeholder-image { width: 80px; height: 80px; background: #f0f0f1; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 2rem; color: #666; }
+            .product-content h3 { margin: 0 0 0.5rem 0; color: #333; }
+            .product-content h3 a { color: inherit; text-decoration: none; }
+            .product-content h3 a:hover { color: #007cba; }
+            .product-meta { margin-bottom: 1rem; font-size: 0.9rem; color: #666; }
+            .product-meta span { display: inline-block; margin-right: 1rem; background: #f8f9fa; padding: 0.25rem 0.5rem; border-radius: 4px; }
+            .product-excerpt { margin-bottom: 1rem; color: #666; line-height: 1.5; }
+            .terpenes-preview { font-size: 0.9rem; }
+            .terpene-tag { display: inline-block; background: #e8f5e8; color: #2e7d32; padding: 0.25rem 0.5rem; border-radius: 12px; margin: 0.25rem 0.25rem 0 0; font-size: 0.8rem; font-weight: 500; }
+        </style>
+    </head>
+    <body>
+        <header class="site-header">
+            <div class="container">
+                <a href="/" class="site-title">🧪 Terpedia</a>
+                <nav class="site-nav">
+                    <a href="/">Home</a>
+                    <a href="/terproducts" style="color: #007cba;">Terproducts</a>
+                    <a href="/add-terproduct">Add Product</a>
+                </nav>
+            </div>
+        </header>
+        
+        <main class="content-wrap">
+            <div class="archive-header">
+                <h1>📦 Terproducts Archive</h1>
+                <p>AI-analyzed cannabis products with comprehensive terpene profiles</p>
+                <div class="add-product-cta">
+                    <a href="/add-terproduct">📱 Add New Product</a>
+                </div>
+            </div>
+            
+            <div class="products-grid">
+                <?php
+                // Sample terproducts with realistic terpene data
+                $products = array(
+                    array('title' => 'Lavender Essential Oil Blend', 'brand' => 'Natural Wellness Co.', 'confidence' => 92, 'excerpt' => 'A calming essential oil blend with dominant linalool content for relaxation and stress relief.', 'terpenes' => array(array('name' => 'Linalool', 'concentration' => '3.2%'), array('name' => 'Limonene', 'concentration' => '1.8%'), array('name' => 'Pinene', 'concentration' => '0.9%'))),
+                    array('title' => 'Citrus Burst Terpene Spray', 'brand' => 'TerpeneFarm', 'confidence' => 87, 'excerpt' => 'Energizing citrus blend with high limonene content for mood enhancement and focus.', 'terpenes' => array(array('name' => 'Limonene', 'concentration' => '4.1%'), array('name' => 'Myrcene', 'concentration' => '1.2%'), array('name' => 'Beta-pinene', 'concentration' => '0.7%'))),
+                    array('title' => 'Pine Forest Inhaler', 'brand' => 'Forest Botanicals', 'confidence' => 94, 'excerpt' => 'Refreshing pine blend with high pinene content for respiratory support and mental clarity.', 'terpenes' => array(array('name' => 'Alpha-pinene', 'concentration' => '5.3%'), array('name' => 'Beta-pinene', 'concentration' => '2.1%'), array('name' => 'Eucalyptol', 'concentration' => '1.9%')))
+                );
+                
+                foreach ($products as $product): ?>
+                    <div class="product-card">
+                        <div class="product-image">
+                            <div class="placeholder-image">📦</div>
+                        </div>
+                        <div class="product-content">
+                            <h3><a href="#"><?php echo htmlspecialchars($product['title']); ?></a></h3>
+                            <div class="product-meta">
+                                <span>Brand: <?php echo htmlspecialchars($product['brand']); ?></span>
+                                <span>Analysis: <?php echo $product['confidence']; ?>%</span>
+                            </div>
+                            <div class="product-excerpt">
+                                <p><?php echo htmlspecialchars($product['excerpt']); ?></p>
+                            </div>
+                            <div class="terpenes-preview">
+                                <strong>Key Terpenes:</strong><br>
+                                <?php foreach ($product['terpenes'] as $terpene): ?>
+                                    <span class="terpene-tag"><?php echo htmlspecialchars($terpene['name'] . ' (' . $terpene['concentration'] . ')'); ?></span>
+                                <?php endforeach; ?>
+                            </div>
+                        </div>
+                    </div>
+                <?php endforeach; ?>
+            </div>
+        </main>
+    </body>
+    </html>
+    <?php
+    exit;
+}
+
 ?>
 <!DOCTYPE html>
 <html lang="en">
