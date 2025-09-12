@@ -1,0 +1,149 @@
+
+/* TULIP System Styles */
+.tulip-link {
+    color: #0073aa;
+    text-decoration: underline;
+    cursor: help;
+    border-bottom: 1px dotted #0073aa;
+}
+
+.tulip-link:hover {
+    background-color: #f0f6fc;
+    border-bottom: 1px solid #0073aa;
+}
+
+.tulip-fact-card {
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-left: 4px solid #0073aa;
+    border-radius: 8px;
+    padding: 16px;
+    margin: 16px 0;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.tulip-fact-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.tulip-fact-id {
+    font-family: 'Courier New', monospace;
+    background: #e9ecef;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+.tulip-evidence-level {
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: bold;
+    text-transform: uppercase;
+}
+
+.tulip-evidence-level.verified {
+    background-color: #d4edda;
+    color: #155724;
+}
+
+.tulip-evidence-level.peer_reviewed {
+    background-color: #d1ecf1;
+    color: #0c5460;
+}
+
+.tulip-evidence-level.preliminary {
+    background-color: #fff3cd;
+    color: #856404;
+}
+
+.tulip-evidence-level.anecdotal {
+    background-color: #f8f9fa;
+    color: #6c757d;
+}
+
+.tulip-fact-card h4 {
+    margin: 8px 0;
+    color: #212529;
+}
+
+.tulip-citations {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid #dee2e6;
+}
+
+.tulip-citations ul {
+    margin: 8px 0;
+    padding-left: 20px;
+}
+
+.tulip-citations li {
+    font-size: 12px;
+    color: #6c757d;
+    margin-bottom: 4px;
+}
+
+.tulip-citation {
+    font-style: italic;
+    color: #6c757d;
+    border-bottom: 1px dotted #6c757d;
+}
+
+.tulip-search-widget {
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 16px;
+    margin: 16px 0;
+}
+
+.tulip-search-widget h3 {
+    margin-top: 0;
+    color: #0073aa;
+}
+
+.tulip-search-widget input {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    margin-bottom: 12px;
+}
+
+.tulip-search-result {
+    padding: 8px 0;
+    border-bottom: 1px solid #eee;
+}
+
+.tulip-search-result:last-child {
+    border-bottom: none;
+}
+
+.tulip-search-result strong {
+    color: #0073aa;
+}
+
+.tulip-search-result p {
+    margin: 4px 0 0 0;
+    color: #666;
+    font-size: 14px;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    .tulip-fact-card {
+        padding: 12px;
+        margin: 12px 0;
+    }
+    
+    .tulip-fact-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 4px;
+    }
+}

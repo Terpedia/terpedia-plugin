@@ -3,7 +3,7 @@
  * Plugin Name: Terpedia
  * Plugin URI: https://terpedia.com
  * Description: Comprehensive terpene encyclopedia with 13 AI experts, intelligent newsletter generator with PubMed integration, 700K+ natural products, UA Huntsville supercomputer integration
- * Version: 3.9.4
+ * Version: 3.9.3
  * Author: Terpedia Team
  * License: GPL v2 or later
  * Requires at least: 5.8
@@ -17,7 +17,7 @@ if (!defined('ABSPATH')) {
 }
 
 // Define plugin constants
-define('TERPEDIA_AI_VERSION', '3.9.4');
+define('TERPEDIA_AI_VERSION', '3.9.1');
 define('TERPEDIA_AI_URL', plugin_dir_url(__FILE__));
 define('TERPEDIA_AI_PATH', plugin_dir_path(__FILE__));
 
@@ -106,9 +106,21 @@ class TerpediaAI {
             delete_option('terpedia_ai_flush_rewrite_rules');
         }
         
+        // Include TULIP system and other core features
+        $includes = array(
+            'includes/tulip-system.php',
+        );
+        
+        foreach ($includes as $file) {
+            $filepath = plugin_dir_path(__FILE__) . $file;
+            if (file_exists($filepath)) {
+                require_once $filepath;
+            }
+        }
+        
         // Include BuddyPress messaging and agent systems (safely)
         if (class_exists('BuddyPress')) {
-            $includes = array(
+            $bp_includes = array(
                 'includes/buddypress-messaging.php',
                 'includes/terpene-agents.php',
                 'includes/agent-profiles.php',
@@ -134,7 +146,7 @@ class TerpediaAI {
                 'includes/force-demo-creation.php'
             );
             
-            foreach ($includes as $file) {
+            foreach ($bp_includes as $file) {
                 $filepath = plugin_dir_path(__FILE__) . $file;
                 if (file_exists($filepath)) {
                     require_once $filepath;
@@ -3842,24 +3854,6 @@ class TerpediaAI {
 
 // Initialize the plugin
 new TerpediaAI();
-
-// Load CPT Archive System
-if (file_exists(TERPEDIA_AI_PATH . 'includes/cpt-archive-system.php')) {
-    require_once TERPEDIA_AI_PATH . 'includes/cpt-archive-system.php';
-    // Initialize the archive system
-    add_action('plugins_loaded', function() {
-        new Terpedia_CPT_Archive_System();
-    });
-}
-
-// Load Frontend Terproduct Creator
-if (file_exists(TERPEDIA_AI_PATH . 'includes/frontend-terproduct-creator.php')) {
-    require_once TERPEDIA_AI_PATH . 'includes/frontend-terproduct-creator.php';
-    // Initialize the frontend creator
-    add_action('plugins_loaded', function() {
-        new Terpedia_Frontend_Terproduct_Creator();
-    });
-}
 
 // Create default content on activation
 register_activation_hook(__FILE__, function() {
