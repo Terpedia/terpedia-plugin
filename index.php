@@ -354,22 +354,37 @@ if ($path === '/add-terproduct' || $path === '/add-terproduct/') {
             </div>
         </main>
         
+        <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
         <script src="/assets/js/enhanced-terproducts.js"></script>
         <script>
             // Initialize the camera interface
-            jQuery(document).ready(function($) {
-                // Camera functionality
-                $('#open-camera-btn, #upload-photos-btn').on('click', function() {
-                    $('#product-camera-input').click();
-                });
+            document.addEventListener('DOMContentLoaded', function() {
+                // Camera functionality  
+                const openCameraBtn = document.getElementById('open-camera-btn');
+                const uploadPhotosBtn = document.getElementById('upload-photos-btn');
+                const cameraInput = document.getElementById('product-camera-input');
+                
+                if (openCameraBtn) {
+                    openCameraBtn.addEventListener('click', function() {
+                        if (cameraInput) cameraInput.click();
+                    });
+                }
+                
+                if (uploadPhotosBtn) {
+                    uploadPhotosBtn.addEventListener('click', function() {
+                        if (cameraInput) cameraInput.click();
+                    });
+                }
                 
                 // Handle file selection
-                $('#product-camera-input').on('change', function(e) {
-                    const files = e.target.files;
-                    if (files.length > 0) {
-                        handlePhotoUpload(files);
-                    }
-                });
+                if (cameraInput) {
+                    cameraInput.addEventListener('change', function(e) {
+                        const files = e.target.files;
+                        if (files.length > 0) {
+                            handlePhotoUpload(files);
+                        }
+                    });
+                }
                 
                 function handlePhotoUpload(files) {
                     const file = files[0];
@@ -377,7 +392,11 @@ if ($path === '/add-terproduct' || $path === '/add-terproduct/') {
                     
                     reader.onload = function(e) {
                         // Show image preview
-                        $('#camera-preview').addClass('has-image').html(`<img src="${e.target.result}" alt="Product Photo">`);
+                        const preview = document.getElementById('camera-preview');
+                        if (preview) {
+                            preview.classList.add('has-image');
+                            preview.innerHTML = `<img src="${e.target.result}" alt="Product Photo">`;
+                        }
                         
                         // Start analysis
                         startAnalysis();
@@ -387,13 +406,19 @@ if ($path === '/add-terproduct' || $path === '/add-terproduct/') {
                 }
                 
                 function startAnalysis() {
-                    $('#analysis-placeholder').hide();
-                    $('#analysis-results').show().html(`
-                        <div class="analysis-loading">
-                            <div class="spinner"></div>
-                            Analyzing product photo for ingredients and terpenes...
-                        </div>
-                    `);
+                    const placeholder = document.getElementById('analysis-placeholder');
+                    const results = document.getElementById('analysis-results');
+                    
+                    if (placeholder) placeholder.style.display = 'none';
+                    if (results) {
+                        results.style.display = 'block';
+                        results.innerHTML = `
+                            <div class="analysis-loading">
+                                <div class="spinner"></div>
+                                Analyzing product photo for ingredients and terpenes...
+                            </div>
+                        `;
+                    }
                     
                     // Simulate AI analysis (replace with actual API call)
                     setTimeout(() => {
@@ -420,35 +445,50 @@ if ($path === '/add-terproduct' || $path === '/add-terproduct/') {
                         </div>
                     `;
                     
-                    $('#analysis-results').html(resultsHtml);
-                    $('#save-product-btn').prop('disabled', false);
+                    const results = document.getElementById('analysis-results');
+                    const saveBtn = document.getElementById('save-product-btn');
+                    
+                    if (results) results.innerHTML = resultsHtml;
+                    if (saveBtn) saveBtn.disabled = false;
                     
                     // Auto-save simulation (confidence ≥70%)
                     setTimeout(() => {
-                        $('#save-product-btn').text('✅ Auto-Saved').css('background', '#00a32a');
+                        if (saveBtn) {
+                            saveBtn.textContent = '✅ Auto-Saved';
+                            saveBtn.style.background = '#00a32a';
+                        }
                         showSaveMessage();
                     }, 2000);
                 }
                 
                 function showSaveMessage() {
-                    const messageDiv = $('<div style="background: #d4edda; color: #155724; padding: 1rem; border-radius: 6px; margin-top: 1rem; text-align: center;">✅ Terproduct saved successfully! <a href="/terproducts" style="color: #155724; font-weight: 600;">View all products</a></div>');
-                    $('.save-section').append(messageDiv);
-                    
-                    setTimeout(() => messageDiv.fadeOut(), 5000);
+                    const saveSection = document.querySelector('.save-section');
+                    if (saveSection) {
+                        const messageDiv = document.createElement('div');
+                        messageDiv.style.cssText = 'background: #d4edda; color: #155724; padding: 1rem; border-radius: 6px; margin-top: 1rem; text-align: center;';
+                        messageDiv.innerHTML = '✅ Terproduct saved successfully! <a href="/terproducts" style="color: #155724; font-weight: 600;">View all products</a>';
+                        saveSection.appendChild(messageDiv);
+                        
+                        setTimeout(() => messageDiv.remove(), 5000);
+                    }
                 }
                 
                 // Save button functionality
-                $('#save-product-btn').on('click', function() {
-                    if (!$(this).prop('disabled')) {
-                        $(this).text('💾 Saving...').prop('disabled', true);
-                        setTimeout(() => {
-                            $(this).text('✅ Saved').css('background', '#00a32a');
-                            showSaveMessage();
-                        }, 1000);
-                    }
-                });
+                const saveBtn = document.getElementById('save-product-btn');
+                if (saveBtn) {
+                    saveBtn.addEventListener('click', function() {
+                        if (!this.disabled) {
+                            this.textContent = '💾 Saving...';
+                            this.disabled = true;
+                            setTimeout(() => {
+                                this.textContent = '✅ Saved';
+                                this.style.background = '#00a32a';
+                                showSaveMessage();
+                            }, 1000);
+                        }
+                    });
+                }
             });
-        </script>
     </body>
     </html>
     <?php
