@@ -3,7 +3,7 @@
  * Plugin Name: Terpedia
  * Plugin URI: https://terpedia.com
  * Description: Comprehensive terpene encyclopedia with 13 AI experts, intelligent newsletter generator with PubMed integration, 700K+ natural products, UA Huntsville supercomputer integration
- * Version: 3.9.15
+ * Version: 3.9.16
  * Author: Terpedia Team
  * License: GPL v2 or later
  * Requires at least: 5.8
@@ -1165,6 +1165,15 @@ class TerpediaAI {
         
         add_submenu_page(
             'terpedia-main',
+            'Rx Formulations',
+            'Rx Formulations',
+            'manage_options',
+            'terpedia-rx',
+            array($this, 'rx_page')
+        );
+        
+        add_submenu_page(
+            'terpedia-main',
             'Encyclopedia Management',
             'Encyclopedia',
             'manage_options',
@@ -1583,6 +1592,41 @@ class TerpediaAI {
                     <button class="button button-primary" style="background: #ff69b4; border-color: #ff69b4;">Add New Entry</button>
                     <button class="button">Update Knowledge Graph</button>
                     <button class="button">Sync with SPARQL</button>
+                </div>
+            </div>
+        </div>
+        <?php
+    }
+    
+    public function rx_page() {
+        ?>
+        <div class="wrap terpedia-admin-page">
+            <h1>💊 Rx Formulations Management</h1>
+            <p>Create and manage precision terpene recipes with calculated ratios and therapeutic profiles.</p>
+            
+            <div class="terpedia-cards">
+                <div class="terpedia-card">
+                    <h3>💊 All Rx Formulations</h3>
+                    <p>View and manage all terpene formulations</p>
+                    <a href="<?php echo admin_url('edit.php?post_type=terpedia_rx'); ?>" class="button-primary">Manage Formulations</a>
+                </div>
+                
+                <div class="terpedia-card">
+                    <h3>➕ Create New Rx</h3>
+                    <p>Design a new terpene formulation</p>
+                    <a href="<?php echo admin_url('post-new.php?post_type=terpedia_rx'); ?>" class="button-primary">Create Formulation</a>
+                </div>
+                
+                <div class="terpedia-card">
+                    <h3>🌿 Rx Categories</h3>
+                    <p>Manage therapeutic categories</p>
+                    <a href="<?php echo admin_url('edit-tags.php?taxonomy=rx_category&post_type=terpedia_rx'); ?>" class="button-primary">Manage Categories</a>
+                </div>
+                
+                <div class="terpedia-card">
+                    <h3>🔬 Frontend Display</h3>
+                    <p>View public Rx formulations page</p>
+                    <a href="<?php echo home_url('/rx/'); ?>" class="button-primary" target="_blank">View Frontend</a>
                 </div>
             </div>
         </div>
