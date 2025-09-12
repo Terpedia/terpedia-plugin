@@ -107,6 +107,72 @@ class Terpedia_Dashboard_Widget {
                     </div>
                 </div>
                 
+                <!-- Development Roadmap -->
+                <div class="terpedia-roadmap-section" style="margin-top: 20px; padding-top: 15px; border-top: 1px solid #e1e1e1;">
+                    <h4 style="margin: 0 0 10px 0; color: #333; font-size: 14px; font-weight: 600;">
+                        <span style="color: #2c5aa0;">🎯</span> Development Roadmap
+                    </h4>
+                    
+                    <!-- Critical Tasks -->
+                    <div class="roadmap-priority-section" style="margin-bottom: 15px;">
+                        <h5 style="margin: 0 0 8px 0; color: #d32f2f; font-size: 12px; font-weight: 600;">
+                            🔥 CRITICAL (Next 2 Weeks)
+                        </h5>
+                        <div class="roadmap-tasks" style="font-size: 11px; line-height: 1.4;">
+                            <div class="roadmap-task" style="margin-bottom: 4px; color: #666;">
+                                <span style="color: #d32f2f;">●</span> Documentation Alignment - Update README.md to match implementation
+                            </div>
+                            <div class="roadmap-task" style="margin-bottom: 4px; color: #666;">
+                                <span style="color: #d32f2f;">●</span> Core System Completion - Complete AI Agent System (13 agents)
+                            </div>
+                            <div class="roadmap-task" style="margin-bottom: 4px; color: #666;">
+                                <span style="color: #d32f2f;">●</span> Version Sync - Update README version to <?php echo esc_html(TERPEDIA_AI_VERSION); ?>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- High Priority Tasks -->
+                    <div class="roadmap-priority-section" style="margin-bottom: 15px;">
+                        <h5 style="margin: 0 0 8px 0; color: #ff9800; font-size: 12px; font-weight: 600;">
+                            🚀 HIGH PRIORITY (Next Month)
+                        </h5>
+                        <div class="roadmap-tasks" style="font-size: 11px; line-height: 1.4;">
+                            <div class="roadmap-task" style="margin-bottom: 4px; color: #666;">
+                                <span style="color: #ff9800;">●</span> TULIP System - Certified Truth Database
+                            </div>
+                            <div class="roadmap-task" style="margin-bottom: 4px; color: #666;">
+                                <span style="color: #ff9800;">●</span> Content Scanner - Universal auto-linking system
+                            </div>
+                            <div class="roadmap-task" style="margin-bottom: 4px; color: #666;">
+                                <span style="color: #ff9800;">●</span> Enhanced Recipe System - Copy & versioning
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Progress Indicators -->
+                    <div class="roadmap-progress" style="margin-bottom: 12px;">
+                        <div style="font-size: 11px; color: #666; margin-bottom: 6px;">Development Progress:</div>
+                        <div style="display: flex; gap: 8px; align-items: center;">
+                            <div style="flex: 1; background: #f0f0f0; border-radius: 8px; height: 6px; overflow: hidden;">
+                                <div style="background: linear-gradient(to right, #d32f2f 0%, #ff9800 70%, #4caf50 100%); height: 100%; width: 35%; border-radius: 8px;"></div>
+                            </div>
+                            <span style="font-size: 10px; color: #666;">35% Complete</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Quick Links -->
+                    <div style="border-top: 1px solid #f0f0f0; padding-top: 10px;">
+                        <div style="font-size: 11px;">
+                            <a href="https://github.com/terpedia/roadmap" target="_blank" style="color: #2c5aa0; text-decoration: none; margin-right: 12px;">
+                                📋 Full Roadmap
+                            </a>
+                            <a href="https://github.com/terpedia/issues" target="_blank" style="color: #2c5aa0; text-decoration: none;">
+                                🐛 Report Issues
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Quick Actions -->
                 <div class="terpedia-quick-actions" style="margin-top: 20px; padding-top: 15px; border-top: 1px solid #e1e1e1;">
                     <h4 style="margin: 0 0 10px 0; color: #333; font-size: 14px; font-weight: 600;">

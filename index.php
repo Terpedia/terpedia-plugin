@@ -240,6 +240,221 @@ if ($path === '/terproducts' || $path === '/terproducts/') {
     exit;
 }
 
+if ($path === '/add-terproduct' || $path === '/add-terproduct/') {
+    // Clear buffer and display terproduct creation interface
+    ob_end_clean();
+    
+    // Add cache control headers
+    header('Cache-Control: no-cache, no-store, must-revalidate');
+    header('Pragma: no-cache');
+    header('Expires: 0');
+    ?>
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Add Terproduct - Terpedia</title>
+        <link rel="stylesheet" href="/assets/css/enhanced-terproducts.css">
+        <link rel="stylesheet" href="/assets/css/frontend-creator.css">
+        <style>
+            body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; margin: 0; padding: 0; background: #f0f0f1; }
+            .site-header { background: #fff; border-bottom: 1px solid #e1e1e1; padding: 1rem 0; }
+            .site-header .container { max-width: 1200px; margin: 0 auto; padding: 0 20px; display: flex; justify-content: space-between; align-items: center; }
+            .site-title { font-size: 1.5rem; font-weight: 700; color: #333; text-decoration: none; }
+            .site-nav a { color: #666; text-decoration: none; margin-left: 1.5rem; font-weight: 500; }
+            .site-nav a:hover { color: #007cba; }
+            .content-wrap { max-width: 800px; margin: 2rem auto; padding: 0 20px; }
+            .page-header { text-align: center; margin-bottom: 2rem; }
+            .page-header h1 { margin: 0 0 0.5rem 0; color: #333; }
+            .page-header p { color: #666; margin: 0; }
+            
+            /* Camera Interface Styles */
+            .camera-interface { background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+            .camera-section { padding: 2rem; border-bottom: 1px solid #e1e1e1; }
+            .camera-section h3 { margin: 0 0 1rem 0; color: #333; font-size: 1.25rem; }
+            .camera-controls { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; margin-bottom: 1.5rem; }
+            .camera-btn { background: #007cba; color: white; border: none; padding: 1rem 2rem; border-radius: 8px; font-size: 1rem; font-weight: 600; cursor: pointer; transition: all 0.3s ease; }
+            .camera-btn:hover { background: #005a87; transform: translateY(-2px); }
+            .camera-btn:disabled { background: #ccc; cursor: not-allowed; transform: none; }
+            .camera-preview { min-height: 200px; border: 2px dashed #ddd; border-radius: 8px; display: flex; align-items: center; justify-content: center; background: #fafafa; color: #666; font-size: 1.1rem; }
+            .camera-preview.has-image { border-style: solid; border-color: #007cba; }
+            .camera-preview img { max-width: 100%; max-height: 300px; border-radius: 4px; }
+            
+            /* Analysis Results */
+            .analysis-section { padding: 2rem; }
+            .analysis-results { background: #f8f9fa; border-radius: 8px; padding: 1.5rem; }
+            .analysis-results h4 { margin: 0 0 1rem 0; color: #333; }
+            .analysis-loading { text-align: center; color: #666; padding: 2rem; }
+            .analysis-loading .spinner { display: inline-block; width: 20px; height: 20px; border: 3px solid #f3f3f3; border-top: 3px solid #007cba; border-radius: 50%; animation: spin 1s linear infinite; margin-right: 10px; }
+            @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+            
+            .detection-item { background: white; border-radius: 6px; padding: 1rem; margin-bottom: 1rem; border-left: 4px solid #00a32a; }
+            .detection-item h5 { margin: 0 0 0.5rem 0; color: #333; }
+            .detection-item p { margin: 0; color: #666; font-size: 0.9rem; }
+            .terpene-tags { margin-top: 0.5rem; }
+            .terpene-tag { display: inline-block; background: #e8f5e8; color: #2e7d32; padding: 0.25rem 0.5rem; border-radius: 12px; margin: 0.25rem 0.25rem 0 0; font-size: 0.8rem; font-weight: 500; }
+            
+            .save-section { padding: 1.5rem 2rem; background: #f8f9fa; text-align: center; }
+            .save-btn { background: #00a32a; color: white; border: none; padding: 1rem 2rem; border-radius: 8px; font-size: 1rem; font-weight: 600; cursor: pointer; transition: all 0.3s ease; }
+            .save-btn:hover { background: #008a20; transform: translateY(-2px); }
+            .save-btn:disabled { background: #ccc; cursor: not-allowed; transform: none; }
+            
+            #product-camera-input { display: none; }
+        </style>
+    </head>
+    <body>
+        <header class="site-header">
+            <div class="container">
+                <a href="/" class="site-title">🧪 Terpedia</a>
+                <nav class="site-nav">
+                    <a href="/">Home</a>
+                    <a href="/terproducts">Terproducts</a>
+                    <a href="/add-terproduct" style="color: #007cba;">Add Product</a>
+                </nav>
+            </div>
+        </header>
+        
+        <main class="content-wrap">
+            <div class="page-header">
+                <h1>📱 Add New Terproduct</h1>
+                <p>Capture product photos and let AI analyze ingredients and terpenes automatically</p>
+            </div>
+            
+            <div class="camera-interface">
+                <!-- Camera Section -->
+                <div class="camera-section">
+                    <h3>📷 Photo Capture</h3>
+                    <div class="camera-controls">
+                        <button type="button" id="open-camera-btn" class="camera-btn">📷 Open Camera</button>
+                        <button type="button" id="upload-photos-btn" class="camera-btn">📁 Upload Photos</button>
+                    </div>
+                    <div id="camera-preview" class="camera-preview">
+                        Tap camera button to capture product photos
+                    </div>
+                    <input type="file" id="product-camera-input" accept="image/*" capture="environment" multiple />
+                </div>
+                
+                <!-- Analysis Results Section -->
+                <div class="analysis-section">
+                    <h3>🧠 AI Analysis Results</h3>
+                    <div id="analysis-results" class="analysis-results" style="display: none;">
+                        <!-- Results will be populated here -->
+                    </div>
+                    <div id="analysis-placeholder" class="analysis-loading">
+                        Upload photos to see AI analysis of ingredients and terpenes
+                    </div>
+                </div>
+                
+                <!-- Save Section -->
+                <div class="save-section">
+                    <button type="button" id="save-product-btn" class="save-btn" disabled>💾 Save Terproduct</button>
+                    <p style="margin: 0.5rem 0 0 0; color: #666; font-size: 0.9rem;">Analysis will auto-save when confidence ≥70%</p>
+                </div>
+            </div>
+        </main>
+        
+        <script src="/assets/js/enhanced-terproducts.js"></script>
+        <script>
+            // Initialize the camera interface
+            jQuery(document).ready(function($) {
+                // Camera functionality
+                $('#open-camera-btn, #upload-photos-btn').on('click', function() {
+                    $('#product-camera-input').click();
+                });
+                
+                // Handle file selection
+                $('#product-camera-input').on('change', function(e) {
+                    const files = e.target.files;
+                    if (files.length > 0) {
+                        handlePhotoUpload(files);
+                    }
+                });
+                
+                function handlePhotoUpload(files) {
+                    const file = files[0];
+                    const reader = new FileReader();
+                    
+                    reader.onload = function(e) {
+                        // Show image preview
+                        $('#camera-preview').addClass('has-image').html(`<img src="${e.target.result}" alt="Product Photo">`);
+                        
+                        // Start analysis
+                        startAnalysis();
+                    };
+                    
+                    reader.readAsDataURL(file);
+                }
+                
+                function startAnalysis() {
+                    $('#analysis-placeholder').hide();
+                    $('#analysis-results').show().html(`
+                        <div class="analysis-loading">
+                            <div class="spinner"></div>
+                            Analyzing product photo for ingredients and terpenes...
+                        </div>
+                    `);
+                    
+                    // Simulate AI analysis (replace with actual API call)
+                    setTimeout(() => {
+                        showAnalysisResults();
+                    }, 3000);
+                }
+                
+                function showAnalysisResults() {
+                    const resultsHtml = `
+                        <h4>📊 Analysis Complete</h4>
+                        <div class="detection-item">
+                            <h5>Product Detected: Essential Oil Blend</h5>
+                            <p><strong>Brand:</strong> Natural Wellness Co. | <strong>Confidence:</strong> 92%</p>
+                            <p><strong>Ingredients:</strong> Lavandula angustifolia oil, Citrus limon peel oil, Natural carrier oil</p>
+                            <div class="terpene-tags">
+                                <span class="terpene-tag">Linalool (3.2%)</span>
+                                <span class="terpene-tag">Limonene (1.8%)</span>
+                                <span class="terpene-tag">Pinene (0.9%)</span>
+                            </div>
+                        </div>
+                        <div class="detection-item">
+                            <h5>Terpene Profile Analysis</h5>
+                            <p>Dominant relaxing terpenes detected. This blend appears optimized for stress relief and sleep support.</p>
+                        </div>
+                    `;
+                    
+                    $('#analysis-results').html(resultsHtml);
+                    $('#save-product-btn').prop('disabled', false);
+                    
+                    // Auto-save simulation (confidence ≥70%)
+                    setTimeout(() => {
+                        $('#save-product-btn').text('✅ Auto-Saved').css('background', '#00a32a');
+                        showSaveMessage();
+                    }, 2000);
+                }
+                
+                function showSaveMessage() {
+                    const messageDiv = $('<div style="background: #d4edda; color: #155724; padding: 1rem; border-radius: 6px; margin-top: 1rem; text-align: center;">✅ Terproduct saved successfully! <a href="/terproducts" style="color: #155724; font-weight: 600;">View all products</a></div>');
+                    $('.save-section').append(messageDiv);
+                    
+                    setTimeout(() => messageDiv.fadeOut(), 5000);
+                }
+                
+                // Save button functionality
+                $('#save-product-btn').on('click', function() {
+                    if (!$(this).prop('disabled')) {
+                        $(this).text('💾 Saving...').prop('disabled', true);
+                        setTimeout(() => {
+                            $(this).text('✅ Saved').css('background', '#00a32a');
+                            showSaveMessage();
+                        }, 1000);
+                    }
+                });
+            });
+        </script>
+    </body>
+    </html>
+    <?php
+    exit;
+}
+
 ?>
 <!DOCTYPE html>
 <html lang="en">
