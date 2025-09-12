@@ -85,7 +85,15 @@ class TerpediaPluginVersionManager {
         $is_deployment = getenv('GITHUB_ACTIONS') === 'true' || getenv('CI') === 'true';
         
         if ($is_deployment) {
-            return self::incrementVersion('patch');
+            // Only increment if we're on main/master branch to avoid conflicts
+            $branch = getenv('GITHUB_REF_NAME') ?: getenv('GITHUB_HEAD_REF') ?: 'unknown';
+            
+            if (in_array($branch, ['main', 'master', 'production'])) {
+                return self::incrementVersion('patch');
+            } else {
+                // For feature branches, just return current version
+                return self::getCurrentVersion();
+            }
         }
         
         return self::getCurrentVersion();
