@@ -16,15 +16,15 @@ author = "agent"
 
 [[workflows.workflow.tasks]]
 task = "workflow.run"
-args = "Terproducts Development Server"
+args = "WordPress Plugin Testing"
 
 [[workflows.workflow]]
-name = "Terproducts Development Server"
+name = "WordPress Plugin Testing"
 author = "agent"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "php -S 0.0.0.0:5000"
+args = "php -S 0.0.0.0:5000 -t . terpedia.php"
 waitForPort = 5000
 
 [workflows.workflow.metadata]
@@ -33,10 +33,6 @@ outputType = "webview"
 [[ports]]
 localPort = 5000
 externalPort = 80
-
-[[ports]]
-localPort = 34065
-externalPort = 3001
 
 [[ports]]
 localPort = 34401
@@ -49,10 +45,6 @@ externalPort = 3002
 [[ports]]
 localPort = 37075
 externalPort = 3003
-
-[[ports]]
-localPort = 44177
-externalPort = 5000
 
 [[ports]]
 localPort = 45653
