@@ -357,7 +357,59 @@ jQuery(document).ready(function($) {
         $('#upload-photos-scanner').on('click', function() {
             $('#product-upload-scanner').click();
         });
+        
+        // Batch scan functionality
+        $(document).on('click', '[data-action="batch-scan"], .batch-scan-btn, button:contains("Start Batch Scan")', function(e) {
+            e.preventDefault();
+            startBatchScan();
+        });
     }
+    
+    function startBatchScan() {
+        const $scanButton = $('button:contains("Start Batch Scan")');
+        const originalText = $scanButton.text();
+        
+        // Show scanning status
+        $scanButton.prop('disabled', true).text('🔍 Scanning...');
+        
+        // Show progress indicator
+        const $statusDiv = $('<div class="batch-scan-status" style="margin-top: 15px; padding: 15px; background: #f0f8ff; border-left: 4px solid #0073aa; border-radius: 4px;">📷 Analyzing photos and extracting product information...</div>');
+        $scanButton.after($statusDiv);
+        
+        // Simulate batch scanning process (replace with actual API call)
+        setTimeout(() => {
+            $statusDiv.html('✅ Batch scan complete! Products detected and ready for review.');
+            $scanButton.prop('disabled', false).text(originalText);
+            
+            // Show results
+            const resultsHtml = `
+                <div class="batch-scan-results" style="margin-top: 20px; padding: 20px; background: #f9f9f9; border-radius: 8px;">
+                    <h4>📊 Scan Results</h4>
+                    <div class="detected-products">
+                        <div class="product-detection" style="margin: 10px 0; padding: 10px; background: white; border-radius: 4px; border-left: 3px solid #00a32a;">
+                            <strong>Product Detected:</strong> Essential Oil Blend<br>
+                            <span style="color: #666;">Confidence: 89% | Terpenes: Limonene, Linalool, Pinene</span>
+                        </div>
+                        <div class="product-detection" style="margin: 10px 0; padding: 10px; background: white; border-radius: 4px; border-left: 3px solid #00a32a;">
+                            <strong>Product Detected:</strong> Terpene Spray<br>
+                            <span style="color: #666;">Confidence: 92% | Terpenes: Myrcene, Caryophyllene</span>
+                        </div>
+                    </div>
+                    <button type="button" class="button button-primary" onclick="createDetectedProducts()">Create Products from Scan</button>
+                </div>
+            `;
+            $statusDiv.after(resultsHtml);
+            
+            // Remove status div after showing results
+            setTimeout(() => $statusDiv.remove(), 2000);
+        }, 3000);
+    }
+    
+    // Global function for creating detected products
+    window.createDetectedProducts = function() {
+        alert('Products would be created from scan results. This would normally save to the database.');
+        $('.batch-scan-results').fadeOut();
+    };
     
     function handleScannerUpload(files) {
         if (files.length === 0) return;
