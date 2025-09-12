@@ -17,7 +17,7 @@ if (!defined('ABSPATH')) {
 }
 
 // Define plugin constants
-define('TERPEDIA_AI_VERSION', '3.9.1');
+define('TERPEDIA_AI_VERSION', '3.9.9');
 define('TERPEDIA_AI_URL', plugin_dir_url(__FILE__));
 define('TERPEDIA_AI_PATH', plugin_dir_path(__FILE__));
 
@@ -457,7 +457,7 @@ class TerpediaAI {
                     <h1>Terpedia - Encyclopedia of Terpenes</h1>
                     <h2>AI-Powered Knowledge System Architecture</h2>
                     <div class="document-meta">
-                        <span class="version">Production v3.9.1</span>
+                        <span class="version">Production v<?php echo esc_html(TERPEDIA_AI_VERSION); ?></span>
                         <span class="date">January 2025 - Mobile Enhanced</span>
                         <span class="authors">Terpedia Research Team</span>
                     </div>
@@ -3706,7 +3706,7 @@ class TerpediaAI {
      */
     public function check_version_update() {
         $current_version = get_option('terpedia_version', '0.0.0');
-        $plugin_version = '3.9.1';
+        $plugin_version = TERPEDIA_AI_VERSION;
         
         if (version_compare($current_version, $plugin_version, '<')) {
             // Clear any cached data
