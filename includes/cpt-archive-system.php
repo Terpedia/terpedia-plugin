@@ -76,6 +76,16 @@ class Terpedia_CPT_Archive_System {
      */
     public function add_archive_rewrite_rules() {
         add_rewrite_rule('^cpt-archives/?$', 'index.php?cpt_archive_hub=1', 'top');
+        
+        // Individual CPT routes with singular names
+        add_rewrite_rule('^terproduct/([0-9]+)/?$', 'index.php?post_type=terpedia_terproduct&p=$matches[1]', 'top');
+        add_rewrite_rule('^terproduct/?$', 'index.php?post_type=terpedia_terproduct', 'top');
+        add_rewrite_rule('^podcast/([0-9]+)/?$', 'index.php?post_type=terpedia_podcast&p=$matches[1]', 'top');
+        add_rewrite_rule('^podcast/?$', 'index.php?post_type=terpedia_podcast', 'top');
+        add_rewrite_rule('^rx/([0-9]+)/?$', 'index.php?post_type=terpedia_rx&p=$matches[1]', 'top');
+        add_rewrite_rule('^rx/?$', 'index.php?post_type=terpedia_rx', 'top');
+        add_rewrite_rule('^newsletter/([0-9]+)/?$', 'index.php?post_type=terpedia_newsletter&p=$matches[1]', 'top');
+        add_rewrite_rule('^newsletter/?$', 'index.php?post_type=terpedia_newsletter', 'top');
     }
     
     /**
@@ -119,13 +129,30 @@ class Terpedia_CPT_Archive_System {
     }
     
     /**
-     * Handle archive templates
+     * Handle archive and single templates
      */
     public function archive_template($template) {
         if (get_query_var('cpt_archive_hub')) {
             return $this->render_cpt_hub_page();
         }
         
+        // Handle single posts
+        if (is_singular()) {
+            $post_type = get_post_type();
+            
+            switch ($post_type) {
+                case 'terpedia_terproduct':
+                    return $this->render_single_terproduct();
+                case 'terpedia_podcast': 
+                    return $this->render_single_podcast();
+                case 'terpedia_rx':
+                    return $this->render_single_rx();
+                case 'terpedia_newsletter':
+                    return $this->render_single_newsletter();
+            }
+        }
+        
+        // Handle archives
         if (is_post_type_archive()) {
             $post_type = get_query_var('post_type');
             
@@ -555,6 +582,320 @@ class Terpedia_CPT_Archive_System {
             </div>
             <?php
         }
+    }
+    
+    /**
+     * Render single terproduct page
+     */
+    private function render_single_terproduct() {
+        global $post;
+        setup_postdata($post);
+        
+        get_header();
+        ?>
+        <div class="terpedia-single-terproduct">
+            <div class="product-header">
+                <div class="breadcrumbs">
+                    <a href="/">Home</a> > <a href="/terproduct/">Terproducts</a> > <?php the_title(); ?>
+                </div>
+                <h1><?php the_title(); ?></h1>
+                
+                <?php
+                $brand = get_post_meta(get_the_ID(), '_extracted_brand', true);
+                $confidence = get_post_meta(get_the_ID(), '_ingredient_confidence', true);
+                ?>
+                
+                <div class="product-meta">
+                    <?php if ($brand): ?>
+                        <span class="brand">Brand: <?php echo esc_html($brand); ?></span>
+                    <?php endif; ?>
+                    <?php if ($confidence): ?>
+                        <span class="confidence">Analysis Confidence: <?php echo esc_html($confidence); ?>%</span>
+                    <?php endif; ?>
+                    <span class="date">Scanned: <?php echo get_the_date(); ?></span>
+                </div>
+            </div>
+            
+            <div class="product-content">
+                <div class="product-main">
+                    <div class="product-image">
+                        <?php if (has_post_thumbnail()): ?>
+                            <?php the_post_thumbnail('large'); ?>
+                        <?php else: ?>
+                            <div class="placeholder-image-large">📦 No Image</div>
+                        <?php endif; ?>
+                    </div>
+                    
+                    <div class="product-details">
+                        <h3>🔬 AI Analysis Results</h3>
+                        
+                        <div class="analysis-section">
+                            <h4>Detected Ingredients</h4>
+                            <?php
+                            $ingredients = get_post_meta(get_the_ID(), '_extracted_ingredients', true);
+                            if ($ingredients): ?>
+                                <div class="ingredients-list">
+                                    <?php echo nl2br(esc_html($ingredients)); ?>
+                                </div>
+                            <?php else: ?>
+                                <p>No ingredients detected</p>
+                            <?php endif; ?>
+                        </div>
+                        
+                        <div class="terpenes-section">
+                            <h4>🌿 Terpene Profile</h4>
+                            <?php
+                            $terpenes = get_post_meta(get_the_ID(), '_detected_terpenes', true);
+                            if ($terpenes && is_array($terpenes)): ?>
+                                <div class="terpenes-grid">
+                                    <?php foreach ($terpenes as $terpene): ?>
+                                        <div class="terpene-item">
+                                            <span class="terpene-name"><?php echo esc_html($terpene['name']); ?></span>
+                                            <?php if (isset($terpene['percentage'])): ?>
+                                                <span class="terpene-percentage"><?php echo esc_html($terpene['percentage']); ?>%</span>
+                                            <?php endif; ?>
+                                        </div>
+                                    <?php endforeach; ?>
+                                </div>
+                            <?php else: ?>
+                                <p>No terpenes detected</p>
+                            <?php endif; ?>
+                        </div>
+                        
+                        <?php if (get_the_content()): ?>
+                            <div class="product-description">
+                                <h4>Description</h4>
+                                <?php the_content(); ?>
+                            </div>
+                        <?php endif; ?>
+                        
+                        <div class="product-actions">
+                            <a href="/terproduct/" class="back-to-archive">← Back to All Terproducts</a>
+                            <a href="/add-terproduct" class="add-new-product">📷 Scan New Product</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <style>
+        .terpedia-single-terproduct {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .breadcrumbs {
+            margin-bottom: 10px;
+            font-size: 14px;
+            color: #666;
+        }
+        .breadcrumbs a {
+            color: #0073aa;
+            text-decoration: none;
+        }
+        .product-header h1 {
+            margin: 0 0 15px 0;
+            font-size: 2.5em;
+        }
+        .product-meta {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+        .product-meta span {
+            background: #f1f1f1;
+            padding: 5px 10px;
+            border-radius: 4px;
+        }
+        .brand {
+            background: #e3f2fd !important;
+        }
+        .confidence {
+            background: #e8f5e8 !important;
+        }
+        .product-main {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 40px;
+            margin-bottom: 30px;
+        }
+        .product-image img {
+            width: 100%;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .placeholder-image-large {
+            background: #f1f1f1;
+            padding: 80px 20px;
+            text-align: center;
+            border-radius: 8px;
+            font-size: 24px;
+            color: #999;
+        }
+        .analysis-section, .terpenes-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            background: #f9f9f9;
+            border-radius: 8px;
+        }
+        .analysis-section h4, .terpenes-section h4 {
+            margin-top: 0;
+            color: #333;
+        }
+        .terpenes-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .terpene-item {
+            background: #fff;
+            padding: 8px 12px;
+            border-radius: 6px;
+            border: 1px solid #ddd;
+            display: flex;
+            justify-content: space-between;
+            min-width: 120px;
+        }
+        .terpene-name {
+            font-weight: 600;
+        }
+        .terpene-percentage {
+            color: #666;
+            font-size: 12px;
+        }
+        .product-actions {
+            display: flex;
+            gap: 15px;
+            margin-top: 30px;
+        }
+        .product-actions a {
+            padding: 12px 20px;
+            border-radius: 6px;
+            text-decoration: none;
+            font-weight: 600;
+        }
+        .back-to-archive {
+            background: #f1f1f1;
+            color: #333;
+        }
+        .add-new-product {
+            background: #0073aa;
+            color: white;
+        }
+        @media (max-width: 768px) {
+            .product-main {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+            .product-meta {
+                flex-direction: column;
+                gap: 10px;
+            }
+        }
+        </style>
+        <?php
+        get_footer();
+        exit;
+    }
+    
+    /**
+     * Render single podcast page
+     */
+    private function render_single_podcast() {
+        global $post;
+        setup_postdata($post);
+        
+        get_header();
+        ?>
+        <div class="terpedia-single-podcast">
+            <div class="podcast-header">
+                <div class="breadcrumbs">
+                    <a href="/">Home</a> > <a href="/podcast/">Podcasts</a> > <?php the_title(); ?>
+                </div>
+                <h1><?php the_title(); ?></h1>
+                <div class="podcast-meta">
+                    <span class="date">Published: <?php echo get_the_date(); ?></span>
+                </div>
+            </div>
+            
+            <div class="podcast-content">
+                <?php the_content(); ?>
+                
+                <div class="podcast-actions">
+                    <a href="/podcast/" class="back-to-archive">← Back to All Podcasts</a>
+                </div>
+            </div>
+        </div>
+        <?php
+        get_footer();
+        exit;
+    }
+    
+    /**
+     * Render single rx page
+     */
+    private function render_single_rx() {
+        global $post;
+        setup_postdata($post);
+        
+        get_header();
+        ?>
+        <div class="terpedia-single-rx">
+            <div class="rx-header">
+                <div class="breadcrumbs">
+                    <a href="/">Home</a> > <a href="/rx/">Rx Formulations</a> > <?php the_title(); ?>
+                </div>
+                <h1><?php the_title(); ?></h1>
+                <div class="rx-meta">
+                    <span class="date">Created: <?php echo get_the_date(); ?></span>
+                </div>
+            </div>
+            
+            <div class="rx-content">
+                <?php the_content(); ?>
+                
+                <div class="rx-actions">
+                    <a href="/rx/" class="back-to-archive">← Back to All Rx Formulations</a>
+                </div>
+            </div>
+        </div>
+        <?php
+        get_footer();
+        exit;
+    }
+    
+    /**
+     * Render single newsletter page
+     */
+    private function render_single_newsletter() {
+        global $post;
+        setup_postdata($post);
+        
+        get_header();
+        ?>
+        <div class="terpedia-single-newsletter">
+            <div class="newsletter-header">
+                <div class="breadcrumbs">
+                    <a href="/">Home</a> > <a href="/newsletter/">Newsletters</a> > <?php the_title(); ?>
+                </div>
+                <h1><?php the_title(); ?></h1>
+                <div class="newsletter-meta">
+                    <span class="date">Published: <?php echo get_the_date(); ?></span>
+                </div>
+            </div>
+            
+            <div class="newsletter-content">
+                <?php the_content(); ?>
+                
+                <div class="newsletter-actions">
+                    <a href="/newsletter/" class="back-to-archive">← Back to All Newsletters</a>
+                </div>
+            </div>
+        </div>
+        <?php
+        get_footer();
+        exit;
     }
 }
 
