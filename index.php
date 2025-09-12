@@ -137,6 +137,11 @@ $path = parse_url($request_uri, PHP_URL_PATH);
 if ($path === '/terproducts' || $path === '/terproducts/') {
     // Clear buffer and display terproducts archive
     ob_end_clean();
+    
+    // Add cache control headers to prevent caching issues
+    header('Cache-Control: no-cache, no-store, must-revalidate');
+    header('Pragma: no-cache');
+    header('Expires: 0');
     ?>
     <!DOCTYPE html>
     <html lang="en">
