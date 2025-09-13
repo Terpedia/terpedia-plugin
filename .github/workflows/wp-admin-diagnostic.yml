@@ -1,0 +1,182 @@
+name: WordPress Admin Diagnostics
+
+on:
+  workflow_dispatch:
+    inputs:
+      fix_maintenance:
+        description: 'Clear maintenance mode and flush caches'
+        type: boolean
+        default: true
+      deactivate_terpedia:
+        description: 'Temporarily deactivate Terpedia plugin for testing'
+        type: boolean
+        default: false
+
+jobs:
+  diagnose-wp-admin:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Setup SSH with passphrase
+      run: |
+        sudo apt-get update && sudo apt-get install -y sshpass
+        mkdir -p ~/.ssh
+        echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+        chmod 600 ~/.ssh/id_rsa
+        ssh-keyscan -H -p 18765 giow1015.siteground.us >> ~/.ssh/known_hosts
+
+    - name: WordPress Core Status Check
+      run: |
+        SSHPASS="${{ secrets.SSH_PASSPHRASE }}" sshpass -e ssh -p 18765 ${{ secrets.SSH_USER }}@giow1015.siteground.us << 'EOF'
+          echo "🔍 WordPress Core Status:"
+          cd ${{ secrets.WP_ROOT_PATH }}
+          
+          # Check if WP-CLI is working
+          if command -v wp &> /dev/null; then
+            wp core is-installed --allow-root && echo "✅ WordPress is installed" || echo "❌ WordPress installation issue"
+            wp core version --allow-root
+            
+            # Check maintenance mode
+            echo "🚧 Maintenance Mode Status:"
+            wp maintenance-mode status --allow-root 2>/dev/null || echo "No maintenance mode plugin"
+            
+            # Check for .maintenance file
+            if [ -f ".maintenance" ]; then
+              echo "❌ .maintenance file exists:"
+              cat .maintenance
+            else
+              echo "✅ No .maintenance file found"
+            fi
+            
+            # Check site URLs
+            echo "🔗 Site URLs:"
+            echo "Site URL: $(wp option get siteurl --allow-root)"
+            echo "Home URL: $(wp option get home --allow-root)"
+            
+          else
+            echo "❌ WP-CLI not available"
+          fi
+        EOF
+
+    - name: File Permissions Check
+      run: |
+        SSHPASS="${{ secrets.SSH_PASSPHRASE }}" sshpass -e ssh -p 18765 ${{ secrets.SSH_USER }}@giow1015.siteground.us << 'EOF'
+          echo "📁 File Permissions Check:"
+          cd ${{ secrets.WP_ROOT_PATH }}
+          
+          # Check wp-admin.php specifically
+          if [ -f "wp-admin.php" ]; then
+            ls -la wp-admin.php
+            echo "wp-admin.php exists with permissions above"
+          else
+            echo "❌ wp-admin.php file not found!"
+          fi
+          
+          # Check .htaccess
+          if [ -f ".htaccess" ]; then
+            echo "📄 .htaccess file exists:"
+            echo "First 20 lines of .htaccess:"
+            head -20 .htaccess
+          else
+            echo "❌ No .htaccess file found"
+          fi
+          
+          # Check directory permissions
+          echo "📂 Root directory permissions:"
+          ls -ld .
+        EOF
+
+    - name: Plugin Status Check
+      run: |
+        SSHPASS="${{ secrets.SSH_PASSPHRASE }}" sshpass -e ssh -p 18765 ${{ secrets.SSH_USER }}@giow1015.siteground.us << 'EOF'
+          echo "🔌 Active Plugins:"
+          cd ${{ secrets.WP_ROOT_PATH }}
+          
+          if command -v wp &> /dev/null; then
+            wp plugin list --status=active --fields=name,version,status --allow-root
+            
+            echo "🎯 Terpedia Plugin Status:"
+            wp plugin status terpedia --allow-root 2>/dev/null || wp plugin status terpedia-plugin --allow-root 2>/dev/null || echo "Terpedia plugin not found by those names"
+          fi
+        EOF
+
+    - name: Error Log Check
+      run: |
+        SSHPASS="${{ secrets.SSH_PASSPHRASE }}" sshpass -e ssh -p 18765 ${{ secrets.SSH_USER }}@giow1015.siteground.us << 'EOF'
+          echo "📋 Recent Error Logs:"
+          cd ${{ secrets.WP_ROOT_PATH }}
+          
+          # Check WordPress debug log
+          if [ -f "wp-content/debug.log" ]; then
+            echo "🐛 WordPress Debug Log (last 50 lines):"
+            tail -50 wp-content/debug.log
+          else
+            echo "No wp-content/debug.log found"
+          fi
+          
+          # Check server error logs (common SiteGround paths)
+          for log_path in ~/logs/error.log ~/logs/*/error.log /var/log/apache2/error.log; do
+            if [ -f "$log_path" ]; then
+              echo "🚨 Server Error Log: $log_path (last 20 lines):"
+              tail -20 "$log_path" 2>/dev/null || echo "Cannot read $log_path"
+              break
+            fi
+          done
+        EOF
+
+    - name: Fix Maintenance and Cache (if requested)
+      if: ${{ github.event.inputs.fix_maintenance == 'true' }}
+      run: |
+        SSHPASS="${{ secrets.SSH_PASSPHRASE }}" sshpass -e ssh -p 18765 ${{ secrets.SSH_USER }}@giow1015.siteground.us << 'EOF'
+          echo "🔧 Fixing maintenance mode and clearing caches:"
+          cd ${{ secrets.WP_ROOT_PATH }}
+          
+          # Remove maintenance file
+          rm -f .maintenance && echo "✅ Removed .maintenance file" || echo "No .maintenance file to remove"
+          
+          if command -v wp &> /dev/null; then
+            # Deactivate maintenance mode plugin if exists
+            wp maintenance-mode deactivate --allow-root 2>/dev/null && echo "✅ Deactivated maintenance mode" || echo "No maintenance mode to deactivate"
+            
+            # Flush caches and rewrite rules
+            wp cache flush --allow-root && echo "✅ Cache flushed"
+            wp rewrite flush --hard --allow-root && echo "✅ Rewrite rules flushed"
+            
+            echo "🧪 Testing wp-admin access after fixes..."
+            curl -I https://terpedia.com/wp-admin.php
+          fi
+        EOF
+
+    - name: Temporarily Deactivate Terpedia Plugin (if requested)
+      if: ${{ github.event.inputs.deactivate_terpedia == 'true' }}
+      run: |
+        SSHPASS="${{ secrets.SSH_PASSPHRASE }}" sshpass -e ssh -p 18765 ${{ secrets.SSH_USER }}@giow1015.siteground.us << 'EOF'
+          echo "⚠️ Temporarily deactivating Terpedia plugin for testing:"
+          cd ${{ secrets.WP_ROOT_PATH }}
+          
+          if command -v wp &> /dev/null; then
+            wp plugin deactivate terpedia --allow-root 2>/dev/null || wp plugin deactivate terpedia-plugin --allow-root 2>/dev/null || echo "Could not find Terpedia plugin to deactivate"
+            
+            echo "🧪 Testing wp-admin access after plugin deactivation..."
+            curl -I https://terpedia.com/wp-admin.php
+            
+            echo "⚠️ Remember to reactivate the plugin after testing!"
+          fi
+        EOF
+
+    - name: Summary and Next Steps
+      run: |
+        echo "🎯 Diagnostic Summary Complete"
+        echo ""
+        echo "Check the logs above for:"
+        echo "1. ❌ Any PHP fatal errors in debug.log"
+        echo "2. 🚧 Maintenance mode issues"
+        echo "3. 📁 File permission problems with wp-admin.php"
+        echo "4. 🔌 Plugin conflicts"
+        echo ""
+        echo "If wp-admin access is restored after deactivating Terpedia plugin,"
+        echo "the issue is in the recent plugin deployment (v3.11.1)"
+        echo ""
+        echo "Next steps:"
+        echo "- If fixed: Reactivate plugin and identify the specific issue"
+        echo "- If not fixed: Check SiteGround security settings or contact support"
