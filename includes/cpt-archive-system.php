@@ -92,8 +92,7 @@ class Terpedia_CPT_Archive_System {
         add_rewrite_rule('^newsletter/([0-9]+)/?$', 'index.php?post_type=terpedia_newsletter&p=$matches[1]', 'top');
         add_rewrite_rule('^newsletter/?$', 'index.php?post_type=terpedia_newsletter', 'top');
         
-        // Terport routes
-        add_rewrite_rule('^terport/([0-9]+)/chat/?$', 'index.php?terport_chat=1&terport_id=$matches[1]', 'top');
+        // Terport routes (frontend only - no chat)
         add_rewrite_rule('^terport/([0-9]+)/?$', 'index.php?post_type=terport&p=$matches[1]', 'top');
         add_rewrite_rule('^terports/?$', 'index.php?post_type=terport', 'top');
     }
@@ -106,8 +105,6 @@ class Terpedia_CPT_Archive_System {
         $vars[] = 'terproduct_category';
         $vars[] = 'podcast_category';
         $vars[] = 'rx_category';
-        $vars[] = 'terport_chat';
-        $vars[] = 'terport_id';
         return $vars;
     }
     

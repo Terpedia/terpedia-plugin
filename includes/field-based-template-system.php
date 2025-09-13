@@ -59,6 +59,15 @@ class Terpedia_Field_Based_Template_System {
             'side',
             'high'
         );
+        
+        add_meta_box(
+            'terpedia_terport_chat_link',
+            'AI Chat Assistant',
+            array($this, 'chat_link_callback'),
+            'terport',
+            'side',
+            'high'
+        );
     }
     
     /**
@@ -374,14 +383,6 @@ class Terpedia_Field_Based_Template_System {
                 </div>
             </div>
             
-            <?php if ($visibility === 'public'): ?>
-                <div style="background: #d1ecf1; border: 1px solid #bee5eb; padding: 10px; border-radius: 4px; margin-top: 10px;">
-                    <small>
-                        <strong>💬 Chat URL:</strong><br>
-                        <code><?php echo home_url("/terport/{$post->ID}/chat/"); ?></code>
-                    </small>
-                </div>
-            <?php endif; ?>
         </div>
         
         <script>
@@ -410,6 +411,32 @@ class Terpedia_Field_Based_Template_System {
                 echo '<p style="color: #6c757d; text-align: center; padding: 40px;">Select a template type above to see structured fields</p>';
             }
             ?>
+        </div>
+        <?php
+    }
+    
+    /**
+     * Chat link callback
+     */
+    public function chat_link_callback($post) {
+        $template_type = get_post_meta($post->ID, '_terpedia_field_template_type', true);
+        
+        ?>
+        <div class="terport-chat-link" style="text-align: center; padding: 20px;">
+            <?php if ($template_type && $post->post_status !== 'auto-draft'): ?>
+                <a href="<?php echo admin_url('admin.php?page=terport-chat&terport_id=' . $post->ID); ?>" 
+                   class="button button-primary button-hero" 
+                   style="background: #ff69b4; border-color: #ff69b4; text-decoration: none; display: block; padding: 15px;">
+                    💬 Chat with AI Assistant
+                </a>
+                <p style="margin-top: 10px; color: #666; font-size: 13px;">
+                    Discuss and refine this Terport with AI assistance
+                </p>
+            <?php else: ?>
+                <p style="color: #666; font-style: italic;">
+                    💡 Select a template and save the post to enable AI chat
+                </p>
+            <?php endif; ?>
         </div>
         <?php
     }

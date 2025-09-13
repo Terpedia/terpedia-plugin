@@ -18,45 +18,63 @@ class Terpedia_Terport_Chat_Interface {
     
     public function __construct() {
         add_action('wp_ajax_terpedia_terport_chat', array($this, 'handle_terport_chat'));
-        add_action('wp_ajax_nopriv_terpedia_terport_chat', array($this, 'handle_terport_chat'));
         add_action('wp_ajax_terpedia_update_terport_field', array($this, 'handle_field_update'));
-        add_action('wp_ajax_nopriv_terpedia_update_terport_field', array($this, 'handle_field_update'));
         
-        // Template redirect for chat interface
-        add_filter('template_include', array($this, 'terport_chat_template'));
+        // Admin-only chat interface
+        add_action('admin_menu', array($this, 'add_chat_admin_pages'));
+        add_action('admin_enqueue_scripts', array($this, 'enqueue_chat_scripts'));
         
         // Initialize OpenRouter API
         $this->openrouter_api = new Terpedia_OpenRouter_API();
     }
     
     /**
-     * Handle chat template routing
+     * Add admin chat pages
      */
-    public function terport_chat_template($template) {
-        global $wp_query;
+    public function add_chat_admin_pages() {
+        // Only show if we have Terports
+        $terports = get_posts(array(
+            'post_type' => 'terport',
+            'post_status' => 'any',
+            'posts_per_page' => 1
+        ));
         
-        if (get_query_var('terport_chat')) {
-            $terport_id = get_query_var('terport_id');
-            if ($terport_id && get_post_type($terport_id) === 'terport') {
-                return $this->render_chat_interface($terport_id);
-            }
+        if (!empty($terports)) {
+            add_submenu_page(
+                null, // No parent menu (hidden)
+                'Chat with Terport',
+                'Chat with Terport', 
+                'edit_posts',
+                'terport-chat',
+                array($this, 'admin_chat_page')
+            );
         }
-        
-        return $template;
     }
     
     /**
-     * Render the two-column chat interface
+     * Admin chat page
      */
-    public function render_chat_interface($terport_id) {
+    public function admin_chat_page() {
+        $terport_id = intval($_GET['terport_id'] ?? 0);
+        if (!$terport_id) {
+            echo '<div class="wrap"><h1>Error</h1><p>No Terport ID provided.</p></div>';
+            return;
+        }
+        
+        $this->render_admin_chat_interface($terport_id);
+    }
+    
+    /**
+     * Render the admin two-column chat interface
+     */
+    public function render_admin_chat_interface($terport_id) {
         $terport = get_post($terport_id);
         if (!$terport) {
             wp_die('Terport not found');
         }
         
-        // Check if Terport is public or user has permission
-        $is_public = get_post_meta($terport_id, '_terport_visibility', true) === 'public';
-        if (!$is_public && !current_user_can('edit_post', $terport_id)) {
+        // Check admin permissions
+        if (!current_user_can('edit_post', $terport_id)) {
             wp_die('Access denied');
         }
         
@@ -70,8 +88,11 @@ class Terpedia_Terport_Chat_Interface {
         <head>
             <meta charset="<?php bloginfo('charset'); ?>">
             <meta name="viewport" content="width=device-width, initial-scale=1">
-            <title>Chat: <?php echo esc_html($terport->post_title); ?> | Terpedia</title>
-            <?php wp_head(); ?>
+            <title>Chat: <?php echo esc_html($terport->post_title); ?> | WordPress Admin</title>
+            <?php 
+            // Enqueue admin styles
+            wp_enqueue_script('jquery');
+            ?>
             <style>
                 body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
                 .terport-chat-container {
@@ -328,7 +349,12 @@ class Terpedia_Terport_Chat_Interface {
                 }
             </style>
         </head>
-        <body>
+        <body class="wp-admin">
+            <div class="wrap">
+                <h1 class="wp-heading-inline">💬 Chat with Terport: <?php echo esc_html($terport->post_title); ?></h1>
+                <a href="<?php echo admin_url('post.php?post=' . $terport_id . '&action=edit'); ?>" class="page-title-action">← Back to Edit</a>
+                <hr class="wp-header-end">
+            </div>
             <div class="terport-chat-container">
                 <!-- Chat Column -->
                 <div class="chat-column">
@@ -384,9 +410,10 @@ class Terpedia_Terport_Chat_Interface {
                 </div>
             </div>
             
-            <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
             <script>
             jQuery(document).ready(function($) {
+                // Use WordPress admin AJAX URL
+                var ajaxurl = '<?php echo admin_url('admin-ajax.php'); ?>';
                 const terportId = <?php echo $terport_id; ?>;
                 const chatMessages = $('#chatMessages');
                 const chatInput = $('#chatInput');
@@ -501,12 +528,9 @@ class Terpedia_Terport_Chat_Interface {
                 chatInput.focus();
             });
             </script>
-            
-            <?php wp_footer(); ?>
         </body>
         </html>
         <?php
-        exit;
     }
     
     /**
@@ -552,9 +576,8 @@ class Terpedia_Terport_Chat_Interface {
             wp_send_json_error('Invalid Terport');
         }
         
-        // Check permissions
-        $is_public = get_post_meta($terport_id, '_terport_visibility', true) === 'public';
-        if (!$is_public && !current_user_can('edit_post', $terport_id)) {
+        // Check admin permissions
+        if (!current_user_can('edit_post', $terport_id)) {
             wp_send_json_error('Access denied');
         }
         
