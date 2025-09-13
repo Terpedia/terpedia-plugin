@@ -1,0 +1,46 @@
+{
+  "$schema": "https://schemas.wp.org/trunk/block.json",
+  "apiVersion": 3,
+  "name": "terpedia/template-editor",
+  "version": "1.0.0",
+  "title": "Template Editor",
+  "category": "text",
+  "icon": "text-page",
+  "description": "Rich text editor with template field markup support for AI content generation",
+  "keywords": ["template", "ai", "fields", "content"],
+  "supports": {
+    "html": false,
+    "typography": {
+      "fontSize": true,
+      "lineHeight": true
+    },
+    "spacing": {
+      "margin": true,
+      "padding": true
+    },
+    "color": {
+      "text": true,
+      "background": true
+    }
+  },
+  "attributes": {
+    "content": {
+      "type": "string",
+      "source": "html",
+      "selector": ".template-editor-content",
+      "default": ""
+    },
+    "fieldPreview": {
+      "type": "boolean",
+      "default": false
+    },
+    "showMarkup": {
+      "type": "boolean", 
+      "default": true
+    }
+  },
+  "textdomain": "terpedia",
+  "editorScript": "file:./build/index.js",
+  "editorStyle": "file:./build/index.css",
+  "style": "file:./build/style-index.css"
+}

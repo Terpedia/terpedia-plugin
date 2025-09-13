@@ -1,0 +1,9 @@
+// Frontend styles for Template Editor block
+
+.wp-block-terpedia-template-editor {
+	.template-editor-saved {
+		// Template content should not be visible on frontend
+		// as it's meant to be processed by the template system
+		display: none;
+	}
+}

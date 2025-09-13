@@ -3,7 +3,7 @@
  * Plugin Name: Terpedia
  * Plugin URI: https://terpedia.com
  * Description: Comprehensive terpene encyclopedia with 13 AI experts, intelligent newsletter generator with PubMed integration, 700K+ natural products, UA Huntsville supercomputer integration
- * Version: 3.9.18
+ * Version: 3.11.0
  * Author: Terpedia Team
  * License: GPL v2 or later
  * Requires at least: 5.8
@@ -112,6 +112,9 @@ class TerpediaAI {
             'includes/cpt-archive-system.php',
             'includes/field-based-template-system.php',
             'includes/terport-chat-interface.php',
+            'includes/terport-smart-refresh-system.php',
+            'includes/templated-text-gutenberg-block.php',
+            'includes/cpt-template-management.php',
         );
         
         foreach ($includes as $file) {

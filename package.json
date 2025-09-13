@@ -1,0 +1,27 @@
+{
+	"name": "terpedia-wordpress-plugin",
+	"version": "3.11.0",
+	"description": "Terpedia WordPress Plugin with Gutenberg blocks and AI content generation",
+	"main": "terpedia.php",
+	"scripts": {
+		"build": "wp-scripts build --webpack-src-dir=blocks --output-path=blocks",
+		"start": "wp-scripts start --webpack-src-dir=blocks --output-path=blocks",
+		"format": "wp-scripts format",
+		"lint:css": "wp-scripts lint-style",
+		"lint:js": "wp-scripts lint-js",
+		"packages-update": "wp-scripts packages-update"
+	},
+	"keywords": ["wordpress", "plugin", "gutenberg", "ai", "terpedia"],
+	"author": "Terpedia",
+	"license": "GPL-3.0-or-later",
+	"devDependencies": {
+		"@wordpress/scripts": "^27.0.0"
+	},
+	"dependencies": {
+		"@wordpress/block-editor": "^12.0.0",
+		"@wordpress/blocks": "^12.0.0",
+		"@wordpress/components": "^25.0.0",
+		"@wordpress/element": "^5.0.0",
+		"@wordpress/i18n": "^4.0.0"
+	}
+}

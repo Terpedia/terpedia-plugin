@@ -1,0 +1,54 @@
+{
+  "$schema": "https://schemas.wp.org/trunk/block.json",
+  "apiVersion": 3,
+  "name": "terpedia/templated-text",
+  "version": "1.0.0",
+  "title": "Templated Text",
+  "category": "text",
+  "icon": "editor-quote",
+  "description": "Generate AI-powered content using CPT-specific templates with field inputs",
+  "keywords": ["template", "ai", "content", "generation"],
+  "supports": {
+    "html": false,
+    "typography": {
+      "fontSize": true,
+      "lineHeight": true
+    },
+    "spacing": {
+      "margin": true,
+      "padding": true
+    },
+    "color": {
+      "text": true,
+      "background": true
+    }
+  },
+  "attributes": {
+    "templateId": {
+      "type": "number",
+      "default": 0
+    },
+    "fieldValues": {
+      "type": "object",
+      "default": {}
+    },
+    "content": {
+      "type": "string",
+      "source": "html",
+      "selector": ".templated-text-content",
+      "default": ""
+    },
+    "isGenerating": {
+      "type": "boolean",
+      "default": false
+    },
+    "selectedModel": {
+      "type": "string",
+      "default": "openai/gpt-4o"
+    }
+  },
+  "textdomain": "terpedia",
+  "editorScript": "file:./build/index.js",
+  "editorStyle": "file:./build/index.css",
+  "style": "file:./build/style-index.css"
+}
