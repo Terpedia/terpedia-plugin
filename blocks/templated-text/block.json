@@ -44,7 +44,7 @@
     },
     "selectedModel": {
       "type": "string",
-      "default": "openai/gpt-4o"
+      "default": "openai/gpt-5"
     }
   },
   "textdomain": "terpedia",

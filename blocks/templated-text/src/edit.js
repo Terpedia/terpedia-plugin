@@ -229,6 +229,8 @@ export default function Edit({ attributes, setAttributes }) {
                                                 label={__('AI Model', 'terpedia')}
                                                 value={selectedModel}
                                                 options={[
+                                                        { label: 'GPT-5 (Default)', value: 'openai/gpt-5' },
+                                                        { label: 'GPT-OSS 120B (Free)', value: 'gpt-oss-120B:free' },
                                                         { label: 'GPT-4o (Recommended)', value: 'openai/gpt-4o' },
                                                         { label: 'GPT-4o Mini (Fast & Economical)', value: 'openai/gpt-4o-mini' },
                                                         { label: 'Claude 3.5 Sonnet (Creative)', value: 'anthropic/claude-3.5-sonnet' },
@@ -238,7 +240,7 @@ export default function Edit({ attributes, setAttributes }) {
                                                         { label: 'Llama 3.1 8B (Budget)', value: 'meta-llama/llama-3.1-8b-instruct' }
                                                 ]}
                                                 onChange={(model) => setAttributes({ selectedModel: model })}
-                                                help={__('Choose the AI model for content generation. GPT-4o provides the best quality for scientific content.', 'terpedia')}
+                                                help={__('Choose the AI model for content generation. GPT-5 provides the latest capabilities for scientific content.', 'terpedia')}
                                         />
 
                                         {selectedTemplate && (

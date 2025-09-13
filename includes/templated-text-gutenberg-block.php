@@ -116,7 +116,7 @@ class Terpedia_Templated_Text_Block {
         $template_id = intval($_POST['template_id'] ?? 0);
         $field_values = $_POST['field_values'] ?? array();
         $post_type = sanitize_text_field($_POST['post_type'] ?? 'post');
-        $selected_model = sanitize_text_field($_POST['selected_model'] ?? 'openai/gpt-4o');
+        $selected_model = sanitize_text_field($_POST['selected_model'] ?? 'openai/gpt-5');
         
         if (!$template_id) {
             wp_send_json_error('No template selected');
@@ -236,7 +236,7 @@ class Terpedia_Templated_Text_Block {
     /**
      * Generate AI content using template
      */
-    private function generate_ai_content($template, $field_values, $post_type, $selected_model = 'openai/gpt-4o') {
+    private function generate_ai_content($template, $field_values, $post_type, $selected_model = 'openai/gpt-5') {
         // For new template system, use content template with field replacements
         if (isset($template['content_template']) && isset($template['schema'])) {
             return $this->generate_with_template_content($template, $field_values, $post_type, $selected_model);
@@ -253,7 +253,7 @@ class Terpedia_Templated_Text_Block {
     /**
      * Generate content using new template system
      */
-    private function generate_with_template_content($template, $field_values, $post_type, $selected_model = 'openai/gpt-4o') {
+    private function generate_with_template_content($template, $field_values, $post_type, $selected_model = 'openai/gpt-5') {
         // Replace field placeholders in template content
         $content_template = $template['content_template'];
         
@@ -304,7 +304,7 @@ class Terpedia_Templated_Text_Block {
     /**
      * Generate content using legacy template format
      */
-    private function generate_with_legacy_template($template, $field_values, $post_type, $selected_model = 'openai/gpt-4o') {
+    private function generate_with_legacy_template($template, $field_values, $post_type, $selected_model = 'openai/gpt-5') {
         // Replace placeholders in prompt template
         $prompt = $template['prompt_template'];
         foreach ($field_values as $field_name => $field_value) {
