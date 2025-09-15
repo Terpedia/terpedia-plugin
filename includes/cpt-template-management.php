@@ -554,6 +554,10 @@ class Terpedia_CPT_Template_Management {
     public function parse_template_markup() {
         check_ajax_referer('template_markup_nonce', 'nonce');
         
+        if (!current_user_can('edit_posts')) {
+            wp_send_json_error('Access denied');
+        }
+        
         $content = wp_kses_post($_POST['content'] ?? '');
         $result = $this->parse_template_content($content);
         

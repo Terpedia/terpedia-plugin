@@ -1,0 +1,18 @@
+/* Templated Text Block Styles */
+.templated-text-placeholder {
+    border: 2px dashed #007cba;
+    padding: 20px;
+    text-align: center;
+    background: #f0f8ff;
+    border-radius: 4px;
+}
+
+.templated-text-content {
+    margin: 1em 0;
+}
+
+.templated-text-block .template-status {
+    font-size: 12px;
+    color: #666;
+    margin-bottom: 10px;
+}

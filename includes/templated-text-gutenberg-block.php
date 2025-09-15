@@ -114,7 +114,12 @@ class Terpedia_Templated_Text_Block {
         }
         
         $template_id = intval($_POST['template_id'] ?? 0);
-        $field_values = $_POST['field_values'] ?? array();
+        $field_values = isset($_POST['field_values']) ? json_decode(stripslashes($_POST['field_values']), true) : array();
+        
+        // Validate field_values is an array
+        if (!is_array($field_values)) {
+            $field_values = array();
+        }
         $post_type = sanitize_text_field($_POST['post_type'] ?? 'post');
         $selected_model = sanitize_text_field($_POST['selected_model'] ?? 'openai/gpt-5');
         

@@ -115,6 +115,7 @@ class TerpediaAI {
             'includes/terport-smart-refresh-system.php',
             'includes/templated-text-gutenberg-block.php',
             'includes/cpt-template-management.php',
+            'includes/veterinary-terpene-templates.php',
         );
         
         foreach ($includes as $file) {
