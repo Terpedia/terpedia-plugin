@@ -119,6 +119,7 @@ class TerpediaAI {
             'includes/templated-text-gutenberg-block.php',
             'includes/cpt-template-management.php',
             'includes/veterinary-terpene-templates.php',
+            'includes/version-endpoint.php',
         );
         
         foreach ($includes as $file) {
