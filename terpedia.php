@@ -82,6 +82,9 @@ class TerpediaAI {
         // Create database tables if needed
         $this->create_database_tables();
         
+        // Create veterinary research report as Terport
+        $this->create_veterinary_research_terport();
+        
         // Force flush rewrite rules immediately
         flush_rewrite_rules();
         add_option('terpedia_ai_flush_rewrite_rules', true);
@@ -1883,6 +1886,92 @@ class TerpediaAI {
         }
         </script>
         <?php
+    }
+    
+    /**
+     * Create veterinary research report as Terport post
+     */
+    private function create_veterinary_research_terport() {
+        // Check if post already exists
+        $existing_post = get_page_by_title('Comprehensive Veterinary Terpene Research Report', OBJECT, 'terport');
+        if ($existing_post) {
+            return; // Already exists
+        }
+        
+        // Load veterinary research content
+        $report_content = $this->get_veterinary_research_content();
+        
+        // Create the Terport post
+        $post_data = array(
+            'post_title'    => 'Comprehensive Veterinary Terpene Research Report',
+            'post_content'  => $report_content,
+            'post_status'   => 'publish',
+            'post_author'   => 1,
+            'post_type'     => 'terport',
+            'post_excerpt'  => 'Comprehensive research addressing critical questions about terpene applications in veterinary medicine, covering cancer efficacy, physiological dosing, topical and oral applications, and condition-specific treatment protocols for dogs, cats, and horses.',
+            'meta_input'    => array(
+                '_terpedia_terport_type' => 'veterinary_research',
+                '_terpedia_ai_generated' => 'yes',
+                '_terpedia_template_used' => 'veterinary_comprehensive_research',
+                '_terpedia_model_used' => 'gpt-5'
+            )
+        );
+        
+        $post_id = wp_insert_post($post_data);
+        
+        if ($post_id && !is_wp_error($post_id)) {
+            // Add additional meta data
+            update_post_meta($post_id, '_terpedia_research_type', 'veterinary');
+            update_post_meta($post_id, '_terpedia_species_covered', 'dogs,cats,horses');
+            update_post_meta($post_id, '_terpedia_topics_covered', 'cancer,dosing,topical,oral,conditions');
+            update_post_meta($post_id, '_terpedia_creation_date', current_time('mysql'));
+        }
+    }
+    
+    /**
+     * Get veterinary research content from docs
+     */
+    private function get_veterinary_research_content() {
+        $file_path = plugin_dir_path(__FILE__) . 'docs/veterinary-terpene-research-report.md';
+        
+        if (file_exists($file_path)) {
+            $markdown_content = file_get_contents($file_path);
+            // Convert markdown to HTML for WordPress editor
+            return $this->convert_markdown_to_html($markdown_content);
+        }
+        
+        return 'Veterinary research report content not found.';
+    }
+    
+    /**
+     * Basic markdown to HTML conversion for WordPress
+     */
+    private function convert_markdown_to_html($markdown) {
+        // Basic markdown conversions for WordPress editor
+        $html = $markdown;
+        
+        // Headers
+        $html = preg_replace('/^### (.*$)/m', '<h3>$1</h3>', $html);
+        $html = preg_replace('/^## (.*$)/m', '<h2>$1</h2>', $html);
+        $html = preg_replace('/^# (.*$)/m', '<h1>$1</h1>', $html);
+        
+        // Bold text
+        $html = preg_replace('/\*\*(.*?)\*\*/', '<strong>$1</strong>', $html);
+        
+        // Code blocks
+        $html = preg_replace('/`(.*?)`/', '<code>$1</code>', $html);
+        
+        // Lists
+        $html = preg_replace('/^\- (.*$)/m', '<li>$1</li>', $html);
+        $html = preg_replace('/(<li>.*<\/li>)/s', '<ul>$1</ul>', $html);
+        
+        // Horizontal rules
+        $html = str_replace('---', '<hr>', $html);
+        
+        // Line breaks
+        $html = nl2br($html);
+        
+        return $html;
     }
     
     private function create_database_tables() {
