@@ -20,6 +20,7 @@ class Terpedia_Enhanced_Terport_Editor {
     private $openrouter_api;
     
     public function __construct() {
+        add_action('init', array($this, 'register_terport_cpt'));
         add_action('add_meta_boxes', array($this, 'add_terport_meta_boxes'));
         add_action('save_post', array($this, 'save_terport_meta'));
         add_action('admin_enqueue_scripts', array($this, 'enqueue_admin_scripts'));
@@ -30,8 +31,45 @@ class Terpedia_Enhanced_Terport_Editor {
         add_action('wp_ajax_terpedia_generate_terport_image', array($this, 'ajax_generate_terport_image'));
         add_action('wp_ajax_terpedia_get_terport_templates', array($this, 'ajax_get_terport_templates'));
         
+        // Frontend form handlers (login required)
+        add_action('wp_ajax_terpedia_create_user_terport', array($this, 'ajax_create_user_terport'));
+        add_shortcode('terport_creation_form', array($this, 'render_terport_creation_form'));
+        
         // Initialize OpenRouter API
         $this->openrouter_api = new Terpedia_OpenRouter_API();
+    }
+    
+    /**
+     * Register Terport Custom Post Type
+     */
+    public function register_terport_cpt() {
+        register_post_type('terport', array(
+            'labels' => array(
+                'name' => 'Terports',
+                'singular_name' => 'Terport',
+                'menu_name' => 'Terports',
+                'add_new' => 'Add New Terport',
+                'add_new_item' => 'Add New Terport',
+                'edit_item' => 'Edit Terport',
+                'new_item' => 'New Terport',
+                'view_item' => 'View Terport',
+                'search_items' => 'Search Terports',
+                'not_found' => 'No terports found',
+                'not_found_in_trash' => 'No terports found in trash',
+                'all_items' => 'All Terports'
+            ),
+            'public' => true,
+            'show_ui' => true,
+            'show_in_menu' => 'terpedia-main',
+            'menu_position' => 20,
+            'menu_icon' => 'dashicons-analytics',
+            'supports' => array('title', 'editor', 'excerpt', 'thumbnail', 'custom-fields', 'author'),
+            'has_archive' => true,
+            'rewrite' => array('slug' => 'terports'),
+            'show_in_rest' => true,
+            'capability_type' => 'post',
+            'map_meta_cap' => true
+        ));
     }
     
     /**
@@ -749,6 +787,285 @@ class Terpedia_Enhanced_Terport_Editor {
                 'nonce' => wp_create_nonce('terpedia_terport_nonce')
             ));
         }
+    }
+    
+    /**
+     * Render frontend Terport creation form
+     */
+    public function render_terport_creation_form($atts) {
+        if (!is_user_logged_in()) {
+            return '<div class="terport-form-notice"><p>Please <a href="' . wp_login_url(get_permalink()) . '">log in</a> to create a Terport.</p></div>';
+        }
+        
+        ob_start();
+        ?>
+        <div class="terport-creation-form-container">
+            <form id="terport-creation-form" class="terport-creation-form">
+                <?php wp_nonce_field('terpedia_create_terport_nonce', 'terport_nonce'); ?>
+                
+                <div class="form-header">
+                    <h3>🧪 Create Your Research Report</h3>
+                    <p>Create a private research report that only you can access.</p>
+                </div>
+                
+                <div class="form-group">
+                    <label for="terport_title">Research Report Title *</label>
+                    <input type="text" id="terport_title" name="terport_title" required 
+                           placeholder="e.g., Limonene Cancer Research Summary" 
+                           maxlength="200">
+                </div>
+                
+                <div class="form-group">
+                    <label for="terport_type">Research Type *</label>
+                    <select id="terport_type" name="terport_type" required>
+                        <option value="">Select research type...</option>
+                        <option value="cancer_research">Cancer Research</option>
+                        <option value="veterinary_research">Veterinary Research</option>
+                        <option value="clinical_study">Clinical Study</option>
+                        <option value="literature_review">Literature Review</option>
+                        <option value="case_study">Case Study</option>
+                        <option value="molecular_analysis">Molecular Analysis</option>
+                        <option value="product_analysis">Product Analysis</option>
+                        <option value="therapeutic_protocol">Therapeutic Protocol</option>
+                        <option value="safety_assessment">Safety Assessment</option>
+                        <option value="custom_research">Custom Research</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="terport_description">Brief Description (Optional)</label>
+                    <textarea id="terport_description" name="terport_description" rows="3" 
+                              placeholder="What specific aspects will this research cover?"></textarea>
+                </div>
+                
+                <div class="form-actions">
+                    <button type="submit" class="submit-btn">
+                        <span class="btn-text">Create Research Report</span>
+                        <span class="btn-loading" style="display:none;">Creating...</span>
+                    </button>
+                </div>
+                
+                <div id="terport-form-response" class="form-response"></div>
+            </form>
+        </div>
+        
+        <style>
+        .terport-creation-form-container {
+            max-width: 600px;
+            margin: 20px auto;
+            padding: 30px;
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            border: 1px solid #e1e5e9;
+        }
+        
+        .form-header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+        
+        .form-header h3 {
+            margin: 0 0 10px 0;
+            color: #2c3e50;
+            font-size: 24px;
+        }
+        
+        .form-header p {
+            margin: 0;
+            color: #6c757d;
+            font-size: 14px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #495057;
+            font-size: 14px;
+        }
+        
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e1e5e9;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.3s ease;
+            box-sizing: border-box;
+        }
+        
+        .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+            outline: none;
+            border-color: #007cba;
+            box-shadow: 0 0 0 3px rgba(0, 124, 186, 0.1);
+        }
+        
+        .form-actions {
+            text-align: center;
+            margin-top: 30px;
+        }
+        
+        .submit-btn {
+            background: linear-gradient(135deg, #007cba 0%, #005a87 100%);
+            color: white;
+            border: none;
+            padding: 14px 32px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            min-width: 200px;
+        }
+        
+        .submit-btn:hover {
+            background: linear-gradient(135deg, #005a87 0%, #003d5c 100%);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0, 124, 186, 0.3);
+        }
+        
+        .form-response {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 8px;
+            display: none;
+        }
+        
+        .form-response.success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        
+        .form-response.error {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        
+        .terport-form-notice {
+            text-align: center;
+            padding: 20px;
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+        }
+        </style>
+        
+        <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const form = document.getElementById('terport-creation-form');
+            if (!form) return;
+            
+            const submitBtn = form.querySelector('.submit-btn');
+            const btnText = submitBtn.querySelector('.btn-text');
+            const btnLoading = submitBtn.querySelector('.btn-loading');
+            const responseDiv = document.getElementById('terport-form-response');
+            
+            form.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                submitBtn.disabled = true;
+                btnText.style.display = 'none';
+                btnLoading.style.display = 'inline';
+                responseDiv.style.display = 'none';
+                
+                const formData = new FormData(form);
+                formData.append('action', 'terpedia_create_user_terport');
+                
+                fetch('<?php echo admin_url('admin-ajax.php'); ?>', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    responseDiv.style.display = 'block';
+                    
+                    if (data.success) {
+                        responseDiv.className = 'form-response success';
+                        responseDiv.innerHTML = '<strong>Success!</strong> ' + data.data.message;
+                        form.reset();
+                        
+                        if (data.data.redirect_url) {
+                            setTimeout(() => {
+                                window.location.href = data.data.redirect_url;
+                            }, 2000);
+                        }
+                    } else {
+                        responseDiv.className = 'form-response error';
+                        responseDiv.innerHTML = '<strong>Error:</strong> ' + (data.data || 'Something went wrong. Please try again.');
+                    }
+                })
+                .catch(error => {
+                    responseDiv.style.display = 'block';
+                    responseDiv.className = 'form-response error';
+                    responseDiv.innerHTML = '<strong>Error:</strong> Failed to create research report. Please try again.';
+                })
+                .finally(() => {
+                    submitBtn.disabled = false;
+                    btnText.style.display = 'inline';
+                    btnLoading.style.display = 'none';
+                });
+            });
+        });
+        </script>
+        <?php
+        return ob_get_clean();
+    }
+    
+    /**
+     * AJAX handler for creating user Terports
+     */
+    public function ajax_create_user_terport() {
+        // Verify nonce with correct action name
+        if (!check_ajax_referer('terpedia_create_terport_nonce', 'terport_nonce', false)) {
+            wp_send_json_error('Security check failed');
+        }
+        
+        if (!is_user_logged_in()) {
+            wp_send_json_error('You must be logged in to create a research report');
+        }
+        
+        $title = sanitize_text_field($_POST['terport_title']);
+        $type = sanitize_text_field($_POST['terport_type']);
+        $description = sanitize_textarea_field($_POST['terport_description']);
+        
+        if (empty($title) || empty($type)) {
+            wp_send_json_error('Title and research type are required');
+        }
+        
+        $post_data = array(
+            'post_title' => $title,
+            'post_content' => $description ? '<p>' . $description . '</p>' : '',
+            'post_status' => 'private',
+            'post_type' => 'terport',
+            'post_author' => get_current_user_id(),
+            'meta_input' => array(
+                '_terpedia_terport_type' => $type,
+                '_terpedia_terport_description' => $description,
+                '_terpedia_user_created' => 'yes',
+                '_terpedia_creation_date' => current_time('mysql')
+            )
+        );
+        
+        $post_id = wp_insert_post($post_data);
+        
+        if (is_wp_error($post_id) || !$post_id) {
+            wp_send_json_error('Failed to create research report');
+        }
+        
+        wp_send_json_success(array(
+            'message' => 'Research report created successfully! You can now view and edit it.',
+            'post_id' => $post_id,
+            'redirect_url' => get_permalink($post_id)
+        ));
     }
 }
 
