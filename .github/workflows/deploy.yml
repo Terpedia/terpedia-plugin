@@ -99,6 +99,7 @@ jobs:
           StrictHostKeyChecking no
           UserKnownHostsFile ~/.ssh/known_hosts
           IdentitiesOnly yes
+          IdentityAgent $SSH_AUTH_SOCK
           ServerAliveInterval 30
           ServerAliveCountMax 3
         EOF
