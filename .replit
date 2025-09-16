@@ -2,7 +2,7 @@ modules = ["php-8.2", "nodejs-20", "web", "github-cli"]
 
 [nix]
 channel = "stable-24_05"
-packages = ["github-cli"]
+packages = ["github-cli", "openssh"]
 
 [agent]
 expertMode = true

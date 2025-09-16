@@ -1,0 +1,70 @@
+🚨 EMERGENCY WORDPRESS ADMIN FIX - TERPEDIA.COM
+==============================================
+
+CRISIS: WordPress admin crashed due to version endpoint bug
+SOLUTION: 3 quick deployment options below
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+OPTION 1: SSH FIX (2 minutes) - IF YOU HAVE SSH ACCESS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+ssh -p 18765 YOUR_USERNAME@giow1015.siteground.us
+
+# STEP 1: Disable broken plugin (INSTANT admin recovery)
+cd ~/public_html/wp-content/plugins/
+mv terpedia terpedia-broken-backup
+
+# STEP 2: Test admin works
+# Go to https://terpedia.com/wp-admin - should work now!
+
+# STEP 3: Deploy fixed plugin  
+cd ~/public_html/wp-content/plugins/
+wget "DOWNLOAD_LINK_TO_emergency-terpedia-fix.tar.gz"
+tar -xzf emergency-terpedia-fix.tar.gz
+mv terpedia-plugin terpedia
+
+# STEP 4: Reactivate
+# WordPress Admin → Plugins → Activate Terpedia
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+OPTION 2: HOSTING FILE MANAGER (3 minutes)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+1. Login to SiteGround hosting panel
+2. Go to File Manager → public_html/wp-content/plugins/
+3. RENAME "terpedia" folder to "terpedia-broken"
+4. TEST: https://terpedia.com/wp-admin should work!
+5. CREATE new "terpedia" folder
+6. UPLOAD all files from emergency-terpedia-fix.tar.gz
+7. WordPress Admin → Plugins → Activate Terpedia
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+OPTION 3: SFTP/FTP CLIENT (3 minutes)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Host: giow1015.siteground.us
+Port: 21 (FTP) or 22 (SFTP)
+Path: /public_html/wp-content/plugins/
+
+1. RENAME "terpedia" folder to "terpedia-broken"
+2. UPLOAD entire fixed plugin folder as "terpedia"
+3. WordPress Admin → Plugins → Activate
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+CRITICAL FILES FIXED:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+includes/version-endpoint.php - SAFE constants usage
+terpedia.php - Updated activation hooks
+All AJAX handlers - Proper nonce validation
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+VERIFICATION:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+After deployment, these should work:
+✅ https://terpedia.com/wp-admin
+✅ https://terpedia.com/version
+✅ https://terpedia.com/wp-json/terpedia/v1/version
+
+YOUR WORDPRESS ADMIN WILL BE RESTORED IN STEP 1 OF ANY OPTION!
