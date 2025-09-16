@@ -112,7 +112,7 @@ jobs:
     - name: Test SSH Connection
       run: |
         echo "Testing SSH connection..."
-        ssh -o ConnectTimeout=10 ${{ secrets.SSH_USER }}@giow1015.siteground.us "echo 'SSH connection successful' && pwd && ls -la www/terpedia.com/public_html/wp-content/plugins/ | head -5"
+        ssh -o ConnectTimeout=10 giow1015.siteground.us "echo 'SSH connection successful' && pwd && ls -la www/terpedia.com/public_html/wp-content/plugins/ | head -5"
         
     - name: Deploy plugin to production
       run: |
@@ -129,12 +129,12 @@ jobs:
         echo "Starting deployment to production server..."
         rsync -avz --delete --timeout=300 --progress \
           -e "ssh -o ConnectTimeout=30 -o ServerAliveInterval=30" \
-          deploy-temp/ ${{ secrets.SSH_USER }}@giow1015.siteground.us:www/terpedia.com/public_html/wp-content/plugins/terpedia-plugin/
+          deploy-temp/ giow1015.siteground.us:www/terpedia.com/public_html/wp-content/plugins/terpedia-plugin/
         
         echo "Upload completed. Setting permissions and activating plugin..."
         
         # Set proper permissions and activate via SSH with timeout
-        ssh -o ConnectTimeout=30 -o ServerAliveInterval=30 ${{ secrets.SSH_USER }}@giow1015.siteground.us << 'EOF'
+        ssh -o ConnectTimeout=30 -o ServerAliveInterval=30 giow1015.siteground.us << 'EOF'
           # Navigate to plugin directory
           cd www/terpedia.com/public_html/wp-content/plugins/terpedia-plugin
           
@@ -155,7 +155,7 @@ jobs:
     - name: Verify deployment
       run: |
         echo "Verifying deployment..."
-        ssh -o ConnectTimeout=30 ${{ secrets.SSH_USER }}@giow1015.siteground.us << 'EOF'
+        ssh -o ConnectTimeout=30 giow1015.siteground.us << 'EOF'
           # Check if plugin files exist
           if [ -f "www/terpedia.com/public_html/wp-content/plugins/terpedia-plugin/terpedia.php" ]; then
             echo "✅ Plugin files deployed successfully"
@@ -208,7 +208,7 @@ jobs:
     - name: Run plugin health checks
       run: |
         echo "Running health checks..."
-        ssh -o ConnectTimeout=30 ${{ secrets.SSH_USER }}@giow1015.siteground.us << 'EOF'
+        ssh -o ConnectTimeout=30 giow1015.siteground.us << 'EOF'
           if command -v wp &> /dev/null; then
             # Check for PHP errors
             echo "🔍 Checking for PHP errors..."
