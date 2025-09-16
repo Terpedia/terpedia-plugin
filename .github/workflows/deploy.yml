@@ -84,6 +84,10 @@ jobs:
         ssh-add -l
         echo "SSH keys loaded successfully"
         
+        # Persist SSH agent environment variables for subsequent steps
+        echo "SSH_AUTH_SOCK=$SSH_AUTH_SOCK" >> $GITHUB_ENV
+        echo "SSH_AGENT_PID=$SSH_AGENT_PID" >> $GITHUB_ENV
+        
     - name: Setup SSH configuration
       run: |
         mkdir -p ~/.ssh
