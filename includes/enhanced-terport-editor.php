@@ -41,8 +41,15 @@ class Terpedia_Enhanced_Terport_Editor {
     
     /**
      * Register Terport Custom Post Type
+     * NOTE: Terport post type is now registered in custom-post-types.php
+     * This method is kept for compatibility but the registration is disabled
      */
     public function register_terport_cpt() {
+        // Terport post type is registered in custom-post-types.php
+        // to avoid conflicts, this registration is disabled
+        return;
+        
+        /*
         register_post_type('terport', array(
             'labels' => array(
                 'name' => 'Terports',
@@ -70,6 +77,7 @@ class Terpedia_Enhanced_Terport_Editor {
             'capability_type' => 'post',
             'map_meta_cap' => true
         ));
+        */
     }
     
     /**
@@ -80,7 +88,7 @@ class Terpedia_Enhanced_Terport_Editor {
             'terpedia_terport_ai_fields',
             'AI Terport Configuration',
             array($this, 'terport_ai_fields_callback'),
-            'terport',
+            'terpedia_terport',
             'normal',
             'high'
         );
@@ -89,7 +97,7 @@ class Terpedia_Enhanced_Terport_Editor {
             'terpedia_terport_template',
             'Content Template',
             array($this, 'terport_template_callback'),
-            'terport',
+            'terpedia_terport',
             'side',
             'high'
         );
@@ -567,7 +575,7 @@ class Terpedia_Enhanced_Terport_Editor {
             return;
         }
         
-        if (get_post_type($post_id) !== 'terport') {
+        if (get_post_type($post_id) !== 'terpedia_terport') {
             return;
         }
         

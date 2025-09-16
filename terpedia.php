@@ -113,6 +113,8 @@ class TerpediaAI {
         $includes = array(
             'includes/tulip-system.php',
             'includes/cpt-archive-system.php',
+            'includes/custom-post-types.php',
+            'includes/enhanced-terport-editor.php',
             'includes/terport-openrouter-integration.php',
             'includes/field-based-template-system.php',
             'includes/terport-chat-interface.php',
