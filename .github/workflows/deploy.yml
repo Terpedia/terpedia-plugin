@@ -37,28 +37,14 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       
-    - name: Setup SSH with passphrase
+    - name: Setup SSH Agent
+      uses: webfactory/ssh-agent@v0.9.0
+      with:
+        ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+        
+    - name: Add SSH known hosts
       run: |
-        # Install sshpass for passphrase handling
-        sudo apt-get update && sudo apt-get install -y sshpass
-        
-        # Create SSH directory and key file
-        mkdir -p ~/.ssh
-        echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
-        chmod 600 ~/.ssh/id_rsa
-        
-        # Add host to known_hosts
-        ssh-keyscan -H -p 18765 giow1015.siteground.us >> ~/.ssh/known_hosts
-        
-        # Create SSH config to use the key with passphrase
-        cat > ~/.ssh/config << EOF
-        Host giow1015.siteground.us
-          HostName giow1015.siteground.us
-          Port 18765
-          User ${{ secrets.SSH_USER }}
-          IdentityFile ~/.ssh/id_rsa
-          StrictHostKeyChecking no
-        EOF
+        ssh-keyscan -p 18765 giow1015.siteground.us >> ~/.ssh/known_hosts
         
     - name: Deploy plugin to production
       run: |
@@ -71,32 +57,13 @@ jobs:
         # Create deployment package from clean directory
         tar -czf terpedia-plugin.tar.gz -C deploy-temp .
         
-        # Upload to server using sshpass
-        SSHPASS="${{ secrets.SSH_PASSPHRASE }}" sshpass -e scp -P 18765 terpedia-plugin.tar.gz ${{ secrets.SSH_USER }}@giow1015.siteground.us:/tmp/
+        # Upload to server using SSH agent
+        rsync -az --delete -e "ssh -p 18765" deploy-temp/ ${{ secrets.SSH_USER }}@giow1015.siteground.us:~/public_html/wp-content/plugins/terpedia/
         
-        # Deploy via SSH using sshpass
-        SSHPASS="${{ secrets.SSH_PASSPHRASE }}" sshpass -e ssh -p 18765 ${{ secrets.SSH_USER }}@giow1015.siteground.us << 'EOF'
-          # Navigate to WordPress plugins directory
-          cd ${{ secrets.WP_PLUGINS_PATH }}
-          
-          # Log deployment start
-          echo "🚀 Starting plugin deployment at $(date)"
-          
-          # Backup current plugin
-          if [ -d "backup" ]; then rm -rf backup; fi
-          mkdir backup
-          cp -r . backup/ 2>/dev/null || true
-          
-          # Extract new plugin files
-          cd /tmp
-          tar -xzf terpedia-plugin.tar.gz
-          
-          # Remove old plugin files (except backup)
-          cd ${{ secrets.WP_PLUGINS_PATH }}
-          rm -rf terpedia-plugin
-          
-          # Copy new files
-          cp -r /tmp/terpedia-plugin .
+        # Set proper permissions and activate via SSH
+        ssh -p 18765 ${{ secrets.SSH_USER }}@giow1015.siteground.us << 'EOF'
+          # Navigate to plugin directory
+          cd ~/public_html/wp-content/plugins/terpedia
           
           # Set proper permissions
           find . -type f -exec chmod 644 {} \;
@@ -106,21 +73,15 @@ jobs:
           if command -v wp &> /dev/null; then
             wp plugin activate terpedia --path=${{ secrets.WP_ROOT_PATH }} --allow-root
             wp cache flush --path=${{ secrets.WP_ROOT_PATH }} --allow-root
-            
-            # Flush rewrite rules for custom post types
             wp rewrite flush --path=${{ secrets.WP_ROOT_PATH }} --allow-root
           fi
           
-          # Cleanup
-          rm -f /tmp/terpedia-plugin.tar.gz
-          rm -rf /tmp/terpedia-plugin
-          
-          echo "Plugin deployment completed successfully"
+          echo "🚀 Plugin deployment completed successfully at $(date)"
         EOF
         
     - name: Verify deployment
       run: |
-        SSHPASS="${{ secrets.SSH_PASSPHRASE }}" sshpass -e ssh -p 18765 ${{ secrets.SSH_USER }}@giow1015.siteground.us << 'EOF'
+        ssh -p 18765 ${{ secrets.SSH_USER }}@giow1015.siteground.us << 'EOF'
           # Check if plugin files exist
           if [ -f "${{ secrets.WP_PLUGINS_PATH }}/terpedia-plugin/terpedia.php" ]; then
             echo "✅ Plugin files deployed successfully"
@@ -145,7 +106,7 @@ jobs:
 
     - name: Run plugin health checks
       run: |
-        SSHPASS="${{ secrets.SSH_PASSPHRASE }}" sshpass -e ssh -p 18765 ${{ secrets.SSH_USER }}@giow1015.siteground.us << 'EOF'
+        ssh -p 18765 ${{ secrets.SSH_USER }}@giow1015.siteground.us << 'EOF'
           if command -v wp &> /dev/null; then
             # Check for PHP errors
             echo "🔍 Checking for PHP errors..."
