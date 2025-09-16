@@ -71,7 +71,7 @@ class Terpedia_CPT_Template_Management {
                 ),
                 'public' => false,
                 'show_ui' => true,
-                'show_in_menu' => false, // We'll add custom menu
+                'show_in_menu' => 'terpedia-settings', // Show under Terpedia menu
                 'show_in_rest' => true, // Enable Gutenberg
                 'supports' => array('title', 'editor', 'custom-fields'),
                 'capability_type' => 'post',
@@ -87,36 +87,10 @@ class Terpedia_CPT_Template_Management {
      * Add template admin menus
      */
     public function add_template_admin_menus() {
+        // Template CPTs now appear automatically under Terpedia menu
+        // Only add the template guide submenu for each template type
         foreach ($this->template_cpts as $base_cpt => $config) {
             $template_cpt = $base_cpt . '_template';
-            
-            // Add top-level menu for templates
-            add_menu_page(
-                $config['label'],
-                $config['menu_icon'] . ' ' . $config['label'],
-                'manage_options',
-                'edit.php?post_type=' . $template_cpt,
-                '',
-                null,
-                25 // Position after Terpedia main menu
-            );
-            
-            // Add submenu items
-            add_submenu_page(
-                'edit.php?post_type=' . $template_cpt,
-                'All Templates',
-                'All Templates',
-                'manage_options',
-                'edit.php?post_type=' . $template_cpt
-            );
-            
-            add_submenu_page(
-                'edit.php?post_type=' . $template_cpt,
-                'Add New Template',
-                'Add New Template',
-                'manage_options',
-                'post-new.php?post_type=' . $template_cpt
-            );
             
             add_submenu_page(
                 'edit.php?post_type=' . $template_cpt,

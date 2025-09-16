@@ -116,6 +116,7 @@ class TerpediaAI {
             'includes/custom-post-types.php',
             'includes/terport-openrouter-integration.php',
             'includes/enhanced-terport-editor.php',
+            'includes/terport-template-system.php',
             'includes/field-based-template-system.php',
             'includes/terport-chat-interface.php',
             'includes/terport-smart-refresh-system.php',
@@ -1149,23 +1150,9 @@ class TerpediaAI {
             array($this, 'experts_page')
         );
         
-        add_submenu_page(
-            'terpedia-main',
-            'Podcast Management',
-            'Podcasts',
-            'manage_options',
-            'terpedia-podcasts',
-            array($this, 'podcasts_page')
-        );
+        // Podcasts now uses standard WordPress post management interface
         
-        add_submenu_page(
-            'terpedia-main',
-            'Newsletter Management',
-            'Newsletters',
-            'manage_options',
-            'terpedia-newsletters',
-            array($this, 'newsletters_page')
-        );
+        // Newsletters now uses standard WordPress post management interface
         
         add_submenu_page(
             'terpedia-main',
@@ -1176,14 +1163,7 @@ class TerpediaAI {
             array($this, 'cases_page')
         );
         
-        add_submenu_page(
-            'terpedia-main',
-            'Rx Formulations',
-            'Rx Formulations',
-            'manage_options',
-            'terpedia-rx',
-            array($this, 'rx_page')
-        );
+        // Rx Formulations now uses standard WordPress post management interface
         
         add_submenu_page(
             'terpedia-main',
@@ -1194,14 +1174,7 @@ class TerpediaAI {
             array($this, 'encyclopedia_page')
         );
         
-        add_submenu_page(
-            'terpedia-main',
-            'Product Management',
-            'Terproducts',
-            'manage_options',
-            'terpedia-terproducts',
-            array($this, 'terproducts_page')
-        );
+        // Terproducts now uses standard WordPress post management interface
         
         // Add CSS for pink styling
         add_action('admin_head', array($this, 'admin_menu_styles'));
@@ -1611,40 +1584,7 @@ class TerpediaAI {
         <?php
     }
     
-    public function rx_page() {
-        ?>
-        <div class="wrap terpedia-admin-page">
-            <h1>💊 Rx Formulations Management</h1>
-            <p>Create and manage precision terpene recipes with calculated ratios and therapeutic profiles.</p>
-            
-            <div class="terpedia-cards">
-                <div class="terpedia-card">
-                    <h3>💊 All Rx Formulations</h3>
-                    <p>View and manage all terpene formulations</p>
-                    <a href="<?php echo admin_url('edit.php?post_type=terpedia_rx'); ?>" class="button-primary">Manage Formulations</a>
-                </div>
-                
-                <div class="terpedia-card">
-                    <h3>➕ Create New Rx</h3>
-                    <p>Design a new terpene formulation</p>
-                    <a href="<?php echo admin_url('post-new.php?post_type=terpedia_rx'); ?>" class="button-primary">Create Formulation</a>
-                </div>
-                
-                <div class="terpedia-card">
-                    <h3>🌿 Rx Categories</h3>
-                    <p>Manage therapeutic categories</p>
-                    <a href="<?php echo admin_url('edit-tags.php?taxonomy=rx_category&post_type=terpedia_rx'); ?>" class="button-primary">Manage Categories</a>
-                </div>
-                
-                <div class="terpedia-card">
-                    <h3>🔬 Frontend Display</h3>
-                    <p>View public Rx formulations page</p>
-                    <a href="<?php echo home_url('/rx/'); ?>" class="button-primary" target="_blank">View Frontend</a>
-                </div>
-            </div>
-        </div>
-        <?php
-    }
+    // rx_page() function removed - Rx Formulations now uses standard WordPress post management interface
 
     /**
      * Terproducts management page

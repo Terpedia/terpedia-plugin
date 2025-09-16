@@ -53,7 +53,7 @@ class TerpediaCycEncyclopediaManager {
             ),
             'public' => false,
             'show_ui' => true,
-            'show_in_menu' => false, // We'll add it to our custom menu
+            'show_in_menu' => 'terpedia-settings', // Show under Terpedia menu
             'supports' => array('title', 'editor', 'custom-fields', 'thumbnail'),
             'capability_type' => 'post',
             'has_archive' => false,
@@ -75,14 +75,7 @@ class TerpediaCycEncyclopediaManager {
             array($this, 'admin_page')
         );
         
-        // Add encyclopedia entries submenu
-        add_submenu_page(
-            'terpedia-cyc-manager',
-            'Encyclopedia Entries',
-            'All Entries',
-            'manage_options',
-            'edit.php?post_type=encyclopedia_entry'
-        );
+        // Encyclopedia entries now appear automatically under Terpedia menu
     }
     
     /**
