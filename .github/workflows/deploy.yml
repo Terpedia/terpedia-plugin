@@ -5,6 +5,7 @@ on:
     branches: [ main ]
   pull_request:
     branches: [ main ]
+  workflow_dispatch:
 
 jobs:
   deploy:
@@ -20,6 +21,42 @@ jobs:
       uses: shivammathur/setup-php@v2
       with:
         php-version: '8.2'
+        
+    - name: Validate plugin version
+      run: |
+        echo "🔍 Validating plugin version before deployment..."
+        
+        # Extract version from plugin header
+        PLUGIN_VERSION=$(grep "Version:" terpedia.php | head -1 | sed 's/.*Version: *//' | tr -d ' ')
+        VERSION_FILE=$(cat VERSION 2>/dev/null || echo "not found")
+        
+        echo "📦 Plugin header version: $PLUGIN_VERSION"
+        echo "📄 VERSION file content: $VERSION_FILE"
+        
+        # Validate version format (semantic versioning)
+        if [[ $PLUGIN_VERSION =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+          echo "✅ Plugin version format is valid: $PLUGIN_VERSION"
+        else
+          echo "❌ Invalid plugin version format: $PLUGIN_VERSION"
+          echo "Expected format: X.Y.Z (e.g., 3.11.13)"
+          exit 1
+        fi
+        
+        # Check if VERSION file matches plugin header
+        if [ "$PLUGIN_VERSION" = "$VERSION_FILE" ]; then
+          echo "✅ VERSION file matches plugin header: $PLUGIN_VERSION"
+        else
+          echo "⚠️ VERSION file mismatch:"
+          echo "  Plugin header: $PLUGIN_VERSION"
+          echo "  VERSION file: $VERSION_FILE"
+          echo "Continuing with plugin header version..."
+        fi
+        
+        # Set version as environment variable for later steps
+        echo "TERPEDIA_VERSION=$PLUGIN_VERSION" >> $GITHUB_ENV
+        echo "TERPEDIA_VERSION_FILE=$VERSION_FILE" >> $GITHUB_ENV
+        
+        echo "🎯 Version validation completed successfully"
         
     - name: Bump version automatically
       run: |
@@ -41,6 +78,7 @@ jobs:
       uses: webfactory/ssh-agent@v0.9.0
       with:
         ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+        log-public-key: true
         
     - name: Setup SSH configuration
       run: |
@@ -116,11 +154,38 @@ jobs:
           # Check if plugin files exist
           if [ -f "www/terpedia.com/public_html/wp-content/plugins/terpedia-plugin/terpedia.php" ]; then
             echo "✅ Plugin files deployed successfully"
+            
             # Extract version from main plugin file
-            version=$(grep "Version:" "www/terpedia.com/public_html/wp-content/plugins/terpedia-plugin/terpedia.php" | head -1 | cut -d' ' -f3)
-            echo "📦 Plugin version: $version"
+            deployed_version=$(grep "Version:" "www/terpedia.com/public_html/wp-content/plugins/terpedia-plugin/terpedia.php" | head -1 | sed 's/.*Version: *//' | tr -d ' ')
+            echo "📦 Deployed plugin version: $deployed_version"
+            
+            # Check VERSION file if it exists
+            if [ -f "www/terpedia.com/public_html/wp-content/plugins/terpedia-plugin/VERSION" ]; then
+              version_file_content=$(cat "www/terpedia.com/public_html/wp-content/plugins/terpedia-plugin/VERSION")
+              echo "📄 Deployed VERSION file: $version_file_content"
+              
+              # Compare versions
+              if [ "$deployed_version" = "$version_file_content" ]; then
+                echo "✅ Version consistency check passed"
+              else
+                echo "⚠️ Version mismatch between plugin header and VERSION file"
+                echo "  Plugin header: $deployed_version"
+                echo "  VERSION file: $version_file_content"
+              fi
+            else
+              echo "ℹ️ No VERSION file found on server"
+            fi
+            
+            # Validate version format
+            if [[ $deployed_version =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+              echo "✅ Deployed version format is valid: $deployed_version"
+            else
+              echo "❌ Invalid deployed version format: $deployed_version"
+              exit 1
+            fi
+            
           else
-            echo "❌ Plugin deployment failed"
+            echo "❌ Plugin deployment failed - main plugin file not found"
             exit 1
           fi
           
