@@ -1,0 +1,209 @@
+name: Debug Site Logs
+
+on:
+  workflow_dispatch:
+    inputs:
+      log_type:
+        description: 'Type of logs to check'
+        required: true
+        default: 'all'
+        type: choice
+        options:
+        - all
+        - error
+        - access
+        - php
+        - wordpress
+        - plugin
+
+jobs:
+  debug-logs:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup SSH Agent
+      run: |
+        eval "$(ssh-agent -s)"
+        echo "${{ secrets.SSH_PRIVATE_KEY }}" | ssh-add -
+        echo "SSH Agent PID: $SSH_AGENT_PID"
+        echo "SSH Auth Sock: $SSH_AUTH_SOCK"
+        ssh-add -l
+        echo "SSH keys loaded successfully"
+        
+        # Persist SSH agent environment variables for subsequent steps
+        echo "SSH_AUTH_SOCK=$SSH_AUTH_SOCK" >> $GITHUB_ENV
+        echo "SSH_AGENT_PID=$SSH_AGENT_PID" >> $GITHUB_ENV
+    
+    - name: Setup SSH configuration
+      run: |
+        mkdir -p ~/.ssh
+        chmod 700 ~/.ssh
+        
+        # Add SSH known hosts
+        ssh-keyscan -p 18765 -t rsa,ed25519 giow1015.siteground.us >> ~/.ssh/known_hosts 2>/dev/null || true
+        ssh-keyscan -p 18765 giow1015.siteground.us >> ~/.ssh/known_hosts 2>/dev/null || true
+        chmod 600 ~/.ssh/known_hosts
+        
+        # Configure SSH client
+        cat >> ~/.ssh/config << EOF
+        Host giow1015.siteground.us
+          HostName giow1015.siteground.us
+          Port 18765
+          User ${{ secrets.SSH_USER }}
+          StrictHostKeyChecking no
+          UserKnownHostsFile ~/.ssh/known_hosts
+          IdentitiesOnly yes
+          IdentityAgent $SSH_AUTH_SOCK
+          ServerAliveInterval 30
+          ServerAliveCountMax 3
+        EOF
+        chmod 600 ~/.ssh/config
+    
+    - name: Debug site logs
+      run: |
+        # Create temporary private key file
+        echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/terpedia_deploy_key
+        chmod 600 ~/.ssh/terpedia_deploy_key
+        
+        echo "🔍 Starting site diagnostics..."
+        
+        ssh -o ConnectTimeout=30 -o ServerAliveInterval=30 -o StrictHostKeyChecking=no -o UserKnownHostsFile=~/.ssh/known_hosts -o IdentitiesOnly=yes -i ~/.ssh/terpedia_deploy_key -p 18765 ${{ secrets.SSH_USER }}@giow1015.siteground.us << 'EOF'
+          echo "=== SITE DIAGNOSTICS REPORT ==="
+          echo "Timestamp: $(date)"
+          echo ""
+          
+          # Check site accessibility
+          echo "🌐 SITE ACCESSIBILITY CHECK"
+          echo "================================"
+          SITE_RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" https://terpedia.com/ || echo "000")
+          echo "Site response code: $SITE_RESPONSE"
+          
+          if [ "$SITE_RESPONSE" = "200" ]; then
+            echo "✅ Site is accessible"
+          else
+            echo "❌ Site is not accessible - HTTP $SITE_RESPONSE"
+          fi
+          echo ""
+          
+          # Check WordPress installation
+          echo "🔍 WORDPRESS STATUS"
+          echo "==================="
+          if [ -f "/home/customer/www/terpedia.com/public_html/wp-config.php" ]; then
+            echo "✅ WordPress config found"
+          else
+            echo "❌ WordPress config not found"
+          fi
+          
+          if command -v wp &> /dev/null; then
+            echo "✅ WP-CLI available"
+            echo ""
+            echo "📋 Plugin Status:"
+            wp plugin list --path=/home/customer/www/terpedia.com/public_html/ --allow-root --format=table 2>/dev/null || echo "Failed to get plugin list"
+            echo ""
+            echo "🔌 Terpedia Plugin Status:"
+            wp plugin status terpedia-plugin --path=/home/customer/www/terpedia.com/public_html/ --allow-root 2>/dev/null || echo "Terpedia plugin not found or error"
+          else
+            echo "❌ WP-CLI not available"
+          fi
+          echo ""
+          
+          # Check error logs
+          echo "📋 ERROR LOGS"
+          echo "============="
+          
+          if [ "${{ github.event.inputs.log_type }}" = "all" ] || [ "${{ github.event.inputs.log_type }}" = "error" ]; then
+            echo "🔍 Recent error logs:"
+            find /home/customer/www/terpedia.com/logs/ -name "*error*" -type f -exec tail -20 {} \; 2>/dev/null || echo "No error logs found in /home/customer/www/terpedia.com/logs/"
+            echo ""
+          fi
+          
+          if [ "${{ github.event.inputs.log_type }}" = "all" ] || [ "${{ github.event.inputs.log_type }}" = "php" ]; then
+            echo "🐘 PHP Error Logs:"
+            find /home/customer/www/terpedia.com/ -name "*php*error*" -type f -exec tail -20 {} \; 2>/dev/null || echo "No PHP error logs found"
+            echo ""
+            
+            # Check PHP error log in WordPress directory
+            if [ -f "/home/customer/www/terpedia.com/public_html/wp-content/debug.log" ]; then
+              echo "📄 WordPress Debug Log (last 20 lines):"
+              tail -20 /home/customer/www/terpedia.com/public_html/wp-content/debug.log
+            else
+              echo "No WordPress debug log found"
+            fi
+            echo ""
+          fi
+          
+          if [ "${{ github.event.inputs.log_type }}" = "all" ] || [ "${{ github.event.inputs.log_type }}" = "access" ]; then
+            echo "🌐 Access Logs:"
+            find /home/customer/www/terpedia.com/logs/ -name "*access*" -type f -exec tail -10 {} \; 2>/dev/null || echo "No access logs found"
+            echo ""
+          fi
+          
+          # Check system logs
+          echo "🖥️ SYSTEM LOGS"
+          echo "=============="
+          echo "Recent system messages:"
+          tail -10 /var/log/messages 2>/dev/null || echo "No system messages log"
+          echo ""
+          
+          # Check disk space
+          echo "💾 DISK SPACE"
+          echo "============="
+          df -h /home/customer/www/terpedia.com/ 2>/dev/null || echo "Could not check disk space"
+          echo ""
+          
+          # Check file permissions
+          echo "🔐 FILE PERMISSIONS"
+          echo "==================="
+          echo "WordPress directory permissions:"
+          ls -la /home/customer/www/terpedia.com/public_html/ | head -10
+          echo ""
+          echo "Plugin directory permissions:"
+          ls -la /home/customer/www/terpedia.com/public_html/wp-content/plugins/ | grep terpedia || echo "Terpedia plugin directory not found"
+          echo ""
+          
+          # Check for recent file changes
+          echo "📁 RECENT FILE CHANGES"
+          echo "======================"
+          echo "Recent changes in WordPress directory (last 24 hours):"
+          find /home/customer/www/terpedia.com/public_html/ -type f -mtime -1 -ls 2>/dev/null | head -10 || echo "No recent file changes found"
+          echo ""
+          
+          # Check WordPress database connection
+          echo "🗄️ DATABASE CONNECTION"
+          echo "======================"
+          if command -v wp &> /dev/null; then
+            echo "Testing database connection:"
+            wp db check --path=/home/customer/www/terpedia.com/public_html/ --allow-root 2>/dev/null && echo "✅ Database connection OK" || echo "❌ Database connection failed"
+          else
+            echo "WP-CLI not available for database check"
+          fi
+          echo ""
+          
+          # Check for fatal errors in WordPress
+          echo "💥 WORDPRESS FATAL ERRORS"
+          echo "========================="
+          if command -v wp &> /dev/null; then
+            echo "Checking for fatal errors:"
+            wp eval 'if (function_exists("error_get_last")) { $error = error_get_last(); if ($error && $error["type"] >= E_ERROR) { echo "FATAL_ERROR: " . $error["message"] . " in " . $error["file"] . " on line " . $error["line"]; } else { echo "NO_FATAL_ERRORS"; } } else { echo "NO_ERROR_FUNCTION"; }' --path=/home/customer/www/terpedia.com/public_html/ --allow-root 2>/dev/null || echo "Error checking failed"
+          else
+            echo "WP-CLI not available for error check"
+          fi
+          echo ""
+          
+          echo "=== END DIAGNOSTICS REPORT ==="
+        EOF
+    
+    - name: Notify diagnostics status
+      if: always()
+      run: |
+        if [ "${{ job.status }}" = "success" ]; then
+          echo "✅ Site diagnostics completed successfully"
+          echo "📅 Diagnostics completed at: $(date)"
+          echo "🔗 Site: https://terpedia.com/"
+        else
+          echo "❌ Site diagnostics failed"
+          echo "📅 Diagnostics failed at: $(date)"
+        fi
