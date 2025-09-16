@@ -112,6 +112,11 @@ jobs:
     - name: Test SSH Connection
       run: |
         echo "Testing SSH connection..."
+        echo "SSH_AUTH_SOCK: $SSH_AUTH_SOCK"
+        echo "SSH_AGENT_PID: $SSH_AGENT_PID"
+        ssh-add -l
+        echo "SSH config:"
+        cat ~/.ssh/config
         ssh -o ConnectTimeout=10 giow1015.siteground.us "echo 'SSH connection successful' && pwd && ls -la www/terpedia.com/public_html/wp-content/plugins/ | head -5"
         
     - name: Deploy plugin to production
