@@ -1,4 +1,3 @@
-
 <?php
 /**
  * TULIP - Terpene Universal Link & Information Protocol
