@@ -29,6 +29,25 @@ class Terpedia_Terport_Chat_Interface {
     }
     
     /**
+     * Enqueue chat scripts and styles
+     */
+    public function enqueue_chat_scripts($hook) {
+        // Only load on our chat pages
+        if (strpos($hook, 'terport-chat') === false) {
+            return;
+        }
+        
+        wp_enqueue_script('jquery');
+        wp_enqueue_style('terport-chat', plugin_dir_url(__FILE__) . '../assets/css/terport-chat.css', array(), '1.0.0');
+        wp_enqueue_script('terport-chat', plugin_dir_url(__FILE__) . '../assets/js/terport-chat.js', array('jquery'), '1.0.0', true);
+        
+        wp_localize_script('terport-chat', 'terport_chat_ajax', array(
+            'ajax_url' => admin_url('admin-ajax.php'),
+            'nonce' => wp_create_nonce('terport_chat_nonce')
+        ));
+    }
+    
+    /**
      * Add admin chat pages
      */
     public function add_chat_admin_pages() {
