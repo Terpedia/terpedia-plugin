@@ -99,7 +99,7 @@ jobs:
         chmod 600 ~/.ssh/known_hosts
         
         # Configure SSH client
-        cat >> ~/.ssh/config << 'EOF'
+        cat >> ~/.ssh/config << EOF
         Host giow1015.siteground.us
           HostName giow1015.siteground.us
           Port 18765
