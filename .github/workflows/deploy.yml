@@ -121,7 +121,7 @@ jobs:
         ssh-add -l
         echo "SSH config:"
         cat ~/.ssh/config
-        ssh -o ConnectTimeout=10 giow1015.siteground.us "echo 'SSH connection successful' && pwd && ls -la www/terpedia.com/public_html/wp-content/plugins/ | head -5"
+        ssh -vvv -o ConnectTimeout=10 giow1015.siteground.us "echo 'SSH connection successful'" 2>&1 | head -20
         
     - name: Deploy plugin to production
       run: |
