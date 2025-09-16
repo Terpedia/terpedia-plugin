@@ -160,6 +160,13 @@ jobs:
         
         # Upload to server using SSH agent with enhanced options
         echo "Starting deployment to production server..."
+        echo "SSH_AUTH_SOCK: $SSH_AUTH_SOCK"
+        echo "SSH_AGENT_PID: $SSH_AGENT_PID"
+        ssh-add -l
+        
+        # Test SSH connection first
+        ssh -o ConnectTimeout=30 -o ServerAliveInterval=30 -o StrictHostKeyChecking=no -o UserKnownHostsFile=~/.ssh/known_hosts -o IdentitiesOnly=yes -o IdentityAgent=$SSH_AUTH_SOCK -p 18765 ${{ secrets.SSH_USER }}@giow1015.siteground.us "echo 'SSH test successful'"
+        
         rsync -avz --delete --timeout=300 --progress \
           -e "ssh -o ConnectTimeout=30 -o ServerAliveInterval=30 -o StrictHostKeyChecking=no -o UserKnownHostsFile=~/.ssh/known_hosts -o IdentitiesOnly=yes -o IdentityAgent=$SSH_AUTH_SOCK -p 18765" \
           deploy-temp/ ${{ secrets.SSH_USER }}@giow1015.siteground.us:www/terpedia.com/public_html/wp-content/plugins/terpedia-plugin/
