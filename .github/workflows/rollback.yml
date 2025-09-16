@@ -1,0 +1,151 @@
+name: Rollback Terpedia Plugin
+
+on:
+  workflow_dispatch:
+    inputs:
+      backup_timestamp:
+        description: 'Backup timestamp (YYYYMMDD-HHMMSS) or "latest"'
+        required: true
+        default: 'latest'
+        type: string
+
+jobs:
+  rollback:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup SSH Agent
+      run: |
+        eval "$(ssh-agent -s)"
+        echo "${{ secrets.SSH_PRIVATE_KEY }}" | ssh-add -
+        echo "SSH Agent PID: $SSH_AGENT_PID"
+        echo "SSH Auth Sock: $SSH_AUTH_SOCK"
+        ssh-add -l
+        echo "SSH keys loaded successfully"
+        
+        # Persist SSH agent environment variables for subsequent steps
+        echo "SSH_AUTH_SOCK=$SSH_AUTH_SOCK" >> $GITHUB_ENV
+        echo "SSH_AGENT_PID=$SSH_AGENT_PID" >> $GITHUB_ENV
+    
+    - name: Setup SSH configuration
+      run: |
+        mkdir -p ~/.ssh
+        chmod 700 ~/.ssh
+        
+        # Add SSH known hosts
+        ssh-keyscan -p 18765 -t rsa,ed25519 giow1015.siteground.us >> ~/.ssh/known_hosts 2>/dev/null || true
+        ssh-keyscan -p 18765 giow1015.siteground.us >> ~/.ssh/known_hosts 2>/dev/null || true
+        chmod 600 ~/.ssh/known_hosts
+        
+        # Configure SSH client
+        cat >> ~/.ssh/config << EOF
+        Host giow1015.siteground.us
+          HostName giow1015.siteground.us
+          Port 18765
+          User ${{ secrets.SSH_USER }}
+          StrictHostKeyChecking no
+          UserKnownHostsFile ~/.ssh/known_hosts
+          IdentitiesOnly yes
+          IdentityAgent $SSH_AUTH_SOCK
+          ServerAliveInterval 30
+          ServerAliveCountMax 3
+        EOF
+        chmod 600 ~/.ssh/config
+    
+    - name: Rollback plugin
+      run: |
+        # Create temporary private key file
+        echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/terpedia_deploy_key
+        chmod 600 ~/.ssh/terpedia_deploy_key
+        
+        echo "🔄 Starting rollback process..."
+        
+        ssh -o ConnectTimeout=30 -o ServerAliveInterval=30 -o StrictHostKeyChecking=no -o UserKnownHostsFile=~/.ssh/known_hosts -o IdentitiesOnly=yes -i ~/.ssh/terpedia_deploy_key -p 18765 ${{ secrets.SSH_USER }}@giow1015.siteground.us << 'EOF'
+          # Find backup directory
+          if [ "${{ github.event.inputs.backup_timestamp }}" = "latest" ]; then
+            BACKUP_DIR=$(ls -td www/terpedia.com/public_html/wp-content/plugins/terpedia-plugin-backup-* 2>/dev/null | head -1 || echo "")
+          else
+            BACKUP_DIR="www/terpedia.com/public_html/wp-content/plugins/terpedia-plugin-backup-${{ github.event.inputs.backup_timestamp }}"
+          fi
+          
+          echo "🔍 Looking for backup: $BACKUP_DIR"
+          
+          if [ -n "$BACKUP_DIR" ] && [ -d "$BACKUP_DIR" ]; then
+            echo "✅ Found backup directory: $BACKUP_DIR"
+            
+            # Deactivate current plugin
+            if command -v wp &> /dev/null; then
+              echo "🔌 Deactivating current plugin..."
+              wp plugin deactivate terpedia-plugin --path=www/terpedia.com/public_html/ --allow-root 2>/dev/null || true
+            fi
+            
+            # Create current state backup before rollback
+            CURRENT_BACKUP="www/terpedia.com/public_html/wp-content/plugins/terpedia-plugin-current-$(date +%Y%m%d-%H%M%S)"
+            if [ -d "www/terpedia.com/public_html/wp-content/plugins/terpedia-plugin" ]; then
+              cp -r www/terpedia.com/public_html/wp-content/plugins/terpedia-plugin "$CURRENT_BACKUP"
+              echo "📦 Current state backed up to: $CURRENT_BACKUP"
+            fi
+            
+            # Restore from backup
+            echo "🔄 Restoring from backup..."
+            rm -rf www/terpedia.com/public_html/wp-content/plugins/terpedia-plugin
+            cp -r "$BACKUP_DIR" www/terpedia.com/public_html/wp-content/plugins/terpedia-plugin
+            
+            # Set proper permissions
+            find www/terpedia.com/public_html/wp-content/plugins/terpedia-plugin -type f -exec chmod 644 {} \;
+            find www/terpedia.com/public_html/wp-content/plugins/terpedia-plugin -type d -exec chmod 755 {} \;
+            
+            # Reactivate restored plugin
+            if command -v wp &> /dev/null; then
+              echo "🔌 Reactivating restored plugin..."
+              wp plugin activate terpedia-plugin --path=www/terpedia.com/public_html/ --allow-root 2>/dev/null || true
+              wp cache flush --path=www/terpedia.com/public_html/ --allow-root 2>/dev/null || true
+            fi
+            
+            echo "✅ Rollback completed successfully"
+            echo "📅 Rolled back to backup: $BACKUP_DIR"
+          else
+            echo "❌ Backup directory not found: $BACKUP_DIR"
+            echo "📋 Available backups:"
+            ls -la www/terpedia.com/public_html/wp-content/plugins/terpedia-plugin-backup-* 2>/dev/null || echo "No backups found"
+            exit 1
+          fi
+        EOF
+    
+    - name: Verify rollback
+      run: |
+        echo "🔍 Verifying rollback..."
+        ssh -o ConnectTimeout=30 -o ServerAliveInterval=30 -o StrictHostKeyChecking=no -o UserKnownHostsFile=~/.ssh/known_hosts -o IdentitiesOnly=yes -i ~/.ssh/terpedia_deploy_key -p 18765 ${{ secrets.SSH_USER }}@giow1015.siteground.us << 'EOF'
+          # Check site accessibility
+          echo "🌐 Testing site accessibility after rollback..."
+          SITE_RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" https://terpedia.com/ || echo "000")
+          echo "Site response code: $SITE_RESPONSE"
+          
+          if [ "$SITE_RESPONSE" = "200" ]; then
+            echo "✅ Site is accessible after rollback"
+          else
+            echo "❌ Site still not accessible after rollback - HTTP $SITE_RESPONSE"
+          fi
+          
+          # Check plugin status
+          if command -v wp &> /dev/null; then
+            plugin_status=$(wp plugin status terpedia-plugin --path=www/terpedia.com/public_html/ --allow-root 2>/dev/null || echo "Plugin check failed")
+            echo "🔌 Plugin status: $plugin_status"
+          fi
+        EOF
+    
+    - name: Notify rollback status
+      if: always()
+      run: |
+        if [ "${{ job.status }}" = "success" ]; then
+          echo "✅ Rollback completed successfully"
+          echo "🔗 Site: https://terpedia.com/"
+          echo "📅 Rollback completed at: $(date)"
+        else
+          echo "❌ Rollback failed"
+          echo "📅 Rollback failed at: $(date)"
+        fi
+

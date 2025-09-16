@@ -171,6 +171,24 @@ jobs:
         # Test SSH connection first
         ssh -o ConnectTimeout=30 -o ServerAliveInterval=30 -o StrictHostKeyChecking=no -o UserKnownHostsFile=~/.ssh/known_hosts -o IdentitiesOnly=yes -i ~/.ssh/terpedia_deploy_key -p 18765 ${{ secrets.SSH_USER }}@giow1015.siteground.us "echo 'SSH test successful'"
         
+        # Create backup of current plugin before deployment
+        echo "📦 Creating backup of current plugin..."
+        ssh -o ConnectTimeout=30 -o ServerAliveInterval=30 -o StrictHostKeyChecking=no -o UserKnownHostsFile=~/.ssh/known_hosts -o IdentitiesOnly=yes -i ~/.ssh/terpedia_deploy_key -p 18765 ${{ secrets.SSH_USER }}@giow1015.siteground.us << 'EOF'
+          # Create backup directory with timestamp
+          BACKUP_DIR="www/terpedia.com/public_html/wp-content/plugins/terpedia-plugin-backup-$(date +%Y%m%d-%H%M%S)"
+          mkdir -p "$BACKUP_DIR"
+          
+          # Copy current plugin to backup if it exists
+          if [ -d "www/terpedia.com/public_html/wp-content/plugins/terpedia-plugin" ]; then
+            cp -r www/terpedia.com/public_html/wp-content/plugins/terpedia-plugin/* "$BACKUP_DIR/" 2>/dev/null || true
+            echo "✅ Backup created at: $BACKUP_DIR"
+            echo "BACKUP_DIR=$BACKUP_DIR" > /tmp/backup_info.txt
+          else
+            echo "ℹ️ No existing plugin found, skipping backup"
+            echo "BACKUP_DIR=" > /tmp/backup_info.txt
+          fi
+        EOF
+        
         rsync -avz --delete --timeout=300 --progress \
           -e "ssh -o ConnectTimeout=30 -o ServerAliveInterval=30 -o StrictHostKeyChecking=no -o UserKnownHostsFile=~/.ssh/known_hosts -o IdentitiesOnly=yes -i ~/.ssh/terpedia_deploy_key -p 18765" \
           deploy-temp/ ${{ secrets.SSH_USER }}@giow1015.siteground.us:www/terpedia.com/public_html/wp-content/plugins/terpedia-plugin/
@@ -208,6 +226,80 @@ jobs:
           
           echo "🚀 Plugin deployment completed successfully at $(date)"
         EOF
+        
+        # Check site health after deployment
+        echo "🏥 Checking site health after deployment..."
+        ssh -o ConnectTimeout=30 -o ServerAliveInterval=30 -o StrictHostKeyChecking=no -o UserKnownHostsFile=~/.ssh/known_hosts -o IdentitiesOnly=yes -i ~/.ssh/terpedia_deploy_key -p 18765 ${{ secrets.SSH_USER }}@giow1015.siteground.us << 'EOF'
+          # Test site accessibility
+          echo "🌐 Testing site accessibility..."
+          SITE_RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" https://terpedia.com/ || echo "000")
+          echo "Site response code: $SITE_RESPONSE"
+          
+          if [ "$SITE_RESPONSE" = "200" ]; then
+            echo "✅ Site is accessible and responding normally"
+            echo "HEALTH_CHECK_PASSED=true" > /tmp/health_check.txt
+          else
+            echo "❌ Site health check failed - HTTP $SITE_RESPONSE"
+            echo "HEALTH_CHECK_PASSED=false" > /tmp/health_check.txt
+          fi
+          
+          # Check for WordPress errors
+          if command -v wp &> /dev/null; then
+            echo "🔍 Checking for WordPress errors..."
+            WP_ERRORS=$(wp eval 'if (function_exists("error_get_last")) { $error = error_get_last(); if ($error && $error["type"] >= E_ERROR) { echo "FATAL_ERROR"; } else { echo "NO_ERRORS"; } } else { echo "NO_ERRORS"; }' --path=www/terpedia.com/public_html/ --allow-root 2>/dev/null || echo "WP_CLI_ERROR")
+            echo "WordPress error check: $WP_ERRORS"
+            
+            if [ "$WP_ERRORS" = "FATAL_ERROR" ]; then
+              echo "❌ WordPress fatal errors detected"
+              echo "HEALTH_CHECK_PASSED=false" > /tmp/health_check.txt
+            fi
+          fi
+        EOF
+        
+        # Check if health check passed and rollback if needed
+        echo "🔍 Evaluating deployment health..."
+        HEALTH_STATUS=$(ssh -o ConnectTimeout=30 -o ServerAliveInterval=30 -o StrictHostKeyChecking=no -o UserKnownHostsFile=~/.ssh/known_hosts -o IdentitiesOnly=yes -i ~/.ssh/terpedia_deploy_key -p 18765 ${{ secrets.SSH_USER }}@giow1015.siteground.us "cat /tmp/health_check.txt 2>/dev/null | grep HEALTH_CHECK_PASSED | cut -d'=' -f2" || echo "false")
+        
+        if [ "$HEALTH_STATUS" = "false" ]; then
+          echo "🚨 Site health check failed! Initiating rollback..."
+          
+          # Rollback to backup
+          ssh -o ConnectTimeout=30 -o ServerAliveInterval=30 -o StrictHostKeyChecking=no -o UserKnownHostsFile=~/.ssh/known_hosts -o IdentitiesOnly=yes -i ~/.ssh/terpedia_deploy_key -p 18765 ${{ secrets.SSH_USER }}@giow1015.siteground.us << 'EOF'
+            # Get backup directory
+            BACKUP_DIR=$(cat /tmp/backup_info.txt 2>/dev/null | grep BACKUP_DIR | cut -d'=' -f2 || echo "")
+            
+            if [ -n "$BACKUP_DIR" ] && [ -d "$BACKUP_DIR" ]; then
+              echo "🔄 Rolling back to backup: $BACKUP_DIR"
+              
+              # Deactivate current plugin
+              if command -v wp &> /dev/null; then
+                wp plugin deactivate terpedia-plugin --path=www/terpedia.com/public_html/ --allow-root 2>/dev/null || true
+              fi
+              
+              # Restore from backup
+              rm -rf www/terpedia.com/public_html/wp-content/plugins/terpedia-plugin
+              cp -r "$BACKUP_DIR" www/terpedia.com/public_html/wp-content/plugins/terpedia-plugin
+              
+              # Reactivate restored plugin
+              if command -v wp &> /dev/null; then
+                wp plugin activate terpedia-plugin --path=www/terpedia.com/public_html/ --allow-root 2>/dev/null || true
+              fi
+              
+              echo "✅ Rollback completed successfully"
+            else
+              echo "❌ No backup found, cannot rollback"
+              echo "🔄 Deactivating problematic plugin..."
+              if command -v wp &> /dev/null; then
+                wp plugin deactivate terpedia-plugin --path=www/terpedia.com/public_html/ --allow-root 2>/dev/null || true
+              fi
+            fi
+          EOF
+          
+          echo "❌ Deployment failed health check and rollback was attempted"
+          exit 1
+        else
+          echo "✅ Site health check passed - deployment successful"
+        fi
         
     - name: Verify deployment
       run: |
