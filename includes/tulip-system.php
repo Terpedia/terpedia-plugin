@@ -241,6 +241,16 @@ class TerpediaTULIPSystem {
         global $wpdb;
         
         $facts_table = $wpdb->prefix . 'tulip_facts';
+        
+        // Check if table exists
+        $table_exists = $wpdb->get_var("SHOW TABLES LIKE '$facts_table'") == $facts_table;
+        
+        if (!$table_exists) {
+            echo '<div class="wrap"><h1>🌐 TULIP - Terpene Universal Link & Information Protocol</h1>';
+            echo '<div class="notice notice-error"><p><strong>Error:</strong> TULIP database tables have not been created yet. Please deactivate and reactivate the plugin to create the required tables.</p></div></div>';
+            return;
+        }
+        
         $facts = $wpdb->get_results("SELECT * FROM $facts_table ORDER BY created_at DESC LIMIT 50");
         
         ?>
@@ -446,8 +456,22 @@ class TerpediaTULIPSystem {
     public function process_tulip_links($content) {
         global $wpdb;
         
+        // Check if TULIP facts table exists
+        $facts_table = $wpdb->prefix . 'tulip_facts';
+        $table_exists = $wpdb->get_var("SHOW TABLES LIKE '$facts_table'") == $facts_table;
+        
+        if (!$table_exists) {
+            // Table doesn't exist, return content unchanged
+            return $content;
+        }
+        
         // Get all verified TULIP facts
         $facts = $wpdb->get_results("SELECT fact_id, title, terpene_name FROM {$wpdb->prefix}tulip_facts WHERE status = 'verified'");
+        
+        if (!$facts) {
+            // No facts found or query failed, return content unchanged
+            return $content;
+        }
         
         foreach ($facts as $fact) {
             $terpene = $fact->terpene_name;
@@ -479,6 +503,15 @@ class TerpediaTULIPSystem {
         }
         
         global $wpdb;
+        
+        // Check if table exists
+        $facts_table = $wpdb->prefix . 'tulip_facts';
+        $table_exists = $wpdb->get_var("SHOW TABLES LIKE '$facts_table'") == $facts_table;
+        
+        if (!$table_exists) {
+            return '';
+        }
+        
         $fact = $wpdb->get_row($wpdb->prepare(
             "SELECT * FROM {$wpdb->prefix}tulip_facts WHERE fact_id = %s AND status = 'verified'",
             $atts['id']
