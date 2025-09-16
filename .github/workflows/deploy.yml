@@ -42,9 +42,34 @@ jobs:
       with:
         ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
         
-    - name: Add SSH known hosts
+    - name: Setup SSH configuration
       run: |
-        ssh-keyscan -p 18765 giow1015.siteground.us >> ~/.ssh/known_hosts
+        mkdir -p ~/.ssh
+        chmod 700 ~/.ssh
+        
+        # Add SSH known hosts with proper error handling
+        ssh-keyscan -p 18765 -t rsa,ed25519 giow1015.siteground.us >> ~/.ssh/known_hosts 2>/dev/null || true
+        ssh-keyscan -p 18765 giow1015.siteground.us >> ~/.ssh/known_hosts 2>/dev/null || true
+        chmod 600 ~/.ssh/known_hosts
+        
+        # Configure SSH client
+        cat >> ~/.ssh/config << 'EOF'
+        Host giow1015.siteground.us
+          HostName giow1015.siteground.us
+          Port 18765
+          User ${{ secrets.SSH_USER }}
+          StrictHostKeyChecking no
+          UserKnownHostsFile ~/.ssh/known_hosts
+          IdentitiesOnly yes
+          ServerAliveInterval 30
+          ServerAliveCountMax 3
+        EOF
+        chmod 600 ~/.ssh/config
+        
+    - name: Test SSH Connection
+      run: |
+        echo "Testing SSH connection..."
+        ssh -o ConnectTimeout=10 ${{ secrets.SSH_USER }}@giow1015.siteground.us "echo 'SSH connection successful' && pwd && ls -la www/terpedia.com/public_html/wp-content/plugins/ | head -5"
         
     - name: Deploy plugin to production
       run: |
@@ -57,11 +82,16 @@ jobs:
         # Create deployment package from clean directory
         tar -czf terpedia-plugin.tar.gz -C deploy-temp .
         
-        # Upload to server using SSH agent
-        rsync -az --delete -e "ssh -p 18765" deploy-temp/ ${{ secrets.SSH_USER }}@giow1015.siteground.us:www/terpedia.com/public_html/wp-content/plugins/terpedia-plugin/
+        # Upload to server using SSH agent with enhanced options
+        echo "Starting deployment to production server..."
+        rsync -avz --delete --timeout=300 --progress \
+          -e "ssh -o ConnectTimeout=30 -o ServerAliveInterval=30" \
+          deploy-temp/ ${{ secrets.SSH_USER }}@giow1015.siteground.us:www/terpedia.com/public_html/wp-content/plugins/terpedia-plugin/
         
-        # Set proper permissions and activate via SSH
-        ssh -p 18765 ${{ secrets.SSH_USER }}@giow1015.siteground.us << 'EOF'
+        echo "Upload completed. Setting permissions and activating plugin..."
+        
+        # Set proper permissions and activate via SSH with timeout
+        ssh -o ConnectTimeout=30 -o ServerAliveInterval=30 ${{ secrets.SSH_USER }}@giow1015.siteground.us << 'EOF'
           # Navigate to plugin directory
           cd www/terpedia.com/public_html/wp-content/plugins/terpedia-plugin
           
@@ -81,7 +111,8 @@ jobs:
         
     - name: Verify deployment
       run: |
-        ssh -p 18765 ${{ secrets.SSH_USER }}@giow1015.siteground.us << 'EOF'
+        echo "Verifying deployment..."
+        ssh -o ConnectTimeout=30 ${{ secrets.SSH_USER }}@giow1015.siteground.us << 'EOF'
           # Check if plugin files exist
           if [ -f "www/terpedia.com/public_html/wp-content/plugins/terpedia-plugin/terpedia.php" ]; then
             echo "✅ Plugin files deployed successfully"
@@ -106,7 +137,8 @@ jobs:
 
     - name: Run plugin health checks
       run: |
-        ssh -p 18765 ${{ secrets.SSH_USER }}@giow1015.siteground.us << 'EOF'
+        echo "Running health checks..."
+        ssh -o ConnectTimeout=30 ${{ secrets.SSH_USER }}@giow1015.siteground.us << 'EOF'
           if command -v wp &> /dev/null; then
             # Check for PHP errors
             echo "🔍 Checking for PHP errors..."
