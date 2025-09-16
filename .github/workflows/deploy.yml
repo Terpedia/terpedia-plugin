@@ -70,7 +70,8 @@ jobs:
         git config --local user.name "GitHub Action"
         git add terpedia.php VERSION
         git commit -m "Bump plugin version to $(php version-manager.php current)" || exit 0
-        git push origin main
+        git pull --rebase origin main || git reset --hard origin/main
+        git push origin main || echo "Push failed, continuing with deployment"
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       
