@@ -71,7 +71,7 @@ class Terpedia_Force_CPT_Refresh {
         // Force re-registration of all our CPTs
         if (class_exists('Terpedia_Enhanced_Terport_Editor')) {
             $terport_editor = new Terpedia_Enhanced_Terport_Editor();
-            $terport_editor->init();
+            $terport_editor->register_terport_cpt();
         }
         
         if (class_exists('Terpedia_Enhanced_Terproducts_System')) {
