@@ -71,7 +71,7 @@ class Terpedia_CPT_Template_Management {
                 ),
                 'public' => false,
                 'show_ui' => true,
-                'show_in_menu' => 'terpedia-settings', // Show under Terpedia menu
+                'show_in_menu' => 'terpedia-main', // Show under Terpedia menu
                 'show_in_rest' => true, // Enable Gutenberg
                 'supports' => array('title', 'editor', 'custom-fields'),
                 'capability_type' => 'post',

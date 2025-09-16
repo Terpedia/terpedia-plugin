@@ -53,7 +53,7 @@ class TerpediaCycEncyclopediaManager {
             ),
             'public' => false,
             'show_ui' => true,
-            'show_in_menu' => 'terpedia-settings', // Show under Terpedia menu
+            'show_in_menu' => 'terpedia-main', // Show under Terpedia menu
             'supports' => array('title', 'editor', 'custom-fields', 'thumbnail'),
             'capability_type' => 'post',
             'has_archive' => false,

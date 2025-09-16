@@ -67,7 +67,7 @@ class Terpedia_Enhanced_Terport_Editor {
             ),
             'public' => true,
             'show_ui' => true,
-            'show_in_menu' => 'terpedia-agents',
+            'show_in_menu' => true,
             'menu_position' => 20,
             'menu_icon' => 'dashicons-analytics',
             'supports' => array('title', 'editor', 'excerpt', 'thumbnail', 'custom-fields', 'author'),
