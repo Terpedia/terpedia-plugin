@@ -188,9 +188,22 @@ jobs:
           
           # Activate plugin and clear cache if WP-CLI is available
           if command -v wp &> /dev/null; then
+            echo "🔌 Activating terpedia-plugin..."
             wp plugin activate terpedia-plugin --path=www/terpedia.com/public_html/ --allow-root
+            if [ $? -eq 0 ]; then
+              echo "✅ Plugin activated successfully"
+            else
+              echo "❌ Plugin activation failed"
+              exit 1
+            fi
+            
+            echo "🧹 Clearing WordPress cache..."
             wp cache flush --path=www/terpedia.com/public_html/ --allow-root
+            
+            echo "🔄 Flushing rewrite rules..."
             wp rewrite flush --path=www/terpedia.com/public_html/ --allow-root
+          else
+            echo "⚠️ WP-CLI not available, skipping plugin activation"
           fi
           
           echo "🚀 Plugin deployment completed successfully at $(date)"
