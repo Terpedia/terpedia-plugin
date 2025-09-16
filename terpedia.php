@@ -124,6 +124,7 @@ class TerpediaAI {
             'includes/cpt-template-management.php',
             'includes/veterinary-terpene-templates.php',
             'includes/version-endpoint.php',
+            'includes/force-cpt-refresh.php',
         );
         
         foreach ($includes as $file) {
