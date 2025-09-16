@@ -454,6 +454,70 @@ class TerpediaTULIPSystem {
      * Process content to add TULIP links
      */
     public function process_tulip_links($content) {
+        // Try SPARQL endpoint first, fallback to MySQL
+        $facts = $this->get_facts_from_sparql();
+        
+        if (!$facts || !$facts['success']) {
+            // Fallback to MySQL
+            $facts = $this->get_facts_from_mysql();
+        } else {
+            $facts = $facts['data']['results']['bindings'] ?? array();
+        }
+        
+        if (empty($facts)) {
+            return $content;
+        }
+        
+        foreach ($facts as $fact) {
+            // Handle both SPARQL and MySQL result formats
+            if (isset($fact['terpene']['value'])) {
+                // SPARQL format
+                $terpene = $this->extract_terpene_name_from_uri($fact['terpene']['value']);
+                $fact_id = $this->extract_fact_id_from_uri($fact['fact']['value']);
+                $title = $fact['title']['value'] ?? '';
+            } else {
+                // MySQL format
+                $terpene = $fact->terpene_name ?? '';
+                $fact_id = $fact->fact_id ?? '';
+                $title = $fact->title ?? '';
+            }
+            
+            if (empty($terpene)) continue;
+            
+            // Create pattern to match terpene mentions
+            $pattern = '/\b' . preg_quote($terpene, '/') . '\b/i';
+            
+            // Replace with TULIP link
+            $replacement = '<span class="tulip-link" data-fact-id="' . esc_attr($fact_id) . '" title="' . esc_attr($title) . '">' . $terpene . '</span>';
+            
+            $content = preg_replace($pattern, $replacement, $content, 1); // Only replace first occurrence
+        }
+        
+        return $content;
+    }
+    
+    /**
+     * Get facts from SPARQL endpoint
+     */
+    private function get_facts_from_sparql() {
+        if (!class_exists('TerpediaSPARQLMigration')) {
+            require_once plugin_dir_path(__FILE__) . 'sparql-migration.php';
+        }
+        
+        $sparql = new TerpediaSPARQLMigration();
+        
+        $filters = array(
+            'min_confidence' => 0.8,
+            'limit' => 100
+        );
+        
+        return $sparql->get_facts_from_sparql($filters);
+    }
+    
+    /**
+     * Get facts from MySQL (fallback)
+     */
+    private function get_facts_from_mysql() {
         global $wpdb;
         
         // Check if TULIP facts table exists
@@ -461,32 +525,28 @@ class TerpediaTULIPSystem {
         $table_exists = $wpdb->get_var("SHOW TABLES LIKE '$facts_table'") == $facts_table;
         
         if (!$table_exists) {
-            // Table doesn't exist, return content unchanged
-            return $content;
+            return array();
         }
         
         // Get all verified TULIP facts
-        $facts = $wpdb->get_results("SELECT fact_id, title, terpene_name FROM {$wpdb->prefix}tulip_facts WHERE status = 'verified'");
-        
-        if (!$facts) {
-            // No facts found or query failed, return content unchanged
-            return $content;
-        }
-        
-        foreach ($facts as $fact) {
-            $terpene = $fact->terpene_name;
-            if (empty($terpene)) continue;
-            
-            // Create pattern to match terpene mentions
-            $pattern = '/\b' . preg_quote($terpene, '/') . '\b/i';
-            
-            // Replace with TULIP link
-            $replacement = '<span class="tulip-link" data-fact-id="' . esc_attr($fact->fact_id) . '" title="' . esc_attr($fact->title) . '">' . $terpene . '</span>';
-            
-            $content = preg_replace($pattern, $replacement, $content, 1); // Only replace first occurrence
-        }
-        
-        return $content;
+        return $wpdb->get_results("SELECT fact_id, title, terpene_name FROM {$wpdb->prefix}tulip_facts WHERE status = 'verified'");
+    }
+    
+    /**
+     * Extract terpene name from SPARQL URI
+     */
+    private function extract_terpene_name_from_uri($uri) {
+        $parts = explode('#', $uri);
+        return end($parts);
+    }
+    
+    /**
+     * Extract fact ID from SPARQL URI
+     */
+    private function extract_fact_id_from_uri($uri) {
+        $parts = explode('#', $uri);
+        $fact_part = end($parts);
+        return str_replace('fact_', '', $fact_part);
     }
     
     /**
