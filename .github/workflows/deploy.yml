@@ -188,9 +188,9 @@ jobs:
           
           # Activate plugin and clear cache if WP-CLI is available
           if command -v wp &> /dev/null; then
-            wp plugin activate terpedia-plugin --path=~/www/terpedia.com/public_html/ --allow-root
-            wp cache flush --path=~/www/terpedia.com/public_html/ --allow-root
-            wp rewrite flush --path=~/www/terpedia.com/public_html/ --allow-root
+            wp plugin activate terpedia-plugin --path=www/terpedia.com/public_html/ --allow-root
+            wp cache flush --path=www/terpedia.com/public_html/ --allow-root
+            wp rewrite flush --path=www/terpedia.com/public_html/ --allow-root
           fi
           
           echo "🚀 Plugin deployment completed successfully at $(date)"
@@ -240,11 +240,11 @@ jobs:
           
           # Check WordPress plugin status if WP-CLI is available
           if command -v wp &> /dev/null; then
-            plugin_status=$(wp plugin status terpedia-plugin --path=~/www/terpedia.com/public_html/ --allow-root)
+            plugin_status=$(wp plugin status terpedia-plugin --path=www/terpedia.com/public_html/ --allow-root)
             echo "🔌 Plugin status: $plugin_status"
             
             # Check if custom post types are registered
-            post_types=$(wp post-type list --field=name --path=~/www/terpedia.com/public_html/ --allow-root | grep -E "(terpene|podcast|research)" || echo "No custom post types found")
+            post_types=$(wp post-type list --field=name --path=www/terpedia.com/public_html/ --allow-root | grep -E "(terpene|podcast|research)" || echo "No custom post types found")
             echo "📋 Custom post types: $post_types"
           fi
         EOF
@@ -256,15 +256,15 @@ jobs:
           if command -v wp &> /dev/null; then
             # Check for PHP errors
             echo "🔍 Checking for PHP errors..."
-            wp eval 'if (function_exists("terpedia_encyclopedia_shortcode")) { echo "✅ Plugin functions loaded\n"; } else { echo "❌ Plugin functions not loaded\n"; }' --path=~/www/terpedia.com/public_html/ --allow-root
+            wp eval 'if (function_exists("terpedia_encyclopedia_shortcode")) { echo "✅ Plugin functions loaded\n"; } else { echo "❌ Plugin functions not loaded\n"; }' --path=www/terpedia.com/public_html/ --allow-root
             
             # Verify database tables exist (if plugin creates custom tables)
             echo "🗄️ Checking database integration..."
-            wp eval 'global $wpdb; $tables = $wpdb->get_results("SHOW TABLES LIKE \"%terpedia%\""); echo count($tables) > 0 ? "✅ Database tables present\n" : "ℹ️ No custom tables found\n";' --path=~/www/terpedia.com/public_html/ --allow-root
+            wp eval 'global $wpdb; $tables = $wpdb->get_results("SHOW TABLES LIKE \"%terpedia%\""); echo count($tables) > 0 ? "✅ Database tables present\n" : "ℹ️ No custom tables found\n";' --path=www/terpedia.com/public_html/ --allow-root
             
             # Test shortcode functionality
             echo "📝 Testing shortcode functionality..."
-            wp eval 'echo do_shortcode("[terpedia_encyclopedia]") ? "✅ Shortcodes working\n" : "❌ Shortcode issues\n";' --path=~/www/terpedia.com/public_html/ --allow-root
+            wp eval 'echo do_shortcode("[terpedia_encyclopedia]") ? "✅ Shortcodes working\n" : "❌ Shortcode issues\n";' --path=www/terpedia.com/public_html/ --allow-root
           fi
         EOF
 
