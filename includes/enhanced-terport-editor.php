@@ -45,11 +45,7 @@ class Terpedia_Enhanced_Terport_Editor {
      * This method is kept for compatibility but the registration is disabled
      */
     public function register_terport_cpt() {
-        // Terport post type is registered in custom-post-types.php
-        // to avoid conflicts, this registration is disabled
-        return;
-        
-        /*
+        // Register Terport post type
         register_post_type('terport', array(
             'labels' => array(
                 'name' => 'Terports',
@@ -77,7 +73,6 @@ class Terpedia_Enhanced_Terport_Editor {
             'capability_type' => 'post',
             'map_meta_cap' => true
         ));
-        */
     }
     
     /**
