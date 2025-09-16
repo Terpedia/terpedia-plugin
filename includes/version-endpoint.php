@@ -53,38 +53,54 @@ class Terpedia_Version_Endpoint {
      * Get comprehensive version information
      */
     public function get_version_info($request) {
-        // Include version manager if not already loaded
-        if (!class_exists('TerpediaPluginVersionManager')) {
-            require_once TERPEDIA_AI_PATH . 'version-manager.php';
+        // Safe path resolution
+        $plugin_dir = dirname(dirname(__FILE__));
+        
+        // Include version manager safely
+        $version_manager_path = $plugin_dir . '/version-manager.php';
+        if (file_exists($version_manager_path) && !class_exists('TerpediaPluginVersionManager')) {
+            require_once $version_manager_path;
         }
         
-        $version = TerpediaPluginVersionManager::getCurrentVersion();
-        
-        // Get plugin data
-        if (!function_exists('get_file_data')) {
-            require_once ABSPATH . 'wp-includes/functions.php';
+        // Get version safely
+        if (class_exists('TerpediaPluginVersionManager')) {
+            $version = TerpediaPluginVersionManager::getCurrentVersion();
+        } else {
+            $version = '3.11.5'; // Fallback version
         }
         
-        $plugin_data = get_file_data(TERPEDIA_AI_PATH . 'terpedia.php', array(
-            'Name' => 'Plugin Name',
-            'Version' => 'Version',
-            'Description' => 'Description',
-            'Author' => 'Author',
-            'PluginURI' => 'Plugin URI'
-        ), 'plugin');
+        // Get plugin data safely
+        $plugin_file = $plugin_dir . '/terpedia.php';
+        $plugin_data = array();
+        
+        if (file_exists($plugin_file)) {
+            $plugin_data = get_file_data($plugin_file, array(
+                'Name' => 'Plugin Name',
+                'Version' => 'Version',
+                'Description' => 'Description',
+                'Author' => 'Author',
+                'PluginURI' => 'Plugin URI'
+            ), 'plugin');
+        }
+        
+        // Check if plugin is active (safely)
+        $is_active = false;
+        if (function_exists('is_plugin_active')) {
+            $is_active = is_plugin_active(plugin_basename($plugin_file));
+        }
         
         return rest_ensure_response(array(
-            'plugin_name' => $plugin_data['Name'] ?: 'Terpedia',
+            'plugin_name' => isset($plugin_data['Name']) ? $plugin_data['Name'] : 'Terpedia',
             'version' => $version,
-            'header_version' => $plugin_data['Version'], // Version from plugin header
-            'description' => $plugin_data['Description'] ?: 'Comprehensive terpene encyclopedia with AI experts',
-            'author' => $plugin_data['Author'] ?: 'Terpedia Team',
-            'plugin_uri' => $plugin_data['PluginURI'] ?: 'https://terpedia.com',
+            'header_version' => isset($plugin_data['Version']) ? $plugin_data['Version'] : $version,
+            'description' => isset($plugin_data['Description']) ? $plugin_data['Description'] : 'Comprehensive terpene encyclopedia with AI experts',
+            'author' => isset($plugin_data['Author']) ? $plugin_data['Author'] : 'Terpedia Team',
+            'plugin_uri' => isset($plugin_data['PluginURI']) ? $plugin_data['PluginURI'] : 'https://terpedia.com',
             'wordpress_version' => get_bloginfo('version'),
             'php_version' => PHP_VERSION,
-            'is_active' => is_plugin_active(plugin_basename(TERPEDIA_AI_PATH . 'terpedia.php')),
+            'is_active' => $is_active,
             'timestamp' => current_time('mysql'),
-            'build_date' => date('Y-m-d H:i:s', filemtime(TERPEDIA_AI_PATH . 'terpedia.php')),
+            'build_date' => file_exists($plugin_file) ? date('Y-m-d H:i:s', filemtime($plugin_file)) : 'Unknown',
             'endpoints' => array(
                 'version_info' => home_url('/wp-json/terpedia/v1/version'),
                 'version_number' => home_url('/wp-json/terpedia/v1/version/number'),
@@ -97,12 +113,21 @@ class Terpedia_Version_Endpoint {
      * Get version number only (plain text)
      */
     public function get_version_number_only($request) {
-        // Include version manager if not already loaded
-        if (!class_exists('TerpediaPluginVersionManager')) {
-            require_once TERPEDIA_AI_PATH . 'version-manager.php';
+        // Safe path resolution
+        $plugin_dir = dirname(dirname(__FILE__));
+        
+        // Include version manager safely
+        $version_manager_path = $plugin_dir . '/version-manager.php';
+        if (file_exists($version_manager_path) && !class_exists('TerpediaPluginVersionManager')) {
+            require_once $version_manager_path;
         }
         
-        $version = TerpediaPluginVersionManager::getCurrentVersion();
+        // Get version safely
+        if (class_exists('TerpediaPluginVersionManager')) {
+            $version = TerpediaPluginVersionManager::getCurrentVersion();
+        } else {
+            $version = '3.11.5'; // Fallback version
+        }
         
         return new WP_REST_Response($version, 200, array(
             'Content-Type' => 'text/plain'
@@ -113,20 +138,34 @@ class Terpedia_Version_Endpoint {
      * Render HTML version page at /version
      */
     private function render_version_page() {
-        // Include version manager if not already loaded
-        if (!class_exists('TerpediaPluginVersionManager')) {
-            require_once TERPEDIA_AI_PATH . 'version-manager.php';
+        // Safe path resolution
+        $plugin_dir = dirname(dirname(__FILE__));
+        
+        // Include version manager safely
+        $version_manager_path = $plugin_dir . '/version-manager.php';
+        if (file_exists($version_manager_path) && !class_exists('TerpediaPluginVersionManager')) {
+            require_once $version_manager_path;
         }
         
-        $version = TerpediaPluginVersionManager::getCurrentVersion();
+        // Get version safely
+        if (class_exists('TerpediaPluginVersionManager')) {
+            $version = TerpediaPluginVersionManager::getCurrentVersion();
+        } else {
+            $version = '3.11.5'; // Fallback version
+        }
         
-        // Get plugin data
-        $plugin_data = get_file_data(TERPEDIA_AI_PATH . 'terpedia.php', array(
-            'Name' => 'Plugin Name',
-            'Version' => 'Version',
-            'Description' => 'Description',
-            'Author' => 'Author'
-        ), 'plugin');
+        // Get plugin data safely
+        $plugin_file = $plugin_dir . '/terpedia.php';
+        $plugin_data = array();
+        
+        if (file_exists($plugin_file)) {
+            $plugin_data = get_file_data($plugin_file, array(
+                'Name' => 'Plugin Name',
+                'Version' => 'Version',
+                'Description' => 'Description',
+                'Author' => 'Author'
+            ), 'plugin');
+        }
         
         // Simple HTML page
         header('Content-Type: text/html; charset=utf-8');
