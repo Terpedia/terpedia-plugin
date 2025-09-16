@@ -58,6 +58,43 @@ jobs:
         
         echo "🎯 Version validation completed successfully"
         
+    - name: Validate PHP syntax
+      run: |
+        echo "🔍 Validating PHP syntax before deployment..."
+        
+        # Check main plugin file
+        echo "📄 Checking main plugin file: terpedia.php"
+        php -l terpedia.php
+        if [ $? -ne 0 ]; then
+          echo "❌ PHP syntax error in terpedia.php"
+          exit 1
+        fi
+        
+        # Check all PHP files in includes directory
+        echo "📁 Checking PHP files in includes directory..."
+        for file in includes/*.php; do
+          if [ -f "$file" ]; then
+            echo "  Checking: $file"
+            php -l "$file"
+            if [ $? -ne 0 ]; then
+              echo "❌ PHP syntax error in $file"
+              exit 1
+            fi
+          fi
+        done
+        
+        # Check PHP files in blocks directory (if any)
+        if [ -d "blocks" ]; then
+          echo "📁 Checking PHP files in blocks directory..."
+          find blocks -name "*.php" -exec php -l {} \;
+          if [ $? -ne 0 ]; then
+            echo "❌ PHP syntax error in blocks directory"
+            exit 1
+          fi
+        fi
+        
+        echo "✅ All PHP files have valid syntax"
+        
     - name: Bump version automatically
       run: |
         echo "Current version: $(php version-manager.php current)"

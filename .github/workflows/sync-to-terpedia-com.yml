@@ -18,6 +18,74 @@ jobs:
       with:
         fetch-depth: 0
         submodules: recursive
+        
+    - name: Setup PHP
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: '8.2'
+        
+    - name: Validate plugin version
+      run: |
+        echo "🔍 Validating plugin version information..."
+        PLUGIN_VERSION=$(grep "Version:" terpedia.php | head -1 | sed 's/.*Version: *//' | tr -d ' ')
+        VERSION_FILE=$(cat VERSION 2>/dev/null || echo "not found")
+        echo "📦 Plugin header version: $PLUGIN_VERSION"
+        echo "📄 VERSION file content: $VERSION_FILE"
+        if [[ $PLUGIN_VERSION =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+          echo "✅ Plugin version format is valid: $PLUGIN_VERSION"
+        else
+          echo "❌ Invalid plugin version format: $PLUGIN_VERSION"
+          echo "Expected format: X.Y.Z (e.g., 3.11.13)"
+          exit 1
+        fi
+        if [ "$PLUGIN_VERSION" = "$VERSION_FILE" ]; then
+          echo "✅ VERSION file matches plugin header: $PLUGIN_VERSION"
+        else
+          echo "⚠️ VERSION file mismatch:"
+          echo "  Plugin header: $PLUGIN_VERSION"
+          echo "  VERSION file: $VERSION_FILE"
+          echo "Continuing with plugin header version..."
+        fi
+        echo "TERPEDIA_VERSION=$PLUGIN_VERSION" >> $GITHUB_ENV
+        echo "TERPEDIA_VERSION_FILE=$VERSION_FILE" >> $GITHUB_ENV
+        echo "🎯 Version validation completed successfully"
+        
+    - name: Validate PHP syntax
+      run: |
+        echo "🔍 Validating PHP syntax before deployment..."
+        
+        # Check main plugin file
+        echo "📄 Checking main plugin file: terpedia.php"
+        php -l terpedia.php
+        if [ $? -ne 0 ]; then
+          echo "❌ PHP syntax error in terpedia.php"
+          exit 1
+        fi
+        
+        # Check all PHP files in includes directory
+        echo "📁 Checking PHP files in includes directory..."
+        for file in includes/*.php; do
+          if [ -f "$file" ]; then
+            echo "  Checking: $file"
+            php -l "$file"
+            if [ $? -ne 0 ]; then
+              echo "❌ PHP syntax error in $file"
+              exit 1
+            fi
+          fi
+        done
+        
+        # Check PHP files in blocks directory (if any)
+        if [ -d "blocks" ]; then
+          echo "📁 Checking PHP files in blocks directory..."
+          find blocks -name "*.php" -exec php -l {} \;
+          if [ $? -ne 0 ]; then
+            echo "❌ PHP syntax error in blocks directory"
+            exit 1
+          fi
+        fi
+        
+        echo "✅ All PHP files have valid syntax"
     - name: Trigger WordPress deployer webhook
       if: env.WEBHOOK_URL != ''
       run: |
@@ -55,6 +123,8 @@ jobs:
         echo "🎉 Terpedia Plugin deployment completed!"
         echo "📅 Sync completed at: $(date)"
         echo "🔗 Plugin URL: https://terpedia.com/wp-content/plugins/terpedia-plugin/"
+        echo "📦 Deployed version: ${{ env.TERPEDIA_VERSION }}"
+        echo "📄 Version file: ${{ env.TERPEDIA_VERSION_FILE }}"
     
     - name: Notify failure
       if: failure()
