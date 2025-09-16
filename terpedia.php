@@ -112,7 +112,6 @@ class TerpediaAI {
         // Include TULIP system and other core features
         $includes = array(
             'includes/tulip-system.php',
-            'includes/sparql-migration.php',
             'includes/cpt-archive-system.php',
             'includes/terport-openrouter-integration.php',
             'includes/field-based-template-system.php',
