@@ -125,6 +125,30 @@ jobs:
         
     - name: Deploy plugin to production
       run: |
+        # Ensure SSH config is available
+        mkdir -p ~/.ssh
+        chmod 700 ~/.ssh
+        
+        # Add SSH known hosts with proper error handling
+        ssh-keyscan -p 18765 -t rsa,ed25519 giow1015.siteground.us >> ~/.ssh/known_hosts 2>/dev/null || true
+        ssh-keyscan -p 18765 giow1015.siteground.us >> ~/.ssh/known_hosts 2>/dev/null || true
+        chmod 600 ~/.ssh/known_hosts
+        
+        # Configure SSH client
+        cat >> ~/.ssh/config << EOF
+        Host giow1015.siteground.us
+          HostName giow1015.siteground.us
+          Port 18765
+          User ${{ secrets.SSH_USER }}
+          StrictHostKeyChecking no
+          UserKnownHostsFile ~/.ssh/known_hosts
+          IdentitiesOnly yes
+          IdentityAgent $SSH_AUTH_SOCK
+          ServerAliveInterval 30
+          ServerAliveCountMax 3
+        EOF
+        chmod 600 ~/.ssh/config
+        
         # Create clean deployment directory
         mkdir -p deploy-temp
         
