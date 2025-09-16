@@ -58,12 +58,12 @@ jobs:
         tar -czf terpedia-plugin.tar.gz -C deploy-temp .
         
         # Upload to server using SSH agent
-        rsync -az --delete -e "ssh -p 18765" deploy-temp/ ${{ secrets.SSH_USER }}@giow1015.siteground.us:~/public_html/wp-content/plugins/terpedia/
+        rsync -az --delete -e "ssh -p 18765" deploy-temp/ ${{ secrets.SSH_USER }}@giow1015.siteground.us:www/terpedia.com/public_html/wp-content/plugins/terpedia-plugin/
         
         # Set proper permissions and activate via SSH
         ssh -p 18765 ${{ secrets.SSH_USER }}@giow1015.siteground.us << 'EOF'
           # Navigate to plugin directory
-          cd ~/public_html/wp-content/plugins/terpedia
+          cd www/terpedia.com/public_html/wp-content/plugins/terpedia-plugin
           
           # Set proper permissions
           find . -type f -exec chmod 644 {} \;
@@ -71,9 +71,9 @@ jobs:
           
           # Activate plugin and clear cache if WP-CLI is available
           if command -v wp &> /dev/null; then
-            wp plugin activate terpedia --path=${{ secrets.WP_ROOT_PATH }} --allow-root
-            wp cache flush --path=${{ secrets.WP_ROOT_PATH }} --allow-root
-            wp rewrite flush --path=${{ secrets.WP_ROOT_PATH }} --allow-root
+            wp plugin activate terpedia-plugin --path=~/www/terpedia.com/public_html/ --allow-root
+            wp cache flush --path=~/www/terpedia.com/public_html/ --allow-root
+            wp rewrite flush --path=~/www/terpedia.com/public_html/ --allow-root
           fi
           
           echo "🚀 Plugin deployment completed successfully at $(date)"
@@ -83,10 +83,10 @@ jobs:
       run: |
         ssh -p 18765 ${{ secrets.SSH_USER }}@giow1015.siteground.us << 'EOF'
           # Check if plugin files exist
-          if [ -f "${{ secrets.WP_PLUGINS_PATH }}/terpedia-plugin/terpedia.php" ]; then
+          if [ -f "www/terpedia.com/public_html/wp-content/plugins/terpedia-plugin/terpedia.php" ]; then
             echo "✅ Plugin files deployed successfully"
             # Extract version from main plugin file
-            version=$(grep "Version:" "${{ secrets.WP_PLUGINS_PATH }}/terpedia-plugin/terpedia.php" | head -1 | cut -d' ' -f3)
+            version=$(grep "Version:" "www/terpedia.com/public_html/wp-content/plugins/terpedia-plugin/terpedia.php" | head -1 | cut -d' ' -f3)
             echo "📦 Plugin version: $version"
           else
             echo "❌ Plugin deployment failed"
@@ -95,11 +95,11 @@ jobs:
           
           # Check WordPress plugin status if WP-CLI is available
           if command -v wp &> /dev/null; then
-            plugin_status=$(wp plugin status terpedia --path=${{ secrets.WP_ROOT_PATH }} --allow-root)
+            plugin_status=$(wp plugin status terpedia-plugin --path=~/www/terpedia.com/public_html/ --allow-root)
             echo "🔌 Plugin status: $plugin_status"
             
             # Check if custom post types are registered
-            post_types=$(wp post-type list --field=name --path=${{ secrets.WP_ROOT_PATH }} --allow-root | grep -E "(terpene|podcast|research)" || echo "No custom post types found")
+            post_types=$(wp post-type list --field=name --path=~/www/terpedia.com/public_html/ --allow-root | grep -E "(terpene|podcast|research)" || echo "No custom post types found")
             echo "📋 Custom post types: $post_types"
           fi
         EOF
@@ -110,15 +110,15 @@ jobs:
           if command -v wp &> /dev/null; then
             # Check for PHP errors
             echo "🔍 Checking for PHP errors..."
-            wp eval 'if (function_exists("terpedia_encyclopedia_shortcode")) { echo "✅ Plugin functions loaded\n"; } else { echo "❌ Plugin functions not loaded\n"; }' --path=${{ secrets.WP_ROOT_PATH }} --allow-root
+            wp eval 'if (function_exists("terpedia_encyclopedia_shortcode")) { echo "✅ Plugin functions loaded\n"; } else { echo "❌ Plugin functions not loaded\n"; }' --path=~/www/terpedia.com/public_html/ --allow-root
             
             # Verify database tables exist (if plugin creates custom tables)
             echo "🗄️ Checking database integration..."
-            wp eval 'global $wpdb; $tables = $wpdb->get_results("SHOW TABLES LIKE \"%terpedia%\""); echo count($tables) > 0 ? "✅ Database tables present\n" : "ℹ️ No custom tables found\n";' --path=${{ secrets.WP_ROOT_PATH }} --allow-root
+            wp eval 'global $wpdb; $tables = $wpdb->get_results("SHOW TABLES LIKE \"%terpedia%\""); echo count($tables) > 0 ? "✅ Database tables present\n" : "ℹ️ No custom tables found\n";' --path=~/www/terpedia.com/public_html/ --allow-root
             
             # Test shortcode functionality
             echo "📝 Testing shortcode functionality..."
-            wp eval 'echo do_shortcode("[terpedia_encyclopedia]") ? "✅ Shortcodes working\n" : "❌ Shortcode issues\n";' --path=${{ secrets.WP_ROOT_PATH }} --allow-root
+            wp eval 'echo do_shortcode("[terpedia_encyclopedia]") ? "✅ Shortcodes working\n" : "❌ Shortcode issues\n";' --path=~/www/terpedia.com/public_html/ --allow-root
           fi
         EOF
 
