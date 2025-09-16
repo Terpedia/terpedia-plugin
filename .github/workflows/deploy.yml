@@ -75,10 +75,10 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       
     - name: Setup SSH Agent
-      uses: webfactory/ssh-agent@v0.9.0
-      with:
-        ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
-        log-public-key: true
+      run: |
+        eval "$(ssh-agent -s)"
+        echo "${{ secrets.SSH_PRIVATE_KEY }}" | ssh-add -
+        ssh-add -l
         
     - name: Setup SSH configuration
       run: |
