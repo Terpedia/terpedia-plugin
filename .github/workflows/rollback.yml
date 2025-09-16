@@ -79,7 +79,7 @@ jobs:
             # Deactivate current plugin
             if command -v wp &> /dev/null; then
               echo "🔌 Deactivating current plugin..."
-              wp plugin deactivate terpedia-plugin --path=www/terpedia.com/public_html/ --allow-root 2>/dev/null || true
+              wp plugin deactivate terpedia-plugin --path=/home/customer/www/terpedia.com/public_html/ --allow-root 2>/dev/null || true
             fi
             
             # Create current state backup before rollback
@@ -101,8 +101,8 @@ jobs:
             # Reactivate restored plugin
             if command -v wp &> /dev/null; then
               echo "🔌 Reactivating restored plugin..."
-              wp plugin activate terpedia-plugin --path=www/terpedia.com/public_html/ --allow-root 2>/dev/null || true
-              wp cache flush --path=www/terpedia.com/public_html/ --allow-root 2>/dev/null || true
+              wp plugin activate terpedia-plugin --path=/home/customer/www/terpedia.com/public_html/ --allow-root 2>/dev/null || true
+              wp cache flush --path=/home/customer/www/terpedia.com/public_html/ --allow-root 2>/dev/null || true
             fi
             
             echo "✅ Rollback completed successfully"
@@ -132,7 +132,7 @@ jobs:
           
           # Check plugin status
           if command -v wp &> /dev/null; then
-            plugin_status=$(wp plugin status terpedia-plugin --path=www/terpedia.com/public_html/ --allow-root 2>/dev/null || echo "Plugin check failed")
+            plugin_status=$(wp plugin status terpedia-plugin --path=/home/customer/www/terpedia.com/public_html/ --allow-root 2>/dev/null || echo "Plugin check failed")
             echo "🔌 Plugin status: $plugin_status"
           fi
         EOF

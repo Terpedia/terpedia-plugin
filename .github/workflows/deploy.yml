@@ -204,25 +204,25 @@ jobs:
           find . -type f -exec chmod 644 {} \;
           find . -type d -exec chmod 755 {} \;
           
-          # Activate plugin and clear cache if WP-CLI is available
-          if command -v wp &> /dev/null; then
-            echo "🔌 Activating terpedia-plugin..."
-            wp plugin activate terpedia-plugin --path=www/terpedia.com/public_html/ --allow-root
-            if [ $? -eq 0 ]; then
-              echo "✅ Plugin activated successfully"
-            else
-              echo "❌ Plugin activation failed"
-              exit 1
-            fi
-            
-            echo "🧹 Clearing WordPress cache..."
-            wp cache flush --path=www/terpedia.com/public_html/ --allow-root
-            
-            echo "🔄 Flushing rewrite rules..."
-            wp rewrite flush --path=www/terpedia.com/public_html/ --allow-root
-          else
-            echo "⚠️ WP-CLI not available, skipping plugin activation"
-          fi
+  # Activate plugin and clear cache if WP-CLI is available
+  if command -v wp &> /dev/null; then
+    echo "🔌 Activating terpedia-plugin..."
+    wp plugin activate terpedia-plugin --path=/home/customer/www/terpedia.com/public_html/ --allow-root
+    if [ $? -eq 0 ]; then
+      echo "✅ Plugin activated successfully"
+    else
+      echo "❌ Plugin activation failed"
+      exit 1
+    fi
+    
+    echo "🧹 Clearing WordPress cache..."
+    wp cache flush --path=/home/customer/www/terpedia.com/public_html/ --allow-root
+    
+    echo "🔄 Flushing rewrite rules..."
+    wp rewrite flush --path=/home/customer/www/terpedia.com/public_html/ --allow-root
+  else
+    echo "⚠️ WP-CLI not available, skipping plugin activation"
+  fi
           
           echo "🚀 Plugin deployment completed successfully at $(date)"
         EOF
@@ -243,17 +243,17 @@ jobs:
             echo "HEALTH_CHECK_PASSED=false" > /tmp/health_check.txt
           fi
           
-          # Check for WordPress errors
-          if command -v wp &> /dev/null; then
-            echo "🔍 Checking for WordPress errors..."
-            WP_ERRORS=$(wp eval 'if (function_exists("error_get_last")) { $error = error_get_last(); if ($error && $error["type"] >= E_ERROR) { echo "FATAL_ERROR"; } else { echo "NO_ERRORS"; } } else { echo "NO_ERRORS"; }' --path=www/terpedia.com/public_html/ --allow-root 2>/dev/null || echo "WP_CLI_ERROR")
-            echo "WordPress error check: $WP_ERRORS"
-            
-            if [ "$WP_ERRORS" = "FATAL_ERROR" ]; then
-              echo "❌ WordPress fatal errors detected"
-              echo "HEALTH_CHECK_PASSED=false" > /tmp/health_check.txt
-            fi
-          fi
+  # Check for WordPress errors
+  if command -v wp &> /dev/null; then
+    echo "🔍 Checking for WordPress errors..."
+    WP_ERRORS=$(wp eval 'if (function_exists("error_get_last")) { $error = error_get_last(); if ($error && $error["type"] >= E_ERROR) { echo "FATAL_ERROR"; } else { echo "NO_ERRORS"; } } else { echo "NO_ERRORS"; }' --path=/home/customer/www/terpedia.com/public_html/ --allow-root 2>/dev/null || echo "WP_CLI_ERROR")
+    echo "WordPress error check: $WP_ERRORS"
+    
+    if [ "$WP_ERRORS" = "FATAL_ERROR" ]; then
+      echo "❌ WordPress fatal errors detected"
+      echo "HEALTH_CHECK_PASSED=false" > /tmp/health_check.txt
+    fi
+  fi
         EOF
         
         # Check if health check passed and rollback if needed
@@ -271,26 +271,26 @@ jobs:
             if [ -n "$BACKUP_DIR" ] && [ -d "$BACKUP_DIR" ]; then
               echo "🔄 Rolling back to backup: $BACKUP_DIR"
               
-              # Deactivate current plugin
-              if command -v wp &> /dev/null; then
-                wp plugin deactivate terpedia-plugin --path=www/terpedia.com/public_html/ --allow-root 2>/dev/null || true
-              fi
-              
-              # Restore from backup
-              rm -rf www/terpedia.com/public_html/wp-content/plugins/terpedia-plugin
-              cp -r "$BACKUP_DIR" www/terpedia.com/public_html/wp-content/plugins/terpedia-plugin
-              
-              # Reactivate restored plugin
-              if command -v wp &> /dev/null; then
-                wp plugin activate terpedia-plugin --path=www/terpedia.com/public_html/ --allow-root 2>/dev/null || true
-              fi
+      # Deactivate current plugin
+      if command -v wp &> /dev/null; then
+        wp plugin deactivate terpedia-plugin --path=/home/customer/www/terpedia.com/public_html/ --allow-root 2>/dev/null || true
+      fi
+      
+      # Restore from backup
+      rm -rf www/terpedia.com/public_html/wp-content/plugins/terpedia-plugin
+      cp -r "$BACKUP_DIR" www/terpedia.com/public_html/wp-content/plugins/terpedia-plugin
+      
+      # Reactivate restored plugin
+      if command -v wp &> /dev/null; then
+        wp plugin activate terpedia-plugin --path=/home/customer/www/terpedia.com/public_html/ --allow-root 2>/dev/null || true
+      fi
               
               echo "✅ Rollback completed successfully"
             else
               echo "❌ No backup found, cannot rollback"
               echo "🔄 Deactivating problematic plugin..."
               if command -v wp &> /dev/null; then
-                wp plugin deactivate terpedia-plugin --path=www/terpedia.com/public_html/ --allow-root 2>/dev/null || true
+                wp plugin deactivate terpedia-plugin --path=/home/customer/www/terpedia.com/public_html/ --allow-root 2>/dev/null || true
               fi
             fi
           EOF
