@@ -137,7 +137,7 @@ jobs:
         # Upload to server using SSH agent with enhanced options
         echo "Starting deployment to production server..."
         rsync -avz --delete --timeout=300 --progress \
-          -e "ssh -o ConnectTimeout=30 -o ServerAliveInterval=30" \
+          -e "ssh -F ~/.ssh/config" \
           deploy-temp/ giow1015.siteground.us:www/terpedia.com/public_html/wp-content/plugins/terpedia-plugin/
         
         echo "Upload completed. Setting permissions and activating plugin..."
