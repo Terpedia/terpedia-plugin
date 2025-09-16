@@ -2,7 +2,7 @@ modules = ["php-8.2", "nodejs-20", "web", "github-cli"]
 
 [nix]
 channel = "stable-24_05"
-packages = ["github-cli", "openssh"]
+packages = ["github-cli", "openssh", "sshpass"]
 
 [agent]
 expertMode = true
@@ -62,6 +62,10 @@ externalPort = 6000
 [[ports]]
 localPort = 40513
 externalPort = 5000
+
+[[ports]]
+localPort = 41831
+externalPort = 6800
 
 [[ports]]
 localPort = 45653
