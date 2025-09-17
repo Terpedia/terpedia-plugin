@@ -224,7 +224,8 @@ if (isset($_SERVER['REQUEST_URI'])) {
         exit;
     }
     
-    if ($path === 'terports' || $path === 'terports/') {
+    // Handle /terports route for archive and /terport/[id] for individual pages
+    if ($path === 'terports' || $path === 'terports/' || preg_match('/^terport\/\d+/', $path)) {
         // Define comprehensive mock WordPress functions
         if (!function_exists('add_action')) {
             function add_action($hook, $callback, $priority = 10, $accepted_args = 1) { /* Mock function */ }
@@ -772,9 +773,258 @@ if (isset($_SERVER['REQUEST_URI'])) {
 </html>';
         }
         
-        // Render standalone terports archive page
-        render_standalone_terports_archive();
-        exit;
+        // Function to render single terport page
+        function render_single_terport($terport_id) {
+            // Get terport data using the mock function
+            $terport = get_post($terport_id);
+            
+            if (!$terport) {
+                echo "<!DOCTYPE html><html><head><title>Terport Not Found</title></head><body>";
+                echo "<h1>Terport Not Found</h1>";
+                echo "<p>The requested terport could not be found.</p>";
+                echo "<a href='/terports'>← Back to Terports</a>";
+                echo "</body></html>";
+                return;
+            }
+            
+            global $current_terport;
+            $current_terport = $terport;
+            
+            $terport_type = get_post_meta($terport_id, 'terport_type', true);
+            $word_count = get_post_meta($terport_id, 'word_count', true);
+            $research_focus = get_post_meta($terport_id, 'research_focus', true);
+            
+            echo '<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>' . esc_html($terport->post_title) . ' - Terpedia Terport</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            line-height: 1.6;
+            color: #2c3e50;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+            backdrop-filter: blur(10px);
+        }
+        
+        .breadcrumb {
+            padding: 20px 40px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #e9ecef;
+        }
+        
+        .breadcrumb a {
+            color: #007cba;
+            text-decoration: none;
+            font-weight: 500;
+        }
+        
+        .breadcrumb a:hover {
+            text-decoration: underline;
+        }
+        
+        .terport-header {
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            color: white;
+            padding: 40px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .terport-header::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url("data:image/svg+xml,%3Csvg width=\"60\" height=\"60\" viewBox=\"0 0 60 60\" xmlns=\"http://www.w3.org/2000/svg\"%3E%3Cg fill=\"none\" fill-rule=\"evenodd\"%3E%3Cg fill=\"%23ffffff\" fill-opacity=\"0.05\"%3E%3Cpath d=\"M30 30c0-11.046-8.954-20-20-20s-20 8.954-20 20 8.954 20 20 20 20-8.954 20-20z\"/%3E%3C/g%3E%3C/g%3E%3C/svg%3E") repeat;
+        }
+        
+        .terport-type {
+            display: inline-block;
+            background: rgba(255,255,255,0.2);
+            padding: 8px 20px;
+            border-radius: 25px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 20px;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .terport-title {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 15px;
+            position: relative;
+            z-index: 1;
+            line-height: 1.2;
+        }
+        
+        .terport-meta {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            font-size: 1rem;
+            opacity: 0.9;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .terport-content {
+            padding: 40px;
+        }
+        
+        .terport-focus {
+            background: #e3f2fd;
+            border-left: 4px solid #2196f3;
+            padding: 20px;
+            margin-bottom: 30px;
+            border-radius: 0 8px 8px 0;
+        }
+        
+        .terport-focus h3 {
+            color: #1976d2;
+            margin-bottom: 10px;
+            font-size: 1.2rem;
+        }
+        
+        .terport-text {
+            font-size: 1.1rem;
+            line-height: 1.8;
+            color: #34495e;
+            margin-bottom: 30px;
+        }
+        
+        .terport-text p {
+            margin-bottom: 20px;
+        }
+        
+        .nav-links {
+            padding: 30px 40px;
+            text-align: center;
+            background: #f8f9fa;
+            border-top: 1px solid #e9ecef;
+        }
+        
+        .nav-links a {
+            display: inline-block;
+            background: #007cba;
+            color: white;
+            padding: 12px 25px;
+            border-radius: 25px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            margin: 0 10px;
+        }
+        
+        .nav-links a:hover {
+            background: #005a87;
+            transform: translateY(-2px);
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                margin: 10px;
+                border-radius: 15px;
+            }
+            
+            .terport-header,
+            .terport-content {
+                padding: 30px 20px;
+            }
+            
+            .terport-title {
+                font-size: 2rem;
+            }
+            
+            .terport-meta {
+                flex-direction: column;
+                gap: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="breadcrumb">
+            <a href="/">🏠 Home</a> / <a href="/terports">📚 Terports</a> / <strong>' . esc_html($terport->post_title) . '</strong>
+        </div>
+        
+        <div class="terport-header">
+            <div class="terport-type">' . esc_html(ucwords(str_replace('_', ' ', $terport_type))) . '</div>
+            <h1 class="terport-title">' . esc_html($terport->post_title) . '</h1>
+            <div class="terport-meta">
+                <span>📅 ' . get_the_date() . '</span>
+                <span>📊 ' . esc_html($word_count ?: '2500') . ' words</span>
+                <span>🤖 AI Generated</span>
+            </div>
+        </div>
+        
+        <div class="terport-content">
+            ' . ($research_focus ? '
+            <div class="terport-focus">
+                <h3>🔬 Research Focus</h3>
+                <p>' . esc_html($research_focus) . '</p>
+            </div>
+            ' : '') . '
+            
+            <div class="terport-text">
+                ' . nl2br(esc_html($terport->post_content)) . '
+                
+                <p><strong>This is a sample terport display showing the full content structure. In a complete implementation, this would include:</strong></p>
+                <ul>
+                    <li>Detailed research methodology</li>
+                    <li>Scientific citations and references</li>
+                    <li>Data visualizations and charts</li>
+                    <li>Comprehensive analysis sections</li>
+                    <li>Related research recommendations</li>
+                </ul>
+            </div>
+        </div>
+        
+        <div class="nav-links">
+            <a href="/terports">📚 All Terports</a>
+            <a href="/cases">🏥 Case Studies</a>
+            <a href="/">🏠 Home</a>
+        </div>
+    </div>
+</body>
+</html>';
+        }
+        
+        // Parse the path to determine what to render
+        if ($path === 'terports' || $path === 'terports/') {
+            // Render terports archive
+            render_standalone_terports_archive();
+            exit;
+        } elseif (preg_match('/^terport\/(\d+)$/', $path, $matches)) {
+            // Render single terport
+            $terport_id = intval($matches[1]);
+            render_single_terport($terport_id);
+            exit;
+        } else {
+            // Fallback - shouldn't happen with our routing, but just in case
+            render_standalone_terports_archive();
+            exit;
+        }
     }
     
     // Handle /cyc route for Cyc Encyclopedia
