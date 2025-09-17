@@ -2611,7 +2611,7 @@ class TerpediaAI {
             ),
             'public' => true,
             'show_ui' => true,
-            'show_in_menu' => false,
+            'show_in_menu' => true,
             'menu_position' => 20,
             'menu_icon' => 'dashicons-microphone',
             'supports' => array('title', 'editor', 'excerpt', 'thumbnail', 'custom-fields'),
@@ -2694,7 +2694,7 @@ class TerpediaAI {
             ),
             'public' => true,
             'show_ui' => true,
-            'show_in_menu' => false, // Hidden from main menu, managed in our pink Terpedia section
+            'show_in_menu' => true, // Hidden from main menu, managed in our pink Terpedia section
             'menu_position' => 25,
             'menu_icon' => 'dashicons-products',
             'supports' => array('title', 'editor', 'excerpt', 'thumbnail', 'custom-fields'),
