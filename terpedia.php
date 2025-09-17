@@ -2600,14 +2600,14 @@ class TerpediaAI {
     public function create_podcast_post_type() {
         register_post_type('terpedia_podcast', array(
             'labels' => array(
-                'name' => 'Podcast Episodes',
-                'singular_name' => 'Podcast Episode',
-                'menu_name' => 'Podcast Episodes',
-                'add_new' => 'Add New Episode',
-                'add_new_item' => 'Add New Podcast Episode',
-                'edit_item' => 'Edit Podcast Episode',
-                'new_item' => 'New Podcast Episode',
-                'view_item' => 'View Podcast Episode'
+                'name' => 'Podcasts',
+                'singular_name' => 'Podcast',
+                'menu_name' => 'Podcasts',
+                'add_new' => 'Add New Podcast',
+                'add_new_item' => 'Add New Podcast',
+                'edit_item' => 'Edit Podcast',
+                'new_item' => 'New Podcast',
+                'view_item' => 'View Podcast'
             ),
             'public' => true,
             'show_ui' => true,
