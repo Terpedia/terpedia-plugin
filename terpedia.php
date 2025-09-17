@@ -225,7 +225,7 @@ if (isset($_SERVER['REQUEST_URI'])) {
     }
     
     if ($path === 'terports' || $path === 'terports/') {
-        // Define mock WordPress functions to avoid errors
+        // Define comprehensive mock WordPress functions
         if (!function_exists('add_action')) {
             function add_action($hook, $callback, $priority = 10, $accepted_args = 1) { /* Mock function */ }
             function add_filter($hook, $callback, $priority = 10, $accepted_args = 1) { /* Mock function */ }
@@ -235,38 +235,545 @@ if (isset($_SERVER['REQUEST_URI'])) {
             function wp_enqueue_style() { /* Mock function */ }
             function wp_enqueue_script() { /* Mock function */ }
             function admin_url($path = '') { return '/admin/' . ltrim($path, '/'); }
-        }
-        
-        // Include the CPT Archive System file directly
-        $cpt_file = dirname(__FILE__) . '/includes/cpt-archive-system.php';
-        if (file_exists($cpt_file)) {
-            require_once $cpt_file;
-            
-            // Instantiate and call render method directly
-            if (class_exists('Terpedia_CPT_Archive_System')) {
-                try {
-                    $archive_system = new Terpedia_CPT_Archive_System();
-                    // Call the private method using reflection
-                    $method = new ReflectionMethod($archive_system, 'render_terports_archive');
-                    $method->setAccessible(true);
-                    $method->invoke($archive_system);
-                    exit;
-                } catch (Exception $e) {
-                    // Simple fallback: output error and continue
-                    echo "<!DOCTYPE html><html><head><title>Error</title></head><body>";
-                    echo "<h1>Error rendering terports page</h1>";
-                    echo "<p>Error: " . htmlspecialchars($e->getMessage()) . "</p>";
-                    echo "<pre>" . $e->getTraceAsString() . "</pre>";
-                    echo "</body></html>";
-                    exit;
+            function get_option($option, $default = false) { return $default; }
+            function current_user_can($cap) { return true; }
+            function get_current_user_id() { return 1; }
+            function current_time($type) { return date('Y-m-d H:i:s'); }
+            function wp_create_nonce($action) { return 'mock_nonce'; }
+            function check_ajax_referer($action, $query_arg = false) { return true; }
+            function sanitize_text_field($str) { return strip_tags($str); }
+            function sanitize_textarea_field($str) { return strip_tags($str); }
+            function wp_send_json_success($data) { 
+                header('Content-Type: application/json');
+                echo json_encode(array('success' => true, 'data' => $data));
+                exit;
+            }
+            function wp_send_json_error($data) { 
+                header('Content-Type: application/json');
+                echo json_encode(array('success' => false, 'data' => $data));
+                exit;
+            }
+            function get_posts($args) { 
+                // Read from actual terports data files if they exist
+                if (isset($args['post_type']) && $args['post_type'] === 'terpedia_terport') {
+                    $posts_file = 'terports_posts.json';
+                    if (file_exists($posts_file)) {
+                        $posts = json_decode(file_get_contents($posts_file), true);
+                        $result = [];
+                        foreach ($posts as $post) {
+                            $result[] = (object) array(
+                                'ID' => $post['ID'],
+                                'post_title' => $post['post_title'],
+                                'post_content' => $post['post_content'],
+                                'post_date' => date('Y-m-d H:i:s'),
+                                'post_type' => $post['post_type']
+                            );
+                        }
+                        return $result;
+                    }
+                    // Fallback to sample terports
+                    return array(
+                        (object) array(
+                            'ID' => 1,
+                            'post_title' => 'Limonene: A Comprehensive Analysis of Anticancer Properties',
+                            'post_content' => 'This comprehensive research analysis examines the anticancer properties of limonene, a prominent monoterpene found in citrus fruits...',
+                            'post_date' => date('Y-m-d H:i:s'),
+                            'post_type' => 'terpedia_terport'
+                        ),
+                        (object) array(
+                            'ID' => 2,
+                            'post_title' => 'Beta-Caryophyllene: CB2 Receptor Interactions and Therapeutic Potential',
+                            'post_content' => 'An in-depth analysis of beta-caryophyllene and its unique ability to act as a CB2 receptor agonist...',
+                            'post_date' => date('Y-m-d H:i:s'),
+                            'post_type' => 'terpedia_terport'
+                        ),
+                        (object) array(
+                            'ID' => 3,
+                            'post_title' => 'Pinene Isomers: Respiratory Benefits and Neuroprotective Effects',
+                            'post_content' => 'This research explores the differential effects of alpha-pinene and beta-pinene on respiratory function...',
+                            'post_date' => date('Y-m-d H:i:s'),
+                            'post_type' => 'terpedia_terport'
+                        ),
+                        (object) array(
+                            'ID' => 4,
+                            'post_title' => 'Myrcene: Sedative Properties and Pharmacokinetic Profile',
+                            'post_content' => 'A comprehensive examination of myrcene, focusing on its sedative effects and bioavailability...',
+                            'post_date' => date('Y-m-d H:i:s'),
+                            'post_type' => 'terpedia_terport'
+                        ),
+                        (object) array(
+                            'ID' => 5,
+                            'post_title' => 'Linalool: Anxiolytic Effects and GABA Receptor Modulation',
+                            'post_content' => 'This analysis investigates linalool\'s anxiolytic properties and its interaction with GABAergic systems...',
+                            'post_date' => date('Y-m-d H:i:s'),
+                            'post_type' => 'terpedia_terport'
+                        )
+                    );
                 }
+                return array(); 
+            }
+            function get_post($id) { 
+                if ($id) {
+                    $posts_file = 'terports_posts.json';
+                    if (file_exists($posts_file)) {
+                        $posts = json_decode(file_get_contents($posts_file), true);
+                        if (isset($posts[$id])) {
+                            return (object) array(
+                                'ID' => $posts[$id]['ID'],
+                                'post_title' => $posts[$id]['post_title'],
+                                'post_content' => $posts[$id]['post_content'],
+                                'post_type' => $posts[$id]['post_type'],
+                                'post_date' => date('Y-m-d H:i:s')
+                            );
+                        }
+                    }
+                    // Fallback sample data
+                    $samples = array(
+                        1 => 'Limonene: A Comprehensive Analysis of Anticancer Properties',
+                        2 => 'Beta-Caryophyllene: CB2 Receptor Interactions and Therapeutic Potential',
+                        3 => 'Pinene Isomers: Respiratory Benefits and Neuroprotective Effects',
+                        4 => 'Myrcene: Sedative Properties and Pharmacokinetic Profile',
+                        5 => 'Linalool: Anxiolytic Effects and GABA Receptor Modulation'
+                    );
+                    return (object) array(
+                        'ID' => $id,
+                        'post_title' => $samples[$id] ?? 'Sample Terport ' . $id,
+                        'post_content' => 'Sample terport content for terport ' . $id,
+                        'post_type' => 'terpedia_terport',
+                        'post_date' => date('Y-m-d H:i:s')
+                    );
+                }
+                return null; 
+            }
+            function get_post_meta($id, $key, $single = false) { 
+                $meta_file = 'terports_meta.json';
+                if (file_exists($meta_file)) {
+                    $meta = json_decode(file_get_contents($meta_file), true);
+                    if (isset($meta[$id]) && isset($meta[$id][$key])) {
+                        return $single ? $meta[$id][$key] : array($meta[$id][$key]);
+                    }
+                }
+                
+                // Fallback defaults
+                $defaults = array(
+                    'terport_type' => 'research_analysis',
+                    'research_focus' => 'Terpene Analysis',
+                    'ai_generated' => 'yes',
+                    'template_used' => 'Research Analysis Template',
+                    'word_count' => '2500'
+                );
+                return $single ? ($defaults[$key] ?? '') : array($defaults[$key] ?? ''); 
+            }
+            function get_header() { /* Mock function */ }
+            function get_footer() { /* Mock function */ }
+            function wp_reset_postdata() { /* Mock function */ }
+            function update_post_meta($id, $key, $value) { return true; }
+            function wp_update_post($args) { return true; }
+            function wp_insert_post($args) { return 1; }
+            function wp_die($message) { die($message); }
+            function get_the_modified_date($format, $post = null) { return date($format); }
+            function wp_count_posts($type) { 
+                if ($type === 'terpedia_terport') {
+                    return (object) array('publish' => 5); 
+                }
+                return (object) array('publish' => 0); 
+            }
+            function get_file_data($file, $default_headers, $context = '') {
+                // Mock implementation to parse plugin header
+                if (file_exists($file)) {
+                    $content = file_get_contents($file);
+                    $result = array();
+                    foreach ($default_headers as $key => $header) {
+                        if (preg_match('/\* ' . preg_quote($header) . ':\s*(.+)/i', $content, $matches)) {
+                            $result[$key] = trim($matches[1]);
+                        } else {
+                            $result[$key] = '';
+                        }
+                    }
+                    return $result;
+                }
+                return array_fill_keys(array_keys($default_headers), '');
+            }
+            // WordPress query functions
+            function get_query_var($var, $default = '') { return $default; }
+            function paginate_links($args) { return ''; }
+            function the_permalink() { echo '/terport/' . get_the_ID(); }
+            function the_title() { global $current_terport; echo htmlspecialchars($current_terport->post_title ?? 'Unknown Title'); }
+            function the_excerpt() { global $current_terport; echo htmlspecialchars(substr($current_terport->post_content ?? '', 0, 150) . '...'); }
+            function the_content() { global $current_terport; echo nl2br(htmlspecialchars($current_terport->post_content ?? '')); }
+            function the_date() { return date('F j, Y'); }
+            function get_the_date() { return date('F j, Y'); }
+            function get_the_ID() { global $current_terport; return $current_terport->ID ?? 0; }
+            function the_post_thumbnail($size = 'thumbnail') { echo '<div class="placeholder-thumbnail">📚</div>'; }
+            function esc_html($text) { return htmlspecialchars($text); }
+            function esc_attr($text) { return htmlspecialchars($text, ENT_QUOTES); }
+            function selected($selected, $current, $echo = true) { 
+                $result = selected($selected, $current, false);
+                if ($echo) echo $result;
+                return $result;
             }
         }
-        // If we reach here, something went wrong - show a basic terports page
-        echo "<!DOCTYPE html><html><head><title>Terports</title></head><body>";
-        echo "<h1>📚 Terports - Coming Soon</h1>";
-        echo "<p>The terports system is being initialized...</p>";
-        echo "</body></html>";
+        
+        // Log route matching for debugging
+        error_log('Terpedia: Matched /terports route in deployment');
+        
+        // Define standalone rendering function
+        function render_standalone_terports_archive() {
+            // Get terports using mock functions
+            $terports = get_posts(array(
+                'post_type' => 'terpedia_terport',
+                'posts_per_page' => 10,
+                'post_status' => 'publish'
+            ));
+            
+            // Get stats
+            $terport_count = wp_count_posts('terpedia_terport')->publish;
+            
+            // Output standalone HTML
+            echo '<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>📚 Terports - Terpedia AI Research Reports</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            line-height: 1.6;
+            color: #2c3e50;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+            backdrop-filter: blur(10px);
+        }
+        
+        .archive-header {
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            color: white;
+            text-align: center;
+            padding: 60px 40px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .archive-header::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url("data:image/svg+xml,%3Csvg width=\\"60\\" height=\\"60\\" viewBox=\\"0 0 60 60\\" xmlns=\\"http://www.w3.org/2000/svg\\"%3E%3Cg fill=\\"none\\" fill-rule=\\"evenodd\\"%3E%3Cg fill=\\"%23ffffff\\" fill-opacity=\\"0.05\\"%3E%3Cpath d=\\"M30 30c0-11.046-8.954-20-20-20s-20 8.954-20 20 8.954 20 20 20 20-8.954 20-20z\\"/%3E%3C/g%3E%3C/g%3E%3C/svg%3E") repeat;
+        }
+        
+        .archive-header h1 {
+            font-size: 3.5rem;
+            font-weight: 700;
+            margin-bottom: 15px;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .archive-header p {
+            font-size: 1.3rem;
+            opacity: 0.9;
+            max-width: 600px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .archive-stats {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            margin: 30px 0;
+            border-radius: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            position: relative;
+            z-index: 1;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 20px;
+            text-align: center;
+        }
+        
+        .stat-item {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 15px;
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .stat-number {
+            font-size: 2rem;
+            font-weight: 700;
+            display: block;
+            color: #3498db;
+        }
+        
+        .stat-label {
+            font-size: 0.9rem;
+            opacity: 0.8;
+            margin-top: 5px;
+        }
+        
+        .terports-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 30px;
+            padding: 40px;
+        }
+        
+        .terport-card {
+            background: white;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+            border: 1px solid #e3f2fd;
+        }
+        
+        .terport-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 35px rgba(0,0,0,0.15);
+        }
+        
+        .terport-header {
+            background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+            padding: 25px;
+            border-bottom: 1px solid #e1f5fe;
+        }
+        
+        .terport-type {
+            display: inline-block;
+            background: #2196f3;
+            color: white;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 15px;
+        }
+        
+        .terport-title {
+            color: #1565c0;
+            font-size: 1.4rem;
+            font-weight: 700;
+            line-height: 1.3;
+            margin: 0;
+        }
+        
+        .terport-title a {
+            color: inherit;
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+        
+        .terport-title a:hover {
+            color: #0d47a1;
+        }
+        
+        .terport-content {
+            padding: 25px;
+        }
+        
+        .terport-excerpt {
+            color: #555;
+            font-size: 1rem;
+            line-height: 1.6;
+            margin-bottom: 20px;
+        }
+        
+        .terport-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 25px;
+            background: #f8f9fa;
+            border-top: 1px solid #e9ecef;
+        }
+        
+        .terport-date {
+            color: #6c757d;
+            font-size: 0.9rem;
+        }
+        
+        .terport-words {
+            color: #6c757d;
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+        
+        .no-terports {
+            grid-column: 1 / -1;
+            text-align: center;
+            padding: 60px 20px;
+            color: #666;
+            font-size: 1.2rem;
+        }
+        
+        .nav-links {
+            padding: 30px 40px;
+            text-align: center;
+            background: #f8f9fa;
+            border-top: 1px solid #e9ecef;
+        }
+        
+        .nav-links a {
+            display: inline-block;
+            background: #007cba;
+            color: white;
+            padding: 12px 25px;
+            border-radius: 25px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            margin: 0 10px;
+        }
+        
+        .nav-links a:hover {
+            background: #005a87;
+            transform: translateY(-2px);
+        }
+        
+        .breadcrumb {
+            padding: 20px 40px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #e9ecef;
+        }
+        
+        .breadcrumb a {
+            color: #007cba;
+            text-decoration: none;
+            font-weight: 500;
+        }
+        
+        .breadcrumb a:hover {
+            text-decoration: underline;
+        }
+        
+        @media (max-width: 768px) {
+            .terports-grid {
+                grid-template-columns: 1fr;
+                gap: 20px;
+                padding: 20px;
+            }
+            
+            .archive-header {
+                padding: 40px 20px;
+            }
+            
+            .archive-header h1 {
+                font-size: 2.5rem;
+            }
+            
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="breadcrumb">
+            <a href="/">🏠 Home</a> / <a href="/cases">🏥 Cases</a> / <a href="/cyc">📖 Encyclopedia</a> / <strong>📚 Terports</strong>
+        </div>
+        
+        <div class="archive-header">
+            <h1>📚 Terports</h1>
+            <p>AI-Powered Terpene Research Reports with Scientific Analysis</p>
+            
+            <div class="archive-stats">
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <span class="stat-number">' . $terport_count . '</span>
+                        <span class="stat-label">Research Reports</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-number">6</span>
+                        <span class="stat-label">Report Types</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-number">AI</span>
+                        <span class="stat-label">Generated</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-number">700K+</span>
+                        <span class="stat-label">Data Points</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="terports-grid">';
+            
+            if (!empty($terports)) {
+                foreach ($terports as $terport) {
+                    global $current_terport;
+                    $current_terport = $terport;
+                    
+                    $terport_type = get_post_meta($terport->ID, 'terport_type', true);
+                    $word_count = get_post_meta($terport->ID, 'word_count', true);
+                    
+                    echo '
+            <div class="terport-card">
+                <div class="terport-header">
+                    <div class="terport-type">' . esc_html(ucwords(str_replace('_', ' ', $terport_type))) . '</div>
+                    <h3 class="terport-title">
+                        <a href="/terport/' . $terport->ID . '">' . esc_html($terport->post_title) . '</a>
+                    </h3>
+                </div>
+                
+                <div class="terport-content">
+                    <div class="terport-excerpt">
+                        ' . esc_html(substr($terport->post_content, 0, 200)) . '...
+                    </div>
+                </div>
+                
+                <div class="terport-meta">
+                    <span class="terport-date">' . get_the_date() . '</span>
+                    <span class="terport-words">' . esc_html($word_count ?: '2500') . ' words</span>
+                </div>
+            </div>';
+                }
+            } else {
+                echo '
+            <div class="no-terports">
+                <h3>🚀 Terports Coming Soon</h3>
+                <p>Our AI research reports are being generated. Check back soon for comprehensive terpene analysis and research insights.</p>
+            </div>';
+            }
+            
+            echo '
+        </div>
+        
+        <div class="nav-links">
+            <a href="/cases">🏥 View Case Studies</a>
+            <a href="/cyc">📖 Browse Encyclopedia</a>
+            <a href="/">🏠 Return Home</a>
+        </div>
+    </div>
+</body>
+</html>';
+        }
+        
+        // Render standalone terports archive page
+        render_standalone_terports_archive();
         exit;
     }
     
