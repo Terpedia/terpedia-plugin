@@ -174,6 +174,8 @@ class Terpedia_CPT_Archive_System {
                     return $this->render_rx_archive();
                 case 'terpedia_newsletter':
                     return $this->render_newsletters_archive();
+                case 'terport':
+                    return $this->render_terports_archive();
             }
         }
         
@@ -548,6 +550,104 @@ class Terpedia_CPT_Archive_System {
                     <?php
                     echo paginate_links(array(
                         'total' => $newsletters->max_num_pages,
+                        'current' => $paged
+                    ));
+                    ?>
+                </div>
+            <?php endif; ?>
+        </div>
+        <?php
+        wp_reset_postdata();
+        get_footer();
+        exit;
+    }
+    
+    /**
+     * Render terports archive
+     */
+    private function render_terports_archive() {
+        get_header();
+        
+        $paged = get_query_var('paged') ? get_query_var('paged') : 1;
+        
+        $terports = new WP_Query(array(
+            'post_type' => 'terport',
+            'posts_per_page' => 12,
+            'paged' => $paged,
+            'post_status' => 'publish',
+            'orderby' => 'date',
+            'order' => 'DESC'
+        ));
+        ?>
+        <div class="terpedia-terports-archive">
+            <div class="archive-header">
+                <h1>📚 Terports</h1>
+                <p>AI-generated reports and analyses on terpene research, compounds, and industry developments</p>
+            </div>
+            
+            <div class="terports-grid">
+                <?php if ($terports->have_posts()): ?>
+                    <?php while ($terports->have_posts()): $terports->the_post(); ?>
+                        <div class="terport-card">
+                            <div class="terport-image">
+                                <?php if (has_post_thumbnail()): ?>
+                                    <?php the_post_thumbnail('medium'); ?>
+                                <?php else: ?>
+                                    <div class="placeholder-image">📚</div>
+                                <?php endif; ?>
+                            </div>
+                            
+                            <div class="terport-content">
+                                <h3><a href="<?php the_permalink(); ?>"><?php the_title(); ?></a></h3>
+                                <div class="terport-meta">
+                                    <span class="date"><?php echo get_the_date(); ?></span>
+                                    <?php
+                                    $terport_type = get_post_meta(get_the_ID(), '_terport_type', true);
+                                    if ($terport_type): ?>
+                                        <span class="terport-type"><?php echo esc_html($terport_type); ?></span>
+                                    <?php endif; ?>
+                                </div>
+                                
+                                <div class="terport-excerpt">
+                                    <?php the_excerpt(); ?>
+                                </div>
+                                
+                                <div class="terport-tags">
+                                    <?php
+                                    $tags = get_the_tags();
+                                    if ($tags) {
+                                        $displayed_tags = array_slice($tags, 0, 3);
+                                        foreach ($displayed_tags as $tag) {
+                                            echo '<span class="tag">' . esc_html($tag->name) . '</span>';
+                                        }
+                                        if (count($tags) > 3) {
+                                            echo '<span class="more-tags">+' . (count($tags) - 3) . ' more</span>';
+                                        }
+                                    }
+                                    ?>
+                                </div>
+                            </div>
+                        </div>
+                    <?php endwhile; ?>
+                <?php else: ?>
+                    <div class="no-terports">
+                        <div class="empty-state">
+                            <div class="empty-icon">📚</div>
+                            <h3>No Terports Yet</h3>
+                            <p>No terport reports have been published yet. Create your first terport using the Enhanced Terport Editor.</p>
+                            <?php if (current_user_can('edit_posts')): ?>
+                                <a href="<?php echo admin_url('post-new.php?post_type=terport'); ?>" class="cta-button">Create First Terport</a>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                <?php endif; ?>
+            </div>
+            
+            <?php if ($terports->max_num_pages > 1): ?>
+                <div class="archive-pagination">
+                    <?php
+                    echo paginate_links(array(
+                        'total' => $terports->max_num_pages,
                         'current' => $paged
                     ));
                     ?>
