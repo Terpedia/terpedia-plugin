@@ -115,6 +115,7 @@ class TerpediaAI {
             'includes/tulip-system.php',
             'includes/cpt-archive-system.php',
             'includes/terport-openrouter-integration.php',
+            'includes/terport-sparql-integration.php',
             'includes/enhanced-terport-editor.php',
             'includes/terport-template-system.php',
             'includes/field-based-template-system.php',
