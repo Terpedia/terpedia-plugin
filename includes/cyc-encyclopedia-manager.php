@@ -3,22 +3,37 @@
  * Cyc Encyclopedia Manager
  * Backend management system for the Terpedia Encyclopedia with dynamic content generation
  * Integrates LLM + TerpKB (SPARQL) + RAG over uploaded articles
+ * Enhanced with kb.terpedia.com federated database querying
  */
 
 if (!defined('ABSPATH')) {
     exit;
 }
 
+// Include required classes for SPARQL integration
+require_once dirname(__FILE__) . '/terport-sparql-integration.php';
+require_once dirname(__FILE__) . '/openrouter-api-handler.php';
+
 class TerpediaCycEncyclopediaManager {
     
     private $sparql_endpoint;
     private $openrouter_api_key;
     private $vector_db_endpoint;
+    private $sparql_integration;
+    private $openrouter_api;
     
     public function __construct() {
-        $this->sparql_endpoint = get_option('terpedia_sparql_endpoint', 'http://localhost:8890/sparql');
+        $this->sparql_endpoint = get_option('terpedia_sparql_endpoint', 'https://kb.terpedia.com:3030/biodb/sparql');
         $this->openrouter_api_key = get_option('terpedia_openrouter_api_key');
         $this->vector_db_endpoint = get_option('terpedia_vector_db_endpoint', 'http://localhost:8000');
+        
+        // Initialize SPARQL integration and OpenRouter API
+        if (class_exists('Terpedia_Terport_SPARQL_Integration')) {
+            $this->sparql_integration = new Terpedia_Terport_SPARQL_Integration();
+        }
+        if (class_exists('TerpediaOpenRouterHandler')) {
+            $this->openrouter_api = new TerpediaOpenRouterHandler();
+        }
         
         add_action('admin_menu', array($this, 'add_admin_menu'));
         add_action('admin_init', array($this, 'admin_init'));
@@ -29,6 +44,10 @@ class TerpediaCycEncyclopediaManager {
         add_action('wp_ajax_cyc_update_term', array($this, 'ajax_update_term'));
         add_action('wp_ajax_cyc_delete_term', array($this, 'ajax_delete_term'));
         add_action('wp_ajax_cyc_upload_article', array($this, 'ajax_upload_article'));
+        add_action('wp_ajax_cyc_test_connections', array($this, 'ajax_test_connections'));
+        add_action('wp_ajax_cyc_regenerate_all_content', array($this, 'ajax_regenerate_all_content'));
+        add_action('wp_ajax_cyc_query_kb_terpedia', array($this, 'ajax_query_kb_terpedia'));
+        add_action('wp_ajax_cyc_generate_federated_content', array($this, 'ajax_generate_federated_content'));
         
         // Register encyclopedia entry post type
         add_action('init', array($this, 'register_encyclopedia_post_type'));
@@ -634,103 +653,156 @@ class TerpediaCycEncyclopediaManager {
     }
     
     /**
-     * Generate comprehensive content using LLM + TerpKB + RAG
+     * Generate comprehensive content using LLM + TerpKB + RAG + Federated Databases
      */
     private function generate_comprehensive_content($post_id, $term_name, $category) {
-        // Step 1: Query SPARQL knowledge base
-        $sparql_data = $this->query_sparql_knowledge_base($term_name, $category);
+        // Step 1: Query federated SPARQL endpoints via kb.terpedia.com
+        $federated_data = array();
+        if ($this->sparql_integration) {
+            $federated_data = $this->sparql_integration->query_federated_terpene_research($term_name, $category);
+        }
         
-        // Step 2: Search RAG database for relevant articles
+        // Step 2: Use natural language querying via kb.terpedia.com chat API
+        $research_questions = $this->build_research_questions($term_name, $category);
+        $kb_chat_data = array();
+        if ($this->sparql_integration) {
+            foreach ($research_questions as $question) {
+                $kb_chat_data[] = $this->sparql_integration->query_natural_language($question);
+            }
+        }
+        
+        // Step 3: Search RAG database for relevant articles
         $rag_data = $this->search_rag_database($term_name, $category);
         
-        // Step 3: Generate content using LLM
-        $generated_content = $this->generate_llm_content($term_name, $category, $sparql_data, $rag_data);
+        // Step 4: Generate content using OpenRouter with fallback models
+        $generated_content = $this->generate_federated_llm_content($term_name, $category, $federated_data, $kb_chat_data, $rag_data);
         
-        // Step 4: Update post with generated content
-        $this->update_post_with_generated_content($post_id, $generated_content);
+        // Step 5: Update post with generated content
+        $this->update_post_with_generated_content($post_id, $generated_content, $federated_data, $kb_chat_data);
         
         return $generated_content;
     }
     
     /**
-     * Query SPARQL knowledge base
+     * Build research questions for natural language querying
      */
-    private function query_sparql_knowledge_base($term_name, $category) {
-        $sparql_queries = array(
-            'terpene_info' => "
-                PREFIX terp: <http://terpedia.com/ontology#>
-                PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
-                
-                SELECT ?property ?value WHERE {
-                    ?terpene terp:name \"$term_name\" .
-                    ?terpene ?property ?value .
-                }
-            ",
-            'molecular_data' => "
-                PREFIX terp: <http://terpedia.com/ontology#>
-                PREFIX chem: <http://purl.org/dc/terms/>
-                
-                SELECT ?formula ?smiles ?inchi WHERE {
-                    ?terpene terp:name \"$term_name\" .
-                    ?terpene terp:molecularFormula ?formula .
-                    ?terpene terp:smiles ?smiles .
-                    ?terpene terp:inchi ?inchi .
-                }
-            ",
-            'therapeutic_effects' => "
-                PREFIX terp: <http://terpedia.com/ontology#>
-                PREFIX owl: <http://www.w3.org/2002/07/owl#>
-                
-                SELECT ?effect ?mechanism WHERE {
-                    ?terpene terp:name \"$term_name\" .
-                    ?terpene terp:hasTherapeuticEffect ?effect .
-                    ?effect terp:mechanism ?mechanism .
-                }
-            ",
-            'natural_sources' => "
-                PREFIX terp: <http://terpedia.com/ontology#>
-                PREFIX bio: <http://purl.org/obo/owl/GO#>
-                
-                SELECT ?source ?concentration WHERE {
-                    ?terpene terp:name \"$term_name\" .
-                    ?terpene terp:foundIn ?source .
-                    ?source terp:concentration ?concentration .
-                }
-            "
-        );
+    private function build_research_questions($term_name, $category) {
+        $questions = array();
         
-        $results = array();
-        foreach ($sparql_queries as $query_name => $query) {
-            $results[$query_name] = $this->execute_sparql_query($query);
+        switch (strtolower($category)) {
+            case 'monoterpene':
+            case 'sesquiterpene':
+            case 'diterpene':
+            case 'triterpene':
+                $questions = array(
+                    "What are the therapeutic effects and mechanisms of action of $term_name?",
+                    "What are the natural sources and biosynthetic pathways of $term_name?",
+                    "What are the pharmacokinetic properties and bioavailability of $term_name?",
+                    "What are the drug interactions and safety considerations for $term_name?",
+                    "What clinical studies have been conducted on $term_name?"
+                );
+                break;
+                
+            case 'plant source':
+                $questions = array(
+                    "What terpenes are found in $term_name and their concentrations?",
+                    "What are the traditional medicinal uses of $term_name?",
+                    "What are the extraction methods and processing techniques for $term_name?",
+                    "What are the active compounds and their synergistic effects in $term_name?"
+                );
+                break;
+                
+            case 'medical condition':
+                $questions = array(
+                    "Which terpenes are effective for treating $term_name?",
+                    "What are the mechanisms by which terpenes help with $term_name?",
+                    "What are the dosing protocols for terpenes in $term_name treatment?",
+                    "What clinical evidence exists for terpene therapy in $term_name?"
+                );
+                break;
+                
+            default:
+                $questions = array(
+                    "What is the scientific evidence for $term_name in terpene research?",
+                    "What are the biological activities and therapeutic potential of $term_name?",
+                    "What are the molecular mechanisms and pathways involved with $term_name?"
+                );
         }
         
-        return $results;
+        return $questions;
     }
     
     /**
-     * Execute SPARQL query
+     * Generate comprehensive encyclopedia content using federated research data
      */
-    private function execute_sparql_query($query) {
-        $ch = curl_init();
-        curl_setopt($ch, CURLOPT_URL, $this->sparql_endpoint);
-        curl_setopt($ch, CURLOPT_POST, true);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, 'query=' . urlencode($query));
-        curl_setopt($ch, CURLOPT_HTTPHEADER, array(
-            'Content-Type: application/x-www-form-urlencoded',
-            'Accept: application/sparql-results+json'
-        ));
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_TIMEOUT, 30);
-        
-        $response = curl_exec($ch);
-        $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        curl_close($ch);
-        
-        if ($http_code === 200) {
-            return json_decode($response, true);
+    private function generate_federated_llm_content($term_name, $category, $federated_data, $kb_chat_data, $rag_data) {
+        if (!$this->openrouter_api) {
+            return $this->generate_fallback_content($term_name, $category);
         }
         
-        return null;
+        // Build comprehensive system prompt for encyclopedia entries
+        $system_prompt = $this->build_encyclopedia_system_prompt($category);
+        
+        // Consolidate all research data
+        $research_context = $this->consolidate_research_data($federated_data, $kb_chat_data, $rag_data);
+        
+        $user_prompt = "Generate a comprehensive encyclopedia entry for '$term_name' (Category: $category) using the following research data:\n\n";
+        $user_prompt .= "Research Context:\n" . json_encode($research_context, JSON_PRETTY_PRINT) . "\n\n";
+        $user_prompt .= "Please create a detailed, scientifically accurate entry that includes:\n";
+        $user_prompt .= "1. Overview and classification\n";
+        $user_prompt .= "2. Chemical structure and properties\n";
+        $user_prompt .= "3. Natural sources and biosynthesis\n";
+        $user_prompt .= "4. Biological activities and mechanisms\n";
+        $user_prompt .= "5. Therapeutic applications\n";
+        $user_prompt .= "6. Pharmacokinetics and safety\n";
+        $user_prompt .= "7. Current research and clinical evidence\n";
+        $user_prompt .= "8. References to key studies\n";
+        
+        $messages = array(
+            array('role' => 'system', 'content' => $system_prompt),
+            array('role' => 'user', 'content' => $user_prompt)
+        );
+        
+        // Use OpenRouter with fallback models
+        $response = $this->generate_with_fallback_models($messages, 'encyclopedia_entry');
+        
+        if (is_wp_error($response)) {
+            error_log('Cyc Encyclopedia AI Error: ' . $response->get_error_message());
+            return $this->generate_fallback_content($term_name, $category);
+        }
+        
+        if (isset($response['choices'][0]['message']['content'])) {
+            return $response['choices'][0]['message']['content'];
+        }
+        
+        return $this->generate_fallback_content($term_name, $category);
+    }
+    
+    /**
+     * Build encyclopedia-specific system prompt
+     */
+    private function build_encyclopedia_system_prompt($category) {
+        $base_prompt = "You are Dr. Cyrus, a leading expert in terpenes and natural products chemistry, creating comprehensive encyclopedia entries for Terpedia.com. ";
+        
+        switch (strtolower($category)) {
+            case 'monoterpene':
+            case 'sesquiterpene':
+            case 'diterpene':
+            case 'triterpene':
+                return $base_prompt . "Focus on chemical structure, stereochemistry, biosynthetic pathways, biological activities, therapeutic mechanisms, pharmacokinetics, natural sources, and clinical evidence. Emphasize molecular mechanisms and structure-activity relationships.";
+                
+            case 'plant source':
+                return $base_prompt . "Focus on botanical classification, terpene profiles, traditional uses, extraction methods, active compounds, synergistic effects, cultivation, and standardization. Include geographical distribution and seasonal variations.";
+                
+            case 'medical condition':
+                return $base_prompt . "Focus on pathophysiology, terpene interventions, mechanisms of action, clinical evidence, dosing protocols, drug interactions, safety profiles, and therapeutic outcomes. Emphasize evidence-based applications.";
+                
+            case 'biochemical system':
+                return $base_prompt . "Focus on molecular pathways, enzyme interactions, metabolic processes, regulatory mechanisms, and how terpenes modulate these systems. Include pathway diagrams and molecular interactions.";
+                
+            default:
+                return $base_prompt . "Provide comprehensive, scientifically accurate information with emphasis on molecular mechanisms, biological activities, and practical applications. Use proper scientific terminology while maintaining accessibility.";
+        }
     }
     
     /**
@@ -766,88 +838,130 @@ class TerpediaCycEncyclopediaManager {
     }
     
     /**
-     * Generate content using LLM
+     * Generate content using OpenRouter with fallback models
      */
-    private function generate_llm_content($term_name, $category, $sparql_data, $rag_data) {
-        if (empty($this->openrouter_api_key)) {
-            return $this->generate_fallback_content($term_name, $category);
+    private function generate_with_fallback_models($messages, $content_type) {
+        if (!$this->openrouter_api) {
+            return new WP_Error('no_openrouter', 'OpenRouter API not available');
         }
         
-        $prompt = $this->build_llm_prompt($term_name, $category, $sparql_data, $rag_data);
+        $models = $this->get_model_fallback_hierarchy();
+        $last_error = '';
         
-        $payload = array(
-            'model' => get_option('terpedia_cyc_llm_model', 'anthropic/claude-3.5-sonnet'),
-            'messages' => array(
-                array(
-                    'role' => 'user',
-                    'content' => $prompt
-                )
-            ),
-            'max_tokens' => 4000,
-            'temperature' => 0.7
-        );
-        
-        $ch = curl_init();
-        curl_setopt($ch, CURLOPT_URL, 'https://openrouter.ai/api/v1/chat/completions');
-        curl_setopt($ch, CURLOPT_POST, true);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($payload));
-        curl_setopt($ch, CURLOPT_HTTPHEADER, array(
-            'Content-Type: application/json',
-            'Authorization: Bearer ' . $this->openrouter_api_key,
-            'HTTP-Referer: ' . home_url(),
-            'X-Title: Terpedia Encyclopedia'
-        ));
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_TIMEOUT, 60);
-        
-        $response = curl_exec($ch);
-        $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        curl_close($ch);
-        
-        if ($http_code === 200) {
-            $data = json_decode($response, true);
-            if (isset($data['choices'][0]['message']['content'])) {
-                return $data['choices'][0]['message']['content'];
+        foreach ($models as $model_config) {
+            $options = array(
+                'model' => $model_config['model'],
+                'max_tokens' => $model_config['max_tokens'],
+                'temperature' => 0.3 // Lower temperature for more factual content
+            );
+            
+            $response = $this->openrouter_api->chat_completion($messages, $options);
+            
+            if (!is_wp_error($response) && isset($response['choices'][0]['message']['content'])) {
+                // Success! Add metadata about which model was used
+                $response['model_used'] = $model_config['model'];
+                $response['model_type'] = $model_config['type'];
+                return $response;
+            }
+            
+            // Log the error and try next model
+            $error_msg = is_wp_error($response) ? $response->get_error_message() : 'Unknown response format';
+            $last_error .= "Model {$model_config['model']} failed: {$error_msg}; ";
+            
+            // Add small delay between attempts
+            if ($model_config['type'] === 'premium') {
+                sleep(1);
             }
         }
         
-        return $this->generate_fallback_content($term_name, $category);
+        return new WP_Error('all_models_failed', 'All models failed: ' . $last_error);
     }
     
     /**
-     * Build LLM prompt with context
+     * Get model fallback hierarchy for encyclopedia content
      */
-    private function build_llm_prompt($term_name, $category, $sparql_data, $rag_data) {
-        $prompt = "You are Dr. Cyrus, a leading expert in terpenes and natural products. Generate a comprehensive encyclopedia entry for '$term_name' (Category: $category).\n\n";
+    private function get_model_fallback_hierarchy() {
+        return array(
+            // Try premium models first for high-quality encyclopedia content
+            array(
+                'model' => 'anthropic/claude-3.5-sonnet',
+                'max_tokens' => 6000,
+                'type' => 'premium'
+            ),
+            array(
+                'model' => 'openai/gpt-4o-mini',
+                'max_tokens' => 5000,
+                'type' => 'premium'
+            ),
+            array(
+                'model' => 'anthropic/claude-3-haiku',
+                'max_tokens' => 4000,
+                'type' => 'premium'
+            ),
+            // Fall back to free models
+            array(
+                'model' => 'meta-llama/llama-3.1-8b-instruct:free',
+                'max_tokens' => 3000,
+                'type' => 'free'
+            ),
+            array(
+                'model' => 'google/gemma-2-9b-it:free',
+                'max_tokens' => 2000,
+                'type' => 'free'
+            )
+        );
+    }
+    
+    /**
+     * Consolidate research data from multiple sources
+     */
+    private function consolidate_research_data($federated_data, $kb_chat_data, $rag_data) {
+        $consolidated = array(
+            'federated_databases' => array(),
+            'kb_chat_responses' => array(),
+            'rag_articles' => array(),
+            'data_sources' => array(),
+            'total_data_points' => 0,
+            'consolidation_timestamp' => current_time('mysql')
+        );
         
-        $prompt .= "Use the following data sources to create an authoritative, scientifically accurate entry:\n\n";
-        
-        if ($sparql_data) {
-            $prompt .= "SPARQL Knowledge Base Data:\n";
-            $prompt .= json_encode($sparql_data, JSON_PRETTY_PRINT) . "\n\n";
-        }
-        
-        if ($rag_data && isset($rag_data['results'])) {
-            $prompt .= "Relevant Research Articles:\n";
-            foreach ($rag_data['results'] as $result) {
-                $prompt .= "- " . $result['title'] . " (Score: " . $result['score'] . ")\n";
-                $prompt .= "  " . substr($result['content'], 0, 200) . "...\n\n";
+        // Process federated database results
+        if (!empty($federated_data)) {
+            foreach ($federated_data as $source => $data) {
+                if (isset($data['results']) && is_array($data['results'])) {
+                    $consolidated['federated_databases'][$source] = $data;
+                    $consolidated['data_sources'][] = ucfirst(str_replace('_', ' ', $source));
+                    $consolidated['total_data_points'] += $data['count'] ?? count($data['results']);
+                }
             }
         }
         
-        $prompt .= "Please generate a comprehensive encyclopedia entry that includes:\n";
-        $prompt .= "1. Introduction and overview\n";
-        $prompt .= "2. Chemical properties and structure\n";
-        $prompt .= "3. Natural sources and occurrence\n";
-        $prompt .= "4. Therapeutic effects and mechanisms\n";
-        $prompt .= "5. Traditional uses and applications\n";
-        $prompt .= "6. Current research and clinical studies\n";
-        $prompt .= "7. Safety considerations\n";
-        $prompt .= "8. References and further reading\n\n";
+        // Process kb.terpedia.com chat API responses
+        if (!empty($kb_chat_data)) {
+            foreach ($kb_chat_data as $response) {
+                if (isset($response['response']) && !isset($response['error'])) {
+                    $consolidated['kb_chat_responses'][] = $response;
+                    $consolidated['total_data_points']++;
+                }
+            }
+            $consolidated['data_sources'][] = 'kb.terpedia.com Natural Language Queries';
+        }
         
-        $prompt .= "Make the content scientifically accurate, well-structured, and accessible to both researchers and general readers. Use proper scientific terminology while maintaining readability.";
+        // Process RAG database results
+        if (!empty($rag_data) && isset($rag_data['results'])) {
+            $consolidated['rag_articles'] = $rag_data['results'];
+            $consolidated['data_sources'][] = 'Uploaded Research Articles';
+            $consolidated['total_data_points'] += count($rag_data['results']);
+        }
         
-        return $prompt;
+        // Add standard federated sources
+        $consolidated['data_sources'] = array_merge(
+            $consolidated['data_sources'],
+            array('UniProt Proteins', 'Gene Ontology', 'Disease Ontology', 'Wikidata Compounds', 'MeSH Terms')
+        );
+        $consolidated['data_sources'] = array_unique($consolidated['data_sources']);
+        
+        return $consolidated;
     }
     
     /**
@@ -875,9 +989,9 @@ class TerpediaCycEncyclopediaManager {
     }
     
     /**
-     * Update post with generated content
+     * Update post with generated content and metadata
      */
-    private function update_post_with_generated_content($post_id, $content) {
+    private function update_post_with_generated_content($post_id, $content, $federated_data = null, $kb_chat_data = null) {
         $post_data = array(
             'ID' => $post_id,
             'post_content' => $content
@@ -885,9 +999,35 @@ class TerpediaCycEncyclopediaManager {
         
         wp_update_post($post_data);
         
-        // Mark as auto-generated
+        // Mark as auto-generated with enhanced metadata
         update_post_meta($post_id, 'auto_generated', true);
         update_post_meta($post_id, 'generated_at', current_time('mysql'));
+        update_post_meta($post_id, 'generated_via_federated_kb', true);
+        
+        // Store research metadata
+        if ($federated_data) {
+            update_post_meta($post_id, '_federated_data_sources', array_keys($federated_data));
+            update_post_meta($post_id, '_sparql_queries_executed', count($federated_data));
+        }
+        
+        if ($kb_chat_data) {
+            update_post_meta($post_id, '_kb_chat_queries_executed', count($kb_chat_data));
+        }
+        
+        update_post_meta($post_id, '_knowledge_base_version', $this->get_kb_version());
+        update_post_meta($post_id, '_generation_method', 'federated_sparql_kb_rag');
+    }
+    
+    /**
+     * Get knowledge base version info
+     */
+    private function get_kb_version() {
+        $response = wp_remote_get('https://kb.terpedia.com/api/health');
+        if (!is_wp_error($response)) {
+            $data = json_decode(wp_remote_retrieve_body($response), true);
+            return $data['version'] ?? 'unknown';
+        }
+        return 'unknown';
     }
     
     /**
@@ -1100,6 +1240,191 @@ class TerpediaCycEncyclopediaManager {
     private function get_sparql_queries_count() {
         // This would track SPARQL queries in a custom table
         return 0; // Placeholder
+    }
+    
+    /**
+     * AJAX handler for testing connections
+     */
+    public function ajax_test_connections() {
+        check_ajax_referer('cyc_nonce', 'nonce');
+        
+        if (!current_user_can('manage_options')) {
+            wp_send_json_error('Insufficient permissions');
+        }
+        
+        $results = array(
+            'sparql_endpoint' => $this->test_sparql_connection(),
+            'vector_db' => $this->test_vector_db_connection(),
+            'openrouter_api' => $this->test_openrouter_connection(),
+            'kb_terpedia_chat' => $this->test_kb_terpedia_connection()
+        );
+        
+        wp_send_json_success($results);
+    }
+    
+    /**
+     * AJAX handler for regenerating all content
+     */
+    public function ajax_regenerate_all_content() {
+        check_ajax_referer('cyc_nonce', 'nonce');
+        
+        if (!current_user_can('manage_options')) {
+            wp_send_json_error('Insufficient permissions');
+        }
+        
+        $entries = get_posts(array(
+            'post_type' => 'encyclopedia_entry',
+            'posts_per_page' => -1,
+            'post_status' => 'publish'
+        ));
+        
+        $regenerated = 0;
+        $errors = array();
+        
+        foreach ($entries as $entry) {
+            $category = get_post_meta($entry->ID, 'encyclopedia_category', true);
+            
+            try {
+                $this->generate_comprehensive_content($entry->ID, $entry->post_title, $category);
+                $regenerated++;
+            } catch (Exception $e) {
+                $errors[] = "Failed to regenerate {$entry->post_title}: " . $e->getMessage();
+            }
+        }
+        
+        wp_send_json_success(array(
+            'regenerated' => $regenerated,
+            'total' => count($entries),
+            'errors' => $errors
+        ));
+    }
+    
+    /**
+     * AJAX handler for querying kb.terpedia.com
+     */
+    public function ajax_query_kb_terpedia() {
+        check_ajax_referer('cyc_nonce', 'nonce');
+        
+        $query = sanitize_textarea_field($_POST['query']);
+        
+        if (empty($query)) {
+            wp_send_json_error('Query is required');
+        }
+        
+        if (!$this->sparql_integration) {
+            wp_send_json_error('SPARQL integration not available');
+        }
+        
+        $result = $this->sparql_integration->query_natural_language($query);
+        
+        if (isset($result['error'])) {
+            wp_send_json_error($result['error']);
+        }
+        
+        wp_send_json_success($result);
+    }
+    
+    /**
+     * AJAX handler for generating federated content
+     */
+    public function ajax_generate_federated_content() {
+        check_ajax_referer('cyc_nonce', 'nonce');
+        
+        $term_name = sanitize_text_field($_POST['term_name']);
+        $category = sanitize_text_field($_POST['category']);
+        $post_id = intval($_POST['post_id']);
+        
+        if (empty($term_name) || empty($category)) {
+            wp_send_json_error('Term name and category are required');
+        }
+        
+        try {
+            $content = $this->generate_comprehensive_content($post_id, $term_name, $category);
+            wp_send_json_success(array(
+                'content' => $content,
+                'message' => 'Content generated successfully using federated knowledge base'
+            ));
+        } catch (Exception $e) {
+            wp_send_json_error('Failed to generate content: ' . $e->getMessage());
+        }
+    }
+    
+    /**
+     * Test SPARQL endpoint connection
+     */
+    private function test_sparql_connection() {
+        $test_query = "SELECT * WHERE { ?s ?p ?o } LIMIT 1";
+        
+        $response = wp_remote_post($this->sparql_endpoint, array(
+            'body' => array(
+                'query' => $test_query,
+                'format' => 'json'
+            ),
+            'headers' => array(
+                'Accept' => 'application/sparql-results+json'
+            ),
+            'timeout' => 10
+        ));
+        
+        if (is_wp_error($response)) {
+            return array('status' => 'error', 'message' => $response->get_error_message());
+        }
+        
+        $status_code = wp_remote_retrieve_response_code($response);
+        return array(
+            'status' => $status_code === 200 ? 'success' : 'error',
+            'message' => $status_code === 200 ? 'SPARQL endpoint accessible' : 'SPARQL endpoint returned status ' . $status_code
+        );
+    }
+    
+    /**
+     * Test vector database connection
+     */
+    private function test_vector_db_connection() {
+        $response = wp_remote_get($this->vector_db_endpoint . '/health', array('timeout' => 10));
+        
+        if (is_wp_error($response)) {
+            return array('status' => 'error', 'message' => $response->get_error_message());
+        }
+        
+        $status_code = wp_remote_retrieve_response_code($response);
+        return array(
+            'status' => $status_code === 200 ? 'success' : 'error',
+            'message' => $status_code === 200 ? 'Vector database accessible' : 'Vector database returned status ' . $status_code
+        );
+    }
+    
+    /**
+     * Test OpenRouter API connection
+     */
+    private function test_openrouter_connection() {
+        if (!$this->openrouter_api) {
+            return array('status' => 'error', 'message' => 'OpenRouter API not initialized');
+        }
+        
+        $result = $this->openrouter_api->test_connection();
+        
+        return array(
+            'status' => $result['success'] ? 'success' : 'error',
+            'message' => $result['success'] ? 'OpenRouter API accessible' : $result['error']
+        );
+    }
+    
+    /**
+     * Test kb.terpedia.com connection
+     */
+    private function test_kb_terpedia_connection() {
+        $response = wp_remote_get('https://kb.terpedia.com/api/health', array('timeout' => 10));
+        
+        if (is_wp_error($response)) {
+            return array('status' => 'error', 'message' => $response->get_error_message());
+        }
+        
+        $status_code = wp_remote_retrieve_response_code($response);
+        return array(
+            'status' => $status_code === 200 ? 'success' : 'error',
+            'message' => $status_code === 200 ? 'kb.terpedia.com accessible' : 'kb.terpedia.com returned status ' . $status_code
+        );
     }
 }
 
