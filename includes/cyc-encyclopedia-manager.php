@@ -10,9 +10,10 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-// Include required classes for SPARQL integration
+// Include required classes for SPARQL integration and citation management
 require_once dirname(__FILE__) . '/terport-sparql-integration.php';
 require_once dirname(__FILE__) . '/openrouter-api-handler.php';
+require_once dirname(__FILE__) . '/citation-manager.php';
 
 class TerpediaCycEncyclopediaManager {
     
@@ -21,18 +22,22 @@ class TerpediaCycEncyclopediaManager {
     private $vector_db_endpoint;
     private $sparql_integration;
     private $openrouter_api;
+    private $citation_manager;
     
     public function __construct() {
         $this->sparql_endpoint = get_option('terpedia_sparql_endpoint', 'https://kb.terpedia.com:3030/biodb/sparql');
         $this->openrouter_api_key = get_option('terpedia_openrouter_api_key');
         $this->vector_db_endpoint = get_option('terpedia_vector_db_endpoint', 'http://localhost:8000');
         
-        // Initialize SPARQL integration and OpenRouter API
+        // Initialize SPARQL integration, OpenRouter API, and Citation Manager
         if (class_exists('Terpedia_Terport_SPARQL_Integration')) {
             $this->sparql_integration = new Terpedia_Terport_SPARQL_Integration();
         }
         if (class_exists('TerpediaOpenRouterHandler')) {
             $this->openrouter_api = new TerpediaOpenRouterHandler();
+        }
+        if (class_exists('Terpedia_Citation_Manager')) {
+            $this->citation_manager = new Terpedia_Citation_Manager();
         }
         
         add_action('admin_menu', array($this, 'add_admin_menu'));
@@ -653,34 +658,49 @@ class TerpediaCycEncyclopediaManager {
     }
     
     /**
-     * Generate comprehensive content using LLM + TerpKB + RAG + Federated Databases
+     * Generate comprehensive content using LLM + TerpKB + RAG + Federated Databases with citation tracking
      */
     private function generate_comprehensive_content($post_id, $term_name, $category) {
-        // Step 1: Query federated SPARQL endpoints via kb.terpedia.com
+        // Step 1: Query federated SPARQL endpoints via kb.terpedia.com with citation tracking
         $federated_data = array();
         if ($this->sparql_integration) {
-            $federated_data = $this->sparql_integration->query_federated_terpene_research($term_name, $category);
+            $federated_data = $this->sparql_integration->query_federated_terpene_research($term_name, $category, $post_id, 'encyclopedia_entry');
         }
         
-        // Step 2: Use natural language querying via kb.terpedia.com chat API
+        // Step 2: Use natural language querying via kb.terpedia.com chat API with citation tracking
         $research_questions = $this->build_research_questions($term_name, $category);
         $kb_chat_data = array();
         if ($this->sparql_integration) {
             foreach ($research_questions as $question) {
-                $kb_chat_data[] = $this->sparql_integration->query_natural_language($question);
+                $kb_chat_data[] = $this->sparql_integration->query_natural_language($question, $post_id, 'encyclopedia_entry');
             }
         }
         
-        // Step 3: Search RAG database for relevant articles
-        $rag_data = $this->search_rag_database($term_name, $category);
+        // Step 3: Search RAG database for relevant articles and record citations
+        $rag_data = $this->search_rag_database($term_name, $category, $post_id);
         
         // Step 4: Generate content using OpenRouter with fallback models
-        $generated_content = $this->generate_federated_llm_content($term_name, $category, $federated_data, $kb_chat_data, $rag_data);
+        $generated_content = $this->generate_federated_llm_content($term_name, $category, $federated_data, $kb_chat_data, $rag_data, $post_id);
         
-        // Step 5: Update post with generated content
-        $this->update_post_with_generated_content($post_id, $generated_content, $federated_data, $kb_chat_data);
+        // Step 5: Add citation section to generated content
+        $citations_html = '';
+        if ($this->citation_manager) {
+            $citations_html = $this->citation_manager->format_citations_list(
+                $this->citation_manager->get_post_citations($post_id), 
+                'apa'
+            );
+        }
         
-        return $generated_content;
+        // Combine generated content with citations
+        $final_content = $generated_content;
+        if (!empty($citations_html)) {
+            $final_content .= "\n\n" . $citations_html;
+        }
+        
+        // Step 6: Update post with generated content
+        $this->update_post_with_generated_content($post_id, $final_content, $federated_data, $kb_chat_data);
+        
+        return $final_content;
     }
     
     /**
@@ -733,15 +753,18 @@ class TerpediaCycEncyclopediaManager {
     }
     
     /**
-     * Generate comprehensive encyclopedia content using federated research data
+     * Generate comprehensive encyclopedia content using federated research data with citation-aware prompting
      */
-    private function generate_federated_llm_content($term_name, $category, $federated_data, $kb_chat_data, $rag_data) {
+    private function generate_federated_llm_content($term_name, $category, $federated_data, $kb_chat_data, $rag_data, $post_id = null) {
         if (!$this->openrouter_api) {
             return $this->generate_fallback_content($term_name, $category);
         }
         
-        // Build comprehensive system prompt for encyclopedia entries
+        // Build comprehensive system prompt for encyclopedia entries with citation instructions
         $system_prompt = $this->build_encyclopedia_system_prompt($category);
+        $system_prompt .= "\n\nIMPORTANT: When generating content, do NOT include inline citations or reference lists in your output. ";
+        $system_prompt .= "A properly formatted academic citation section will be automatically appended based on the data sources used. ";
+        $system_prompt .= "Focus on creating high-quality, scientifically accurate content that synthesizes information from the provided research data.";
         
         // Consolidate all research data
         $research_context = $this->consolidate_research_data($federated_data, $kb_chat_data, $rag_data);
@@ -755,8 +778,8 @@ class TerpediaCycEncyclopediaManager {
         $user_prompt .= "4. Biological activities and mechanisms\n";
         $user_prompt .= "5. Therapeutic applications\n";
         $user_prompt .= "6. Pharmacokinetics and safety\n";
-        $user_prompt .= "7. Current research and clinical evidence\n";
-        $user_prompt .= "8. References to key studies\n";
+        $user_prompt .= "7. Current research and clinical evidence\n\n";
+        $user_prompt .= "NOTE: Do not include a references or citations section - this will be automatically added using proper academic formatting.";
         
         $messages = array(
             array('role' => 'system', 'content' => $system_prompt),

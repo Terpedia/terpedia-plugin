@@ -137,7 +137,7 @@ class TerpediaOpenRouterHandler {
     }
     
     /**
-     * Build system prompt for agent
+     * Build system prompt for agent with citation guidelines
      */
     private function build_agent_system_prompt($agent_data) {
         $prompt = "You are " . $agent_data['name'] . ", " . $agent_data['description'] . "\n\n";
@@ -160,19 +160,35 @@ class TerpediaOpenRouterHandler {
         $prompt .= "- Use your unique voice style and speech patterns\n";
         $prompt .= "- Provide accurate, scientific information within your specialty\n";
         $prompt .= "- Be helpful and educational while maintaining your personality\n";
-        $prompt .= "- Keep responses concise but informative (2-3 paragraphs max)\n";
+        $prompt .= "- Keep responses concise but informative (2-3 paragraphs max)\n\n";
+        
+        // Add citation guidelines for scientific accuracy
+        $prompt .= "CITATION GUIDELINES:\n";
+        $prompt .= "- Do NOT include inline citations, reference numbers, or bibliography sections\n";
+        $prompt .= "- Academic citations are automatically generated from database sources used\n";
+        $prompt .= "- Focus on evidence-based content without citation formatting\n";
+        $prompt .= "- Sources include UniProt, Gene Ontology, Wikidata, MeSH, PubMed, and kb.terpedia.com\n";
         
         return $prompt;
     }
     
     /**
-     * Provide AI response for general queries
+     * Provide AI response for general queries with citation guidelines
      */
     public function provide_ai_response($default_response, $query, $context = array()) {
+        $system_content = 'You are a knowledgeable terpene expert assistant for Terpedia.com. Provide accurate, scientific information about terpenes, their properties, sources, and therapeutic applications. Be helpful and educational.\n\n';
+        
+        // Add citation guidelines
+        $system_content .= 'CITATION GUIDELINES:\n';
+        $system_content .= '- Do NOT include inline citations, reference numbers, or bibliography sections in your response\n';
+        $system_content .= '- Academic citations will be automatically added based on data sources used\n';
+        $system_content .= '- Focus on creating evidence-based, scientifically accurate content\n';
+        $system_content .= '- When referencing research findings, use clear language without citation markers\n';
+        
         $messages = array(
             array(
                 'role' => 'system',
-                'content' => 'You are a knowledgeable terpene expert assistant for Terpedia.com. Provide accurate, scientific information about terpenes, their properties, sources, and therapeutic applications. Be helpful and educational.'
+                'content' => $system_content
             ),
             array(
                 'role' => 'user',

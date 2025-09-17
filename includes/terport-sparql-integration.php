@@ -8,12 +8,16 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
+// Include citation manager
+require_once dirname(__FILE__) . '/citation-manager.php';
+
 class Terpedia_Terport_SPARQL_Integration {
     
     private $kb_base_url = 'https://kb.terpedia.com';
     private $sparql_endpoint = 'https://kb.terpedia.com:3030/biodb/sparql';
     private $chat_api_endpoint = 'https://kb.terpedia.com/api/chat';
     private $openrouter_api;
+    private $citation_manager;
     
     public function __construct() {
         add_action('init', array($this, 'init'));
@@ -24,6 +28,11 @@ class Terpedia_Terport_SPARQL_Integration {
         if (class_exists('TerpediaOpenRouterHandler')) {
             $this->openrouter_api = new TerpediaOpenRouterHandler();
         }
+        
+        // Initialize Citation Manager
+        if (class_exists('Terpedia_Citation_Manager')) {
+            $this->citation_manager = new Terpedia_Citation_Manager();
+        }
     }
     
     public function init() {
@@ -32,9 +41,9 @@ class Terpedia_Terport_SPARQL_Integration {
     }
     
     /**
-     * Query federated SPARQL endpoints for terpene research data
+     * Query federated SPARQL endpoints for terpene research data with citation tracking
      */
-    public function query_federated_terpene_research($terpene_name, $research_focus = '') {
+    public function query_federated_terpene_research($terpene_name, $research_focus = '', $post_id = null, $post_type = 'terport') {
         $queries = array(
             'uniprot_proteins' => $this->build_uniprot_query($terpene_name),
             'gene_ontology' => $this->build_gene_ontology_query($terpene_name),
@@ -45,16 +54,37 @@ class Terpedia_Terport_SPARQL_Integration {
         
         $results = array();
         foreach ($queries as $endpoint => $query) {
-            $results[$endpoint] = $this->execute_federated_query($query, $endpoint);
+            $query_result = $this->execute_federated_query($query, $endpoint);
+            $results[$endpoint] = $query_result;
+            
+            // Record citation if we have a post ID and citation manager
+            if ($post_id && $this->citation_manager && isset($query_result['success']) && $query_result['success']) {
+                $this->record_query_citation($post_id, $post_type, $endpoint, $terpene_name, $query, $query_result);
+            }
+        }
+        
+        // Also record kb.terpedia.com as a source since we're using their federated system
+        if ($post_id && $this->citation_manager) {
+            $this->citation_manager->add_citation($post_id, $post_type, 'kb_terpedia', 
+                'federated_query_' . md5($terpene_name . $research_focus), array(
+                    'metadata' => array(
+                        'terpene_name' => $terpene_name,
+                        'research_focus' => $research_focus,
+                        'query_type' => 'federated_sparql',
+                        'endpoints_queried' => array_keys($queries)
+                    ),
+                    'is_primary_source' => true
+                )
+            );
         }
         
         return $results;
     }
     
     /**
-     * Use natural language querying via kb.terpedia.com chat API
+     * Use natural language querying via kb.terpedia.com chat API with citation tracking
      */
-    public function query_natural_language($research_question) {
+    public function query_natural_language($research_question, $post_id = null, $post_type = 'terport') {
         $payload = array(
             'message' => $research_question,
             'include_visualizations' => true,
@@ -75,7 +105,133 @@ class Terpedia_Terport_SPARQL_Integration {
         }
         
         $body = wp_remote_retrieve_body($response);
-        return json_decode($body, true);
+        $result = json_decode($body, true);
+        
+        // Record citation for kb.terpedia.com chat API usage
+        if ($post_id && $this->citation_manager && !isset($result['error'])) {
+            $this->citation_manager->add_citation($post_id, $post_type, 'kb_terpedia', 
+                'chat_query_' . md5($research_question), array(
+                    'metadata' => array(
+                        'research_question' => $research_question,
+                        'query_type' => 'natural_language_chat',
+                        'api_endpoint' => $this->chat_api_endpoint,
+                        'federated_search' => true
+                    ),
+                    'source_url' => $this->kb_base_url . '/chat',
+                    'is_primary_source' => true
+                )
+            );
+        }
+        
+        return $result;
+    }
+    
+    /**
+     * Record a citation for a SPARQL query result
+     */
+    private function record_query_citation($post_id, $post_type, $endpoint, $terpene_name, $query, $query_result) {
+        if (!$this->citation_manager) {
+            return;
+        }
+        
+        // Extract relevant identifiers from query results
+        $identifiers = $this->extract_identifiers_from_results($query_result, $endpoint);
+        
+        foreach ($identifiers as $identifier => $metadata) {
+            $this->citation_manager->add_citation($post_id, $post_type, $endpoint, $identifier, array(
+                'metadata' => array_merge($metadata, array(
+                    'terpene_name' => $terpene_name,
+                    'query_timestamp' => current_time('mysql')
+                )),
+                'query_executed' => $query,
+                'results_count' => $query_result['count'] ?? 0
+            ));
+        }
+        
+        // If no specific identifiers found, record a general citation for the endpoint
+        if (empty($identifiers) && isset($query_result['count']) && $query_result['count'] > 0) {
+            $this->citation_manager->add_citation($post_id, $post_type, $endpoint, 
+                $terpene_name . '_query_' . date('Y-m-d'), array(
+                    'metadata' => array(
+                        'terpene_name' => $terpene_name,
+                        'query_timestamp' => current_time('mysql'),
+                        'general_search' => true
+                    ),
+                    'query_executed' => $query,
+                    'results_count' => $query_result['count']
+                )
+            );
+        }
+    }
+    
+    /**
+     * Extract identifiers from SPARQL query results for citation purposes
+     */
+    private function extract_identifiers_from_results($query_result, $endpoint) {
+        $identifiers = array();
+        
+        if (!isset($query_result['results']) || !is_array($query_result['results'])) {
+            return $identifiers;
+        }
+        
+        foreach ($query_result['results'] as $result) {
+            switch ($endpoint) {
+                case 'uniprot_proteins':
+                    if (isset($result['protein'])) {
+                        $protein_id = basename($result['protein']);
+                        $identifiers[$protein_id] = array(
+                            'protein_name' => $result['label'] ?? $protein_id,
+                            'organism' => $result['organism'] ?? 'Unknown',
+                            'function' => $result['function'] ?? 'Not specified'
+                        );
+                    }
+                    break;
+                
+                case 'gene_ontology':
+                    if (isset($result['term'])) {
+                        $go_id = basename($result['term']);
+                        $identifiers[$go_id] = array(
+                            'term_name' => $result['label'] ?? $go_id,
+                            'definition' => $result['definition'] ?? 'No definition available'
+                        );
+                    }
+                    break;
+                
+                case 'disease_ontology':
+                    if (isset($result['disease'])) {
+                        $do_id = basename($result['disease']);
+                        $identifiers[$do_id] = array(
+                            'term_name' => $result['label'] ?? $do_id,
+                            'definition' => $result['definition'] ?? 'No definition available'
+                        );
+                    }
+                    break;
+                
+                case 'wikidata_compounds':
+                    if (isset($result['compound'])) {
+                        $wd_id = basename($result['compound']);
+                        $identifiers[$wd_id] = array(
+                            'item_label' => $result['compoundLabel'] ?? $wd_id,
+                            'molecular_formula' => $result['formula'] ?? 'Not specified',
+                            'cas_number' => $result['cas'] ?? 'Not available'
+                        );
+                    }
+                    break;
+                
+                case 'mesh_terms':
+                    if (isset($result['concept'])) {
+                        $mesh_id = basename($result['concept']);
+                        $identifiers[$mesh_id] = array(
+                            'term_name' => $result['label'] ?? $mesh_id,
+                            'scope_note' => $result['scopeNote'] ?? 'No scope note available',
+                            'tree_number' => $result['treeNumber'] ?? 'Not specified'
+                        );
+                    }
+                    break;
+            }
+        }
+        
+        return $identifiers;
     }
     
     /**

@@ -12,10 +12,14 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
+// Include citation manager
+require_once dirname(__FILE__) . '/citation-manager.php';
+
 class Terpedia_Automatic_Terport_Generator {
     
     private $sparql_integration;
     private $openrouter_api;
+    private $citation_manager;
     private $generated_terports_option = 'terpedia_auto_generated_terports';
     private $current_version;
     
@@ -30,6 +34,10 @@ class Terpedia_Automatic_Terport_Generator {
         
         if (class_exists('TerpediaOpenRouterHandler')) {
             $this->openrouter_api = new TerpediaOpenRouterHandler();
+        }
+        
+        if (class_exists('Terpedia_Citation_Manager')) {
+            $this->citation_manager = new Terpedia_Citation_Manager();
         }
         
         // CRITICAL FIX: Register cron callback in constructor so it's always available
