@@ -16,8 +16,7 @@ class Terpedia_Case_Management_System {
         add_action('init', array($this, 'init'));
         add_action('wp_enqueue_scripts', array($this, 'enqueue_scripts'));
         
-        // Database setup
-        register_activation_hook(__FILE__, array($this, 'create_case_tables'));
+        // No database tables needed - using CPT and post meta only
         
         // AJAX handlers
         add_action('wp_ajax_terpedia_save_case_data', array($this, 'ajax_save_case_data'));
@@ -27,6 +26,10 @@ class Terpedia_Case_Management_System {
         add_action('wp_ajax_terpedia_get_vital_signs', array($this, 'ajax_get_vital_signs'));
         add_action('wp_ajax_terpedia_save_intervention', array($this, 'ajax_save_intervention'));
         add_action('wp_ajax_terpedia_get_interventions', array($this, 'ajax_get_interventions'));
+        
+        // Data seeding functionality
+        add_action('wp_ajax_terpedia_seed_case_data', array($this, 'ajax_seed_case_data'));
+        add_action('wp_ajax_nopriv_terpedia_seed_case_data', array($this, 'ajax_seed_case_data'));
         
         // Initialize OpenRouter API
         if (class_exists('TerpediaOpenRouterHandler')) {
@@ -131,73 +134,102 @@ class Terpedia_Case_Management_System {
     }
     
     /**
-     * Create database tables for case management
+     * Get case messages from post meta
      */
-    public function create_case_tables() {
-        global $wpdb;
+    private function get_case_messages($case_id) {
+        $messages = get_post_meta($case_id, '_terpedia_case_messages', true);
+        return is_array($messages) ? $messages : array();
+    }
+    
+    /**
+     * Add message to case
+     */
+    private function add_case_message($case_id, $user_id, $user_type, $message, $message_type = 'chat') {
+        $messages = $this->get_case_messages($case_id);
         
-        $charset_collate = $wpdb->get_charset_collate();
+        $new_message = array(
+            'id' => uniqid(),
+            'user_id' => $user_id,
+            'user_type' => $user_type,
+            'message' => $message,
+            'timestamp' => current_time('mysql'),
+            'message_type' => $message_type,
+            'metadata' => null
+        );
         
-        // Case messages table
-        $table_messages = $wpdb->prefix . 'terpedia_case_messages';
-        $sql_messages = "CREATE TABLE $table_messages (
-            id mediumint(9) NOT NULL AUTO_INCREMENT,
-            case_id bigint(20) NOT NULL,
-            user_id bigint(20) DEFAULT 0,
-            user_type varchar(20) DEFAULT 'human',
-            message text NOT NULL,
-            timestamp datetime DEFAULT CURRENT_TIMESTAMP,
-            message_type varchar(50) DEFAULT 'chat',
-            metadata longtext DEFAULT NULL,
-            PRIMARY KEY (id),
-            KEY case_id (case_id),
-            KEY timestamp (timestamp)
-        ) $charset_collate;";
+        $messages[] = $new_message;
+        update_post_meta($case_id, '_terpedia_case_messages', $messages);
         
-        // Vital signs table
-        $table_vitals = $wpdb->prefix . 'terpedia_case_vitals';
-        $sql_vitals = "CREATE TABLE $table_vitals (
-            id mediumint(9) NOT NULL AUTO_INCREMENT,
-            case_id bigint(20) NOT NULL,
-            recorded_by bigint(20) NOT NULL,
-            recorded_date datetime DEFAULT CURRENT_TIMESTAMP,
-            heart_rate int(11) DEFAULT NULL,
-            blood_pressure_systolic int(11) DEFAULT NULL,
-            blood_pressure_diastolic int(11) DEFAULT NULL,
-            weight decimal(8,2) DEFAULT NULL,
-            temperature decimal(5,2) DEFAULT NULL,
-            respiratory_rate int(11) DEFAULT NULL,
-            notes text DEFAULT NULL,
-            PRIMARY KEY (id),
-            KEY case_id (case_id),
-            KEY recorded_date (recorded_date)
-        ) $charset_collate;";
+        return $new_message;
+    }
+    
+    /**
+     * Get vital signs from post meta
+     */
+    private function get_vital_signs($case_id) {
+        $vitals = get_post_meta($case_id, '_terpedia_case_vitals', true);
+        return is_array($vitals) ? $vitals : array();
+    }
+    
+    /**
+     * Add vital signs record
+     */
+    private function add_vital_signs($case_id, $user_id, $data) {
+        $vitals = $this->get_vital_signs($case_id);
         
-        // Interventions table
-        $table_interventions = $wpdb->prefix . 'terpedia_case_interventions';
-        $sql_interventions = "CREATE TABLE $table_interventions (
-            id mediumint(9) NOT NULL AUTO_INCREMENT,
-            case_id bigint(20) NOT NULL,
-            recorded_by bigint(20) NOT NULL,
-            intervention_date datetime DEFAULT CURRENT_TIMESTAMP,
-            intervention_type varchar(100) NOT NULL,
-            intervention_category varchar(50) DEFAULT 'treatment',
-            description text NOT NULL,
-            outcome text DEFAULT NULL,
-            follow_up_required tinyint(1) DEFAULT 0,
-            follow_up_date datetime DEFAULT NULL,
-            status varchar(20) DEFAULT 'active',
-            metadata longtext DEFAULT NULL,
-            PRIMARY KEY (id),
-            KEY case_id (case_id),
-            KEY intervention_date (intervention_date),
-            KEY status (status)
-        ) $charset_collate;";
+        $new_vital = array(
+            'id' => uniqid(),
+            'case_id' => $case_id,
+            'recorded_by' => $user_id,
+            'recorded_date' => current_time('mysql'),
+            'heart_rate' => $data['heart_rate'] ?? null,
+            'blood_pressure_systolic' => $data['blood_pressure_systolic'] ?? null,
+            'blood_pressure_diastolic' => $data['blood_pressure_diastolic'] ?? null,
+            'weight' => $data['weight'] ?? null,
+            'temperature' => $data['temperature'] ?? null,
+            'respiratory_rate' => $data['respiratory_rate'] ?? null,
+            'notes' => $data['notes'] ?? null
+        );
         
-        require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
-        dbDelta($sql_messages);
-        dbDelta($sql_vitals);
-        dbDelta($sql_interventions);
+        $vitals[] = $new_vital;
+        update_post_meta($case_id, '_terpedia_case_vitals', $vitals);
+        
+        return $new_vital;
+    }
+    
+    /**
+     * Get interventions from post meta
+     */
+    private function get_interventions($case_id) {
+        $interventions = get_post_meta($case_id, '_terpedia_case_interventions', true);
+        return is_array($interventions) ? $interventions : array();
+    }
+    
+    /**
+     * Add intervention record
+     */
+    private function add_intervention($case_id, $user_id, $data) {
+        $interventions = $this->get_interventions($case_id);
+        
+        $new_intervention = array(
+            'id' => uniqid(),
+            'case_id' => $case_id,
+            'recorded_by' => $user_id,
+            'intervention_date' => current_time('mysql'),
+            'intervention_type' => $data['intervention_type'],
+            'intervention_category' => $data['intervention_category'] ?? 'treatment',
+            'description' => $data['description'],
+            'outcome' => $data['outcome'] ?? null,
+            'follow_up_required' => !empty($data['follow_up_required']),
+            'follow_up_date' => $data['follow_up_date'] ?? null,
+            'status' => $data['status'] ?? 'active',
+            'metadata' => $data['metadata'] ?? null
+        );
+        
+        $interventions[] = $new_intervention;
+        update_post_meta($case_id, '_terpedia_case_interventions', $interventions);
+        
+        return $new_intervention;
     }
     
     /**
@@ -1372,20 +1404,8 @@ class Terpedia_Case_Management_System {
         $user_type = sanitize_text_field($_POST['user_type']);
         $user_id = get_current_user_id();
         
-        global $wpdb;
-        $table = $wpdb->prefix . 'terpedia_case_messages';
-        
-        // Insert human message
-        $wpdb->insert(
-            $table,
-            array(
-                'case_id' => $case_id,
-                'user_id' => $user_id,
-                'user_type' => 'human',
-                'message' => $message,
-                'timestamp' => current_time('mysql')
-            )
-        );
+        // Add human message to post meta
+        $this->add_case_message($case_id, $user_id, 'human', $message);
         
         $response_data = array('message_saved' => true);
         
@@ -1394,18 +1414,8 @@ class Terpedia_Case_Management_System {
             $ai_response = $this->generate_ai_case_response($case_id, $message);
             
             if (!is_wp_error($ai_response)) {
-                // Save AI response
-                $wpdb->insert(
-                    $table,
-                    array(
-                        'case_id' => $case_id,
-                        'user_id' => 0,
-                        'user_type' => 'ai',
-                        'message' => $ai_response,
-                        'timestamp' => current_time('mysql')
-                    )
-                );
-                
+                // Save AI response to post meta
+                $this->add_case_message($case_id, 0, 'ai', $ai_response);
                 $response_data['ai_response'] = $ai_response;
             }
         }
@@ -1419,13 +1429,12 @@ class Terpedia_Case_Management_System {
     public function ajax_get_case_messages() {
         $case_id = intval($_GET['case_id']);
         
-        global $wpdb;
-        $table = $wpdb->prefix . 'terpedia_case_messages';
+        $messages = $this->get_case_messages($case_id);
         
-        $messages = $wpdb->get_results($wpdb->prepare(
-            "SELECT * FROM $table WHERE case_id = %d ORDER BY timestamp ASC",
-            $case_id
-        ));
+        // Sort messages by timestamp
+        usort($messages, function($a, $b) {
+            return strtotime($a['timestamp']) - strtotime($b['timestamp']);
+        });
         
         wp_send_json_success($messages);
     }
@@ -1435,35 +1444,21 @@ class Terpedia_Case_Management_System {
      */
     public function ajax_save_vital_signs() {
         $case_id = intval($_POST['case_id']);
-        $heart_rate = !empty($_POST['heart_rate']) ? intval($_POST['heart_rate']) : null;
-        $bp_systolic = !empty($_POST['blood_pressure_systolic']) ? intval($_POST['blood_pressure_systolic']) : null;
-        $bp_diastolic = !empty($_POST['blood_pressure_diastolic']) ? intval($_POST['blood_pressure_diastolic']) : null;
-        $weight = !empty($_POST['weight']) ? floatval($_POST['weight']) : null;
-        $temperature = !empty($_POST['temperature']) ? floatval($_POST['temperature']) : null;
-        $respiratory_rate = !empty($_POST['respiratory_rate']) ? intval($_POST['respiratory_rate']) : null;
-        $notes = sanitize_textarea_field($_POST['notes']);
         $user_id = get_current_user_id();
         
-        global $wpdb;
-        $table = $wpdb->prefix . 'terpedia_case_vitals';
-        
-        $result = $wpdb->insert(
-            $table,
-            array(
-                'case_id' => $case_id,
-                'recorded_by' => $user_id,
-                'recorded_date' => current_time('mysql'),
-                'heart_rate' => $heart_rate,
-                'blood_pressure_systolic' => $bp_systolic,
-                'blood_pressure_diastolic' => $bp_diastolic,
-                'weight' => $weight,
-                'temperature' => $temperature,
-                'respiratory_rate' => $respiratory_rate,
-                'notes' => $notes
-            )
+        $vital_data = array(
+            'heart_rate' => !empty($_POST['heart_rate']) ? intval($_POST['heart_rate']) : null,
+            'blood_pressure_systolic' => !empty($_POST['blood_pressure_systolic']) ? intval($_POST['blood_pressure_systolic']) : null,
+            'blood_pressure_diastolic' => !empty($_POST['blood_pressure_diastolic']) ? intval($_POST['blood_pressure_diastolic']) : null,
+            'weight' => !empty($_POST['weight']) ? floatval($_POST['weight']) : null,
+            'temperature' => !empty($_POST['temperature']) ? floatval($_POST['temperature']) : null,
+            'respiratory_rate' => !empty($_POST['respiratory_rate']) ? intval($_POST['respiratory_rate']) : null,
+            'notes' => sanitize_textarea_field($_POST['notes'])
         );
         
-        if ($result === false) {
+        $result = $this->add_vital_signs($case_id, $user_id, $vital_data);
+        
+        if (!$result) {
             wp_send_json_error('Failed to save vital signs');
         }
         
@@ -1477,8 +1472,7 @@ class Terpedia_Case_Management_System {
         $case_id = intval($_GET['case_id']);
         $chart_type = sanitize_text_field($_GET['chart_type']) ?: 'heart_rate';
         
-        global $wpdb;
-        $table = $wpdb->prefix . 'terpedia_case_vitals';
+        $vitals = $this->get_vital_signs($case_id);
         
         $field_map = array(
             'heart_rate' => 'heart_rate',
@@ -1489,19 +1483,14 @@ class Terpedia_Case_Management_System {
         
         $field = $field_map[$chart_type] ?? 'heart_rate';
         
-        $results = $wpdb->get_results($wpdb->prepare(
-            "SELECT recorded_date, {$field} as value FROM $table 
-             WHERE case_id = %d AND {$field} IS NOT NULL 
-             ORDER BY recorded_date ASC",
-            $case_id
-        ));
-        
         $labels = array();
         $values = array();
         
-        foreach ($results as $row) {
-            $labels[] = date('Y-m-d', strtotime($row->recorded_date));
-            $values[] = floatval($row->value);
+        foreach ($vitals as $vital) {
+            if (!empty($vital[$field]) && $vital[$field] !== null) {
+                $labels[] = date('Y-m-d', strtotime($vital['recorded_date']));
+                $values[] = floatval($vital[$field]);
+            }
         }
         
         wp_send_json_success(array(
@@ -1515,34 +1504,21 @@ class Terpedia_Case_Management_System {
      */
     public function ajax_save_intervention() {
         $case_id = intval($_POST['case_id']);
-        $intervention_type = sanitize_text_field($_POST['intervention_type']);
-        $intervention_category = sanitize_text_field($_POST['intervention_category']);
-        $description = sanitize_textarea_field($_POST['description']);
-        $outcome = sanitize_textarea_field($_POST['outcome']);
-        $follow_up_required = !empty($_POST['follow_up_required']) ? 1 : 0;
-        $follow_up_date = !empty($_POST['follow_up_date']) ? sanitize_text_field($_POST['follow_up_date']) : null;
         $user_id = get_current_user_id();
         
-        global $wpdb;
-        $table = $wpdb->prefix . 'terpedia_case_interventions';
-        
-        $result = $wpdb->insert(
-            $table,
-            array(
-                'case_id' => $case_id,
-                'recorded_by' => $user_id,
-                'intervention_date' => current_time('mysql'),
-                'intervention_type' => $intervention_type,
-                'intervention_category' => $intervention_category,
-                'description' => $description,
-                'outcome' => $outcome,
-                'follow_up_required' => $follow_up_required,
-                'follow_up_date' => $follow_up_date,
-                'status' => 'active'
-            )
+        $intervention_data = array(
+            'intervention_type' => sanitize_text_field($_POST['intervention_type']),
+            'intervention_category' => sanitize_text_field($_POST['intervention_category']),
+            'description' => sanitize_textarea_field($_POST['description']),
+            'outcome' => sanitize_textarea_field($_POST['outcome']),
+            'follow_up_required' => !empty($_POST['follow_up_required']),
+            'follow_up_date' => !empty($_POST['follow_up_date']) ? sanitize_text_field($_POST['follow_up_date']) : null,
+            'status' => 'active'
         );
         
-        if ($result === false) {
+        $result = $this->add_intervention($case_id, $user_id, $intervention_data);
+        
+        if (!$result) {
             wp_send_json_error('Failed to save intervention');
         }
         
@@ -1555,13 +1531,12 @@ class Terpedia_Case_Management_System {
     public function ajax_get_interventions() {
         $case_id = intval($_GET['case_id']);
         
-        global $wpdb;
-        $table = $wpdb->prefix . 'terpedia_case_interventions';
+        $interventions = $this->get_interventions($case_id);
         
-        $interventions = $wpdb->get_results($wpdb->prepare(
-            "SELECT * FROM $table WHERE case_id = %d ORDER BY intervention_date DESC",
-            $case_id
-        ));
+        // Sort interventions by date (newest first)
+        usort($interventions, function($a, $b) {
+            return strtotime($b['intervention_date']) - strtotime($a['intervention_date']);
+        });
         
         wp_send_json_success($interventions);
     }
@@ -1596,6 +1571,897 @@ class Terpedia_Case_Management_System {
         return isset($response['choices'][0]['message']['content']) ? 
             $response['choices'][0]['message']['content'] : 
             "I couldn't generate a response. Please try rephrasing your question.";
+    }
+    
+    /**
+     * AJAX handler to seed sample case data
+     */
+    public function ajax_seed_case_data() {
+        // Simple security check
+        if (isset($_GET['seed_confirm']) && $_GET['seed_confirm'] === 'yes') {
+            $this->seed_sample_cases();
+            wp_send_json_success('Sample cases created successfully!');
+        } else {
+            wp_send_json_error('Invalid request');
+        }
+    }
+    
+    /**
+     * Create comprehensive sample veterinary cases
+     */
+    private function seed_sample_cases() {
+        // Remove existing cases first
+        $existing_cases = get_posts([
+            'post_type' => 'terpedia_case',
+            'posts_per_page' => -1,
+            'post_status' => 'publish'
+        ]);
+        
+        foreach ($existing_cases as $case) {
+            wp_delete_post($case->ID, true);
+        }
+        
+        // Create the 4 comprehensive cases
+        $this->create_bella_case();
+        $this->create_thunder_case(); 
+        $this->create_whiskers_case();
+        $this->create_emergency_case();
+    }
+    
+    /**
+     * Case 1: Bella - Golden Retriever Seizure Management
+     */
+    private function create_bella_case() {
+        $case_id = wp_insert_post([
+            'post_type' => 'terpedia_case',
+            'post_title' => 'Case #001: Bella - Seizure Management',
+            'post_content' => 'Bella is a 4-year-old spayed female Golden Retriever presenting with a 6-month history of generalized tonic-clonic seizures. Initial presentation showed seizures occurring 2-3 times weekly, lasting 45-90 seconds each. Pre-ictal behavior includes restlessness and excessive panting. Post-ictal confusion lasts approximately 15 minutes.
+
+Current management includes phenobarbital 2.5mg/kg BID with therapeutic levels maintained at 25-30 μg/mL. We have implemented a novel terpene protocol incorporating linalool (5mg/kg daily) and β-caryophyllene (3mg/kg daily) based on recent research showing neuroprotective effects and seizure threshold elevation in canine epilepsy models.
+
+Owner reports significant improvement in seizure frequency and severity since initiation of terpene therapy. Bella\'s quality of life has markedly improved with increased activity levels and better appetite.',
+            'post_status' => 'publish',
+            'post_author' => 1
+        ]);
+        
+        // Patient Information
+        update_post_meta($case_id, 'patient_name', 'Bella');
+        update_post_meta($case_id, 'species', 'Canine');
+        update_post_meta($case_id, 'breed', 'Golden Retriever');
+        update_post_meta($case_id, 'age', '4 years');
+        update_post_meta($case_id, 'weight', '28.5 kg');
+        update_post_meta($case_id, 'owner_name', 'Sarah & Mark Johnson');
+        update_post_meta($case_id, 'owner_contact', 'Phone: (555) 123-4567
+Email: sarah.johnson@email.com
+Address: 123 Oak Street, Springfield, IL 62701');
+        update_post_meta($case_id, 'case_status', 'active');
+        
+        // Chat Messages
+        $messages = [
+            [
+                'id' => uniqid(),
+                'user_id' => 1,
+                'user_type' => 'human',
+                'message' => 'Bella came in for her 2-week follow-up since starting the linalool protocol. Owner reports only 1 seizure this week compared to 3 seizures the previous week.',
+                'timestamp' => date('Y-m-d H:i:s', strtotime('-8 days')),
+                'message_type' => 'chat',
+                'metadata' => null
+            ],
+            [
+                'id' => uniqid(),
+                'user_id' => 2,
+                'user_type' => 'human',
+                'message' => 'That\'s encouraging progress! Have we checked her phenobarbital levels recently? Want to make sure we\'re not seeing interaction effects.',
+                'timestamp' => date('Y-m-d H:i:s', strtotime('-8 days +15 minutes')),
+                'message_type' => 'chat',
+                'metadata' => null
+            ],
+            [
+                'id' => uniqid(),
+                'user_id' => 0,
+                'user_type' => 'ai',
+                'message' => 'The linalool-phenobarbital combination shows promising results. Linalool\'s GABA-ergic effects may potentiate anticonvulsant activity while potentially allowing for lower phenobarbital doses long-term. Consider monitoring hepatic function closely given the dual pathway metabolism.',
+                'timestamp' => date('Y-m-d H:i:s', strtotime('-8 days +30 minutes')),
+                'message_type' => 'chat',
+                'metadata' => null
+            ],
+            [
+                'id' => uniqid(),
+                'user_id' => 1,
+                'user_type' => 'human',
+                'message' => 'Blood work scheduled for tomorrow. Owner is very happy with Bella\'s improvement - she\'s been more playful and alert between episodes.',
+                'timestamp' => date('Y-m-d H:i:s', strtotime('-7 days')),
+                'message_type' => 'chat',
+                'metadata' => null
+            ],
+            [
+                'id' => uniqid(),
+                'user_id' => 3,
+                'user_type' => 'human',
+                'message' => 'Lab results in: Phenobarbital level at 28 μg/mL (therapeutic), ALT slightly elevated at 95 U/L but within acceptable range for phenobarbital therapy.',
+                'timestamp' => date('Y-m-d H:i:s', strtotime('-6 days')),
+                'message_type' => 'chat',
+                'metadata' => null
+            ],
+            [
+                'id' => uniqid(),
+                'user_id' => 2,
+                'user_type' => 'human',
+                'message' => 'Should we consider adding β-caryophyllene to the protocol? The CB2 receptor activation might provide additional neuroprotective benefits.',
+                'timestamp' => date('Y-m-d H:i:s', strtotime('-5 days')),
+                'message_type' => 'chat',
+                'metadata' => null
+            ],
+            [
+                'id' => uniqid(),
+                'user_id' => 0,
+                'user_type' => 'ai',
+                'message' => 'β-caryophyllene addition is well-supported by current research. Start with 3mg/kg daily divided BID. Its CB2 agonist activity provides anti-inflammatory neuroprotection without psychoactive effects. Monitor for any changes in seizure frequency or duration.',
+                'timestamp' => date('Y-m-d H:i:s', strtotime('-5 days +20 minutes')),
+                'message_type' => 'chat',
+                'metadata' => null
+            ],
+            [
+                'id' => uniqid(),
+                'user_id' => 1,
+                'user_type' => 'human',
+                'message' => 'Owner approved β-caryophyllene addition. Starting today with morning and evening dosing mixed with food.',
+                'timestamp' => date('Y-m-d H:i:s', strtotime('-4 days')),
+                'message_type' => 'chat',
+                'metadata' => null
+            ],
+            [
+                'id' => uniqid(),
+                'user_id' => 1,
+                'user_type' => 'human',
+                'message' => 'Bella had a mild seizure yesterday evening - about 30 seconds duration, much shorter than typical. Recovery time was also reduced to about 8 minutes.',
+                'timestamp' => date('Y-m-d H:i:s', strtotime('-2 days')),
+                'message_type' => 'chat',
+                'metadata' => null
+            ],
+            [
+                'id' => uniqid(),
+                'user_id' => 1,
+                'user_type' => 'human',
+                'message' => 'Owner scheduling follow-up appointment for next week. Wants to continue current protocol. Bella is doing great overall!',
+                'timestamp' => date('Y-m-d H:i:s', strtotime('-1 day')),
+                'message_type' => 'chat',
+                'metadata' => null
+            ]
+        ];
+        
+        update_post_meta($case_id, '_terpedia_case_messages', $messages);
+        
+        // Vital Signs
+        $vitals = [];
+        $base_date = strtotime('-18 days');
+        
+        for ($i = 0; $i < 16; $i++) {
+            $date = date('Y-m-d H:i:s', $base_date + ($i * 86400) + rand(28800, 64800));
+            $day_factor = $i / 15;
+            $stress_factor = 1 - ($day_factor * 0.3);
+            
+            $vitals[] = [
+                'id' => uniqid(),
+                'case_id' => $case_id,
+                'recorded_by' => rand(1, 3),
+                'recorded_date' => $date,
+                'heart_rate' => round(95 + rand(-10, 15) - ($day_factor * 8)),
+                'blood_pressure_systolic' => round(140 + rand(-15, 20) * $stress_factor),
+                'blood_pressure_diastolic' => round(85 + rand(-10, 15) * $stress_factor),
+                'weight' => round((28.5 + rand(-2, 3) * 0.1) * 10) / 10,
+                'temperature' => round((38.7 + rand(-5, 5) * 0.1) * 10) / 10,
+                'respiratory_rate' => round(22 + rand(-5, 8) - ($day_factor * 3)),
+                'notes' => $i < 5 ? 'Pre-seizure monitoring' : 
+                          ($i < 10 ? 'Linalool protocol initiated' : 
+                           'Combined terpene therapy, good response')
+            ];
+        }
+        
+        update_post_meta($case_id, '_terpedia_case_vitals', $vitals);
+        
+        // Interventions
+        $interventions = [
+            [
+                'id' => uniqid(),
+                'case_id' => $case_id,
+                'recorded_by' => 1,
+                'intervention_date' => date('Y-m-d H:i:s', strtotime('-18 days')),
+                'intervention_type' => 'Initial Neurological Assessment',
+                'intervention_category' => 'diagnosis',
+                'description' => 'Complete neurological examination performed. Cranial nerves II-XII normal. No focal neurological deficits noted. Reflexes appropriate and symmetrical.',
+                'outcome' => 'MRI scheduled, phenobarbital therapy initiated at 2.5mg/kg BID',
+                'follow_up_required' => true,
+                'follow_up_date' => date('Y-m-d', strtotime('-14 days')),
+                'status' => 'completed',
+                'metadata' => null
+            ],
+            [
+                'id' => uniqid(),
+                'case_id' => $case_id,
+                'recorded_by' => 1,
+                'intervention_date' => date('Y-m-d H:i:s', strtotime('-12 days')),
+                'intervention_type' => 'Linalool Therapy Initiation',
+                'intervention_category' => 'treatment',
+                'description' => 'Started linalool supplementation at 5mg/kg daily based on recent research showing GABAergic effects and seizure threshold elevation in canine models.',
+                'outcome' => 'Owner compliant with therapy, initial tolerance good',
+                'follow_up_required' => true,
+                'follow_up_date' => date('Y-m-d', strtotime('-7 days')),
+                'status' => 'active',
+                'metadata' => null
+            ],
+            [
+                'id' => uniqid(),
+                'case_id' => $case_id,
+                'recorded_by' => 2,
+                'intervention_date' => date('Y-m-d H:i:s', strtotime('-8 days')),
+                'intervention_type' => 'Blood Chemistry Panel',
+                'intervention_category' => 'diagnosis',
+                'description' => 'Complete blood chemistry panel including phenobarbital level, hepatic function panel, and electrolytes.',
+                'outcome' => 'Phenobarbital level therapeutic at 28 μg/mL, mild ALT elevation acceptable',
+                'follow_up_required' => true,
+                'follow_up_date' => date('Y-m-d', strtotime('+30 days')),
+                'status' => 'completed',
+                'metadata' => null
+            ],
+            [
+                'id' => uniqid(),
+                'case_id' => $case_id,
+                'recorded_by' => 2,
+                'intervention_date' => date('Y-m-d H:i:s', strtotime('-5 days')),
+                'intervention_type' => 'β-Caryophyllene Addition',
+                'intervention_category' => 'treatment',
+                'description' => 'Added β-caryophyllene at 3mg/kg daily divided BID to existing protocol. CB2 receptor agonist providing neuroprotective effects.',
+                'outcome' => 'Well tolerated, no adverse effects noted',
+                'follow_up_required' => true,
+                'follow_up_date' => date('Y-m-d', strtotime('+7 days')),
+                'status' => 'active',
+                'metadata' => null
+            ],
+            [
+                'id' => uniqid(),
+                'case_id' => $case_id,
+                'recorded_by' => 1,
+                'intervention_date' => date('Y-m-d H:i:s', strtotime('-3 days')),
+                'intervention_type' => 'Seizure Response Assessment',
+                'intervention_category' => 'treatment',
+                'description' => 'Evaluated seizure characteristics post-terpene therapy. Seizure duration reduced from 60-90 seconds to 30-45 seconds.',
+                'outcome' => 'Significant clinical improvement in seizure severity and recovery',
+                'follow_up_required' => true,
+                'follow_up_date' => date('Y-m-d', strtotime('+14 days')),
+                'status' => 'active',
+                'metadata' => null
+            ]
+        ];
+        
+        update_post_meta($case_id, '_terpedia_case_interventions', $interventions);
+        
+        return $case_id;
+    }
+    
+    /**
+     * Case 2: Thunder - Thoroughbred Anxiety Treatment  
+     */
+    private function create_thunder_case() {
+        $case_id = wp_insert_post([
+            'post_type' => 'terpedia_case',
+            'post_title' => 'Case #002: Thunder - Performance Anxiety Protocol',
+            'post_content' => 'Thunder is an 8-year-old Thoroughbred gelding competing in eventing who has developed significant performance anxiety over the past 4 months. Symptoms include excessive sweating, elevated heart rate pre-competition, reluctance to load in trailer, and decreased performance scores.
+
+Initial behavioral assessment revealed no physical abnormalities contributing to anxiety. Stress-related behaviors began following a minor trailer accident 5 months ago. Traditional anxiolytic medications were ineffective and caused sedation affecting athletic performance.
+
+Implemented novel terpene-based protocol using limonene (8mg/kg daily) for its anxiolytic D-limonene effects and myrcene (6mg/kg daily) for muscle relaxation. Both terpenes selected for absence of prohibited substances in equine competition.',
+            'post_status' => 'publish',
+            'post_author' => 1
+        ]);
+        
+        update_post_meta($case_id, 'patient_name', 'Thunder');
+        update_post_meta($case_id, 'species', 'Equine');
+        update_post_meta($case_id, 'breed', 'Thoroughbred');
+        update_post_meta($case_id, 'age', '8 years');
+        update_post_meta($case_id, 'weight', '545 kg');
+        update_post_meta($case_id, 'owner_name', 'Riverside Equestrian Center - Amanda Sterling');
+        update_post_meta($case_id, 'owner_contact', 'Phone: (555) 234-5678
+Email: amanda@riversideequestrian.com
+Address: 456 County Road 12, Lexington, KY 40511');
+        update_post_meta($case_id, 'case_status', 'active');
+        
+        // Create comprehensive messages, vitals, and interventions for Thunder
+        $messages = [
+            [
+                'id' => uniqid(),
+                'user_id' => 1,
+                'user_type' => 'human',
+                'message' => 'Thunder arrived for pre-competition assessment. Heart rate at rest is 48 BPM but jumps to 85+ when trailer is mentioned. Clear anxiety response.',
+                'timestamp' => date('Y-m-d H:i:s', strtotime('-10 days')),
+                'message_type' => 'chat',
+                'metadata' => null
+            ],
+            [
+                'id' => uniqid(),
+                'user_id' => 2,
+                'user_type' => 'human',
+                'message' => 'Classic post-traumatic stress response. The limonene protocol should help with the limbic system regulation.',
+                'timestamp' => date('Y-m-d H:i:s', strtotime('-10 days +20 minutes')),
+                'message_type' => 'chat',
+                'metadata' => null
+            ],
+            [
+                'id' => uniqid(),
+                'user_id' => 0,
+                'user_type' => 'ai',
+                'message' => 'Limonene and myrcene are both naturally occurring terpenes providing anxiolytic effects through 5-HT1A receptor modulation and GABA potentiation without performance-impairing sedation.',
+                'timestamp' => date('Y-m-d H:i:s', strtotime('-10 days +35 minutes')),
+                'message_type' => 'chat',
+                'metadata' => null
+            ],
+            [
+                'id' => uniqid(),
+                'user_id' => 1,
+                'user_type' => 'human',
+                'message' => 'Started Thunder on limonene 8mg/kg daily this morning. Owner reports he was noticeably calmer during routine handling this afternoon.',
+                'timestamp' => date('Y-m-d H:i:s', strtotime('-8 days')),
+                'message_type' => 'chat',
+                'metadata' => null
+            ],
+            [
+                'id' => uniqid(),
+                'user_id' => 2,
+                'user_type' => 'human',
+                'message' => 'Excellent progress report from Amanda. Thunder loaded into the trailer voluntarily yesterday for the first time in months!',
+                'timestamp' => date('Y-m-d H:i:s', strtotime('-5 days')),
+                'message_type' => 'chat',
+                'metadata' => null
+            ],
+            [
+                'id' => uniqid(),
+                'user_id' => 1,
+                'user_type' => 'human',
+                'message' => 'Just got word - Thunder placed 3rd in his division! First podium finish since the accident. Amanda is thrilled with the results.',
+                'timestamp' => date('Y-m-d H:i:s', strtotime('-1 day')),
+                'message_type' => 'chat',
+                'metadata' => null
+            ]
+        ];
+        
+        update_post_meta($case_id, '_terpedia_case_messages', $messages);
+        
+        // Vital signs showing anxiety improvement
+        $vitals = [];
+        $base_date = strtotime('-12 days');
+        
+        for ($i = 0; $i < 12; $i++) {
+            $date = date('Y-m-d H:i:s', $base_date + ($i * 86400) + rand(21600, 61200));
+            $improvement_factor = $i / 11;
+            $anxiety_reduction = 1 - ($improvement_factor * 0.4);
+            
+            $vitals[] = [
+                'id' => uniqid(),
+                'case_id' => $case_id,
+                'recorded_by' => rand(1, 3),
+                'recorded_date' => $date,
+                'heart_rate' => round(42 + rand(5, 20) * $anxiety_reduction),
+                'blood_pressure_systolic' => null,
+                'blood_pressure_diastolic' => null,
+                'weight' => round(545 + rand(-15, 10)),
+                'temperature' => round((37.8 + rand(-3, 4) * 0.1) * 10) / 10,
+                'respiratory_rate' => round(12 + rand(0, 8) * $anxiety_reduction),
+                'notes' => $i < 3 ? 'Pre-treatment anxiety baseline' :
+                          ($i < 6 ? 'Limonene therapy initiated' :
+                           'Pre-competition assessment, improvement noted')
+            ];
+        }
+        
+        update_post_meta($case_id, '_terpedia_case_vitals', $vitals);
+        
+        // Interventions
+        $interventions = [
+            [
+                'id' => uniqid(),
+                'case_id' => $case_id,
+                'recorded_by' => 1,
+                'intervention_date' => date('Y-m-d H:i:s', strtotime('-12 days')),
+                'intervention_type' => 'Behavioral Assessment',
+                'intervention_category' => 'diagnosis',
+                'description' => 'Comprehensive behavioral evaluation including stress response testing, trailer loading assessment, and performance anxiety scoring.',
+                'outcome' => 'Confirmed performance anxiety with trauma-associated triggers',
+                'follow_up_required' => true,
+                'follow_up_date' => date('Y-m-d', strtotime('-8 days')),
+                'status' => 'completed',
+                'metadata' => null
+            ],
+            [
+                'id' => uniqid(),
+                'case_id' => $case_id,
+                'recorded_by' => 1,
+                'intervention_date' => date('Y-m-d H:i:s', strtotime('-10 days')),
+                'intervention_type' => 'Limonene Therapy Initiation',
+                'intervention_category' => 'treatment',
+                'description' => 'Started D-limonene at 8mg/kg daily mixed with grain ration. Anxiolytic properties through 5-HT1A receptor modulation.',
+                'outcome' => 'Immediate tolerance good, initial calming effects noted within 2 hours',
+                'follow_up_required' => true,
+                'follow_up_date' => date('Y-m-d', strtotime('-6 days')),
+                'status' => 'active',
+                'metadata' => null
+            ],
+            [
+                'id' => uniqid(),
+                'case_id' => $case_id,
+                'recorded_by' => 2,
+                'intervention_date' => date('Y-m-d H:i:s', strtotime('-6 days')),
+                'intervention_type' => 'Trailer Loading Desensitization',
+                'intervention_category' => 'treatment',
+                'description' => 'Systematic desensitization protocol for trailer loading while on terpene therapy. Gradual exposure with positive reinforcement.',
+                'outcome' => 'Successful voluntary loading achieved, HR remained below 65 BPM',
+                'follow_up_required' => false,
+                'follow_up_date' => null,
+                'status' => 'completed',
+                'metadata' => null
+            ],
+            [
+                'id' => uniqid(),
+                'case_id' => $case_id,
+                'recorded_by' => 1,
+                'intervention_date' => date('Y-m-d H:i:s', strtotime('-1 day')),
+                'intervention_type' => 'Competition Performance Evaluation',
+                'intervention_category' => 'treatment',
+                'description' => 'Post-competition assessment following 3rd place finish. Thunder performed at pre-incident levels.',
+                'outcome' => 'Outstanding success - podium finish achieved, anxiety fully managed',
+                'follow_up_required' => true,
+                'follow_up_date' => date('Y-m-d', strtotime('+30 days')),
+                'status' => 'completed',
+                'metadata' => null
+            ]
+        ];
+        
+        update_post_meta($case_id, '_terpedia_case_interventions', $interventions);
+        
+        return $case_id;
+    }
+    
+    /**
+     * Case 3: Whiskers - Maine Coon Palliative Care
+     */
+    private function create_whiskers_case() {
+        $case_id = wp_insert_post([
+            'post_type' => 'terpedia_case',
+            'post_title' => 'Case #003: Whiskers - Feline Lymphoma Support Care',
+            'post_content' => 'Whiskers is a 12-year-old neutered male Maine Coon diagnosed with intermediate-grade alimentary lymphoma 6 weeks ago. Initial presentation included weight loss, intermittent vomiting, and decreased appetite. Family opted for palliative care approach rather than aggressive chemotherapy.
+
+Treatment goals focus on comfort, appetite stimulation, and maintaining dignity throughout end-of-life care. Initiated supportive care protocol including geraniol (2mg/kg BID) for anti-inflammatory effects, and β-caryophyllene (1.5mg/kg BID) for pain management and appetite stimulation through CB2 receptor activation.',
+            'post_status' => 'publish',
+            'post_author' => 1
+        ]);
+        
+        update_post_meta($case_id, 'patient_name', 'Whiskers');
+        update_post_meta($case_id, 'species', 'Feline');
+        update_post_meta($case_id, 'breed', 'Maine Coon');
+        update_post_meta($case_id, 'age', '12 years');
+        update_post_meta($case_id, 'weight', '5.2 kg');
+        update_post_meta($case_id, 'owner_name', 'Eleanor and Robert Chen');
+        update_post_meta($case_id, 'owner_contact', 'Phone: (555) 345-6789
+Email: eleanor.chen@email.com
+Address: 789 Maple Avenue, Portland, OR 97205');
+        update_post_meta($case_id, 'case_status', 'critical');
+        
+        // Palliative care focused messages
+        $messages = [
+            [
+                'id' => uniqid(),
+                'user_id' => 1,
+                'user_type' => 'human',
+                'message' => 'Whiskers came in today for his 2-week recheck. Weight has stabilized at 5.2kg. Eleanor reports he\'s eating small meals more frequently since starting the geraniol.',
+                'timestamp' => date('Y-m-d H:i:s', strtotime('-8 days')),
+                'message_type' => 'chat',
+                'metadata' => null
+            ],
+            [
+                'id' => uniqid(),
+                'user_id' => 0,
+                'user_type' => 'ai',
+                'message' => 'Geraniol\'s anti-inflammatory effects on gastric mucosa can significantly reduce nausea and vomiting in lymphoma patients. The appetite stimulation suggests good therapeutic response.',
+                'timestamp' => date('Y-m-d H:i:s', strtotime('-8 days +30 minutes')),
+                'message_type' => 'chat',
+                'metadata' => null
+            ],
+            [
+                'id' => uniqid(),
+                'user_id' => 1,
+                'user_type' => 'human',
+                'message' => 'Eleanor says vomiting reduced from daily to 2-3 times per week. She\'s very pleased with his comfort level.',
+                'timestamp' => date('Y-m-d H:i:s', strtotime('-7 days')),
+                'message_type' => 'chat',
+                'metadata' => null
+            ],
+            [
+                'id' => uniqid(),
+                'user_id' => 2,
+                'user_type' => 'human',
+                'message' => 'Family meeting went well. They understand the prognosis but want to focus on quality time. Whiskers is still enjoying sunbathing and purrs when petted.',
+                'timestamp' => date('Y-m-d H:i:s', strtotime('-5 days')),
+                'message_type' => 'chat',
+                'metadata' => null
+            ],
+            [
+                'id' => uniqid(),
+                'user_id' => 2,
+                'user_type' => 'human',
+                'message' => 'Eleanor called - Whiskers had a really good day yesterday. Played with his feather toy for the first time in weeks. The β-caryophyllene seems to be helping.',
+                'timestamp' => date('Y-m-d H:i:s', strtotime('-3 days')),
+                'message_type' => 'chat',
+                'metadata' => null
+            ],
+            [
+                'id' => uniqid(),
+                'user_id' => 3,
+                'user_type' => 'human',
+                'message' => 'This is such a beautiful example of how terpene therapy can enhance comfort care. Whiskers is maintaining his personality and the family feels empowered.',
+                'timestamp' => date('Y-m-d H:i:s', strtotime('-1 day')),
+                'message_type' => 'chat',
+                'metadata' => null
+            ]
+        ];
+        
+        update_post_meta($case_id, '_terpedia_case_messages', $messages);
+        
+        // Vital signs showing initial decline then stabilization
+        $vitals = [];
+        $base_date = strtotime('-15 days');
+        
+        for ($i = 0; $i < 15; $i++) {
+            $date = date('Y-m-d H:i:s', $base_date + ($i * 86400) + rand(25200, 64800));
+            
+            if ($i < 6) {
+                $decline_factor = $i / 6;
+                $weight = 5.8 - ($decline_factor * 0.6);
+                $temp = 38.5 + rand(-5, 3) * 0.1;
+                $hr = 180 + rand(0, 20);
+                $notes = 'Pre-treatment monitoring, disease progression noted';
+            } else {
+                $weight = 5.2 + rand(-2, 1) * 0.1;
+                $temp = 38.3 + rand(-3, 5) * 0.1;
+                $hr = 160 + rand(-10, 15);
+                $notes = $i < 10 ? 'Geraniol therapy initiated' : 'Combined terpene protocol, comfort care focus';
+            }
+            
+            $vitals[] = [
+                'id' => uniqid(),
+                'case_id' => $case_id,
+                'recorded_by' => rand(1, 3),
+                'recorded_date' => $date,
+                'heart_rate' => round($hr),
+                'blood_pressure_systolic' => null,
+                'blood_pressure_diastolic' => null,
+                'weight' => round($weight * 10) / 10,
+                'temperature' => round($temp * 10) / 10,
+                'respiratory_rate' => round(24 + rand(-6, 12)),
+                'notes' => $notes
+            ];
+        }
+        
+        update_post_meta($case_id, '_terpedia_case_vitals', $vitals);
+        
+        // Palliative care interventions
+        $interventions = [
+            [
+                'id' => uniqid(),
+                'case_id' => $case_id,
+                'recorded_by' => 1,
+                'intervention_date' => date('Y-m-d H:i:s', strtotime('-14 days')),
+                'intervention_type' => 'Lymphoma Diagnosis and Staging',
+                'intervention_category' => 'diagnosis',
+                'description' => 'Confirmed intermediate-grade alimentary lymphoma through intestinal biopsy and histopathology. Family chose palliative care approach.',
+                'outcome' => 'Localized disease, good candidate for palliative care approach',
+                'follow_up_required' => true,
+                'follow_up_date' => date('Y-m-d', strtotime('-10 days')),
+                'status' => 'completed',
+                'metadata' => null
+            ],
+            [
+                'id' => uniqid(),
+                'case_id' => $case_id,
+                'recorded_by' => 1,
+                'intervention_date' => date('Y-m-d H:i:s', strtotime('-10 days')),
+                'intervention_type' => 'Geraniol Therapy Initiation',
+                'intervention_category' => 'treatment',
+                'description' => 'Started geraniol 2mg/kg BID for anti-inflammatory and potential anti-neoplastic effects. Formulated in palatable liquid.',
+                'outcome' => 'Well tolerated, initial reduction in vomiting frequency noted',
+                'follow_up_required' => true,
+                'follow_up_date' => date('Y-m-d', strtotime('-6 days')),
+                'status' => 'active',
+                'metadata' => null
+            ],
+            [
+                'id' => uniqid(),
+                'case_id' => $case_id,
+                'recorded_by' => 2,
+                'intervention_date' => date('Y-m-d H:i:s', strtotime('-6 days')),
+                'intervention_type' => 'β-Caryophyllene Addition',
+                'intervention_category' => 'treatment',
+                'description' => 'Added β-caryophyllene 1.5mg/kg BID for CB2-mediated appetite stimulation and pain management.',
+                'outcome' => 'Improved appetite and increased activity levels observed',
+                'follow_up_required' => true,
+                'follow_up_date' => date('Y-m-d', strtotime('-2 days')),
+                'status' => 'active',
+                'metadata' => null
+            ],
+            [
+                'id' => uniqid(),
+                'case_id' => $case_id,
+                'recorded_by' => 2,
+                'intervention_date' => date('Y-m-d H:i:s', strtotime('-4 days')),
+                'intervention_type' => 'Quality of Life Assessment',
+                'intervention_category' => 'treatment',
+                'description' => 'Implemented standardized feline quality of life scale. Evaluated mobility, appetite, hygiene, happiness.',
+                'outcome' => 'Baseline QoL score: 22/35 - Good quality with room for support',
+                'follow_up_required' => true,
+                'follow_up_date' => date('Y-m-d', strtotime('+7 days')),
+                'status' => 'active',
+                'metadata' => null
+            ],
+            [
+                'id' => uniqid(),
+                'case_id' => $case_id,
+                'recorded_by' => 1,
+                'intervention_date' => date('Y-m-d H:i:s', strtotime('-1 day')),
+                'intervention_type' => 'Family Support and Education',
+                'intervention_category' => 'treatment',
+                'description' => 'Ongoing support for Chen family including comfort care techniques, medication administration, and end-of-life planning.',
+                'outcome' => 'Family feels confident and supported in Whiskers\' care',
+                'follow_up_required' => true,
+                'follow_up_date' => date('Y-m-d', strtotime('+7 days')),
+                'status' => 'active',
+                'metadata' => null
+            ]
+        ];
+        
+        update_post_meta($case_id, '_terpedia_case_interventions', $interventions);
+        
+        return $case_id;
+    }
+    
+    /**
+     * Case 4: Emergency Multi-trauma Case
+     */
+    private function create_emergency_case() {
+        $case_id = wp_insert_post([
+            'post_type' => 'terpedia_case',
+            'post_title' => 'Case #004: Emergency - Multi-trauma Critical Care',
+            'post_content' => 'Emergency presentation of 3-year-old mixed breed dog following motor vehicle accident. Patient arrived in hypovolemic shock with multiple injuries including pneumothorax, pelvic fractures, and significant soft tissue trauma.
+
+Initial stabilization required immediate thoracostomy tube placement, aggressive fluid resuscitation, and multimodal pain management. Implemented emergency terpene protocol incorporating β-caryophyllene (4mg/kg q8h) for analgesic effects, and linalool (3mg/kg q12h) for anxiolytic properties during critical care period.',
+            'post_status' => 'publish',
+            'post_author' => 1
+        ]);
+        
+        update_post_meta($case_id, 'patient_name', 'Rocky (Emergency #E2024-089)');
+        update_post_meta($case_id, 'species', 'Canine');
+        update_post_meta($case_id, 'breed', 'Mixed Breed (Shepherd/Lab)');
+        update_post_meta($case_id, 'age', '3 years');
+        update_post_meta($case_id, 'weight', '32.1 kg');
+        update_post_meta($case_id, 'owner_name', 'Michael Rodriguez (Emergency Contact)');
+        update_post_meta($case_id, 'owner_contact', 'Phone: (555) 789-0123
+Emergency: (555) 789-0124
+Email: m.rodriguez.emergency@email.com
+Reference #: SPD-2024-4567');
+        update_post_meta($case_id, 'case_status', 'critical');
+        
+        // Emergency team messages
+        $messages = [
+            [
+                'id' => uniqid(),
+                'user_id' => 1,
+                'user_type' => 'human',
+                'message' => 'EMERGENCY: MVA victim arriving in 5 minutes. Police report indicates multiple injuries, patient conscious but in apparent shock.',
+                'timestamp' => date('Y-m-d H:i:s', strtotime('-2 days +2 hours')),
+                'message_type' => 'chat',
+                'metadata' => null
+            ],
+            [
+                'id' => uniqid(),
+                'user_id' => 2,
+                'user_type' => 'human',
+                'message' => 'ER team assembled. IV access established, vitals: HR 180, RR 40, pale MM, CRT >3sec. Suspect pneumothorax on right side.',
+                'timestamp' => date('Y-m-d H:i:s', strtotime('-2 days +2 hours +10 minutes')),
+                'message_type' => 'chat',
+                'metadata' => null
+            ],
+            [
+                'id' => uniqid(),
+                'user_id' => 3,
+                'user_type' => 'human',
+                'message' => 'Thoracostomy tube placed, immediate improvement in respiratory effort. Starting fluid resuscitation with LRS. Need pain management ASAP.',
+                'timestamp' => date('Y-m-d H:i:s', strtotime('-2 days +2 hours +25 minutes')),
+                'message_type' => 'chat',
+                'metadata' => null
+            ],
+            [
+                'id' => uniqid(),
+                'user_id' => 0,
+                'user_type' => 'ai',
+                'message' => 'For multimodal pain management in trauma, consider β-caryophyllene 4mg/kg q8h for CB2-mediated analgesia and anti-inflammatory effects. Can complement opioids while potentially reducing requirements.',
+                'timestamp' => date('Y-m-d H:i:s', strtotime('-2 days +2 hours +30 minutes')),
+                'message_type' => 'chat',
+                'metadata' => null
+            ],
+            [
+                'id' => uniqid(),
+                'user_id' => 2,
+                'user_type' => 'human',
+                'message' => 'Starting β-caryophyllene protocol now. Patient showing signs of anxiety/stress. Should we add linalool for anxiolytic effects?',
+                'timestamp' => date('Y-m-d H:i:s', strtotime('-2 days +3 hours')),
+                'message_type' => 'chat',
+                'metadata' => null
+            ],
+            [
+                'id' => uniqid(),
+                'user_id' => 1,
+                'user_type' => 'human',
+                'message' => 'Patient stable overnight. HR down to 110, RR 24. Pain score improved from 8/10 to 5/10. Terpene protocol seems to be helping.',
+                'timestamp' => date('Y-m-d H:i:s', strtotime('-1 day +8 hours')),
+                'message_type' => 'chat',
+                'metadata' => null
+            ],
+            [
+                'id' => uniqid(),
+                'user_id' => 3,
+                'user_type' => 'human',
+                'message' => 'Owner located! Michael Rodriguez confirmed as owner. Very grateful for emergency care. Approved all treatment including terpene protocol.',
+                'timestamp' => date('Y-m-d H:i:s', strtotime('-1 day +12 hours')),
+                'message_type' => 'chat',
+                'metadata' => null
+            ],
+            [
+                'id' => uniqid(),
+                'user_id' => 1,
+                'user_type' => 'human',
+                'message' => 'Rocky ate voluntarily this morning! First solid food since the accident. Owner reports he\'s recognizing voices and wagging slightly.',
+                'timestamp' => date('Y-m-d H:i:s', strtotime('-6 hours')),
+                'message_type' => 'chat',
+                'metadata' => null
+            ]
+        ];
+        
+        update_post_meta($case_id, '_terpedia_case_messages', $messages);
+        
+        // Critical care vitals with improvement
+        $vitals = [];
+        $base_time = strtotime('-2 days +2 hours');
+        
+        // Every 2 hours for first 24 hours
+        for ($i = 0; $i < 12; $i++) {
+            $time = $base_time + ($i * 7200);
+            $improvement = $i / 11;
+            
+            $vitals[] = [
+                'id' => uniqid(),
+                'case_id' => $case_id,
+                'recorded_by' => rand(1, 3),
+                'recorded_date' => date('Y-m-d H:i:s', $time),
+                'heart_rate' => round(180 - ($improvement * 70)),
+                'blood_pressure_systolic' => round(80 + ($improvement * 50)),
+                'blood_pressure_diastolic' => round(40 + ($improvement * 35)),
+                'weight' => 32.1,
+                'temperature' => round((36.8 + ($improvement * 1.2)) * 10) / 10,
+                'respiratory_rate' => round(40 - ($improvement * 16)),
+                'notes' => $i < 3 ? 'Critical - immediate post-trauma' :
+                          ($i < 8 ? 'Stabilizing, terpene protocol initiated' :
+                           'Stable, good response to treatment')
+            ];
+        }
+        
+        // Then every 8 hours
+        for ($i = 0; $i < 4; $i++) {
+            $time = $base_time + 86400 + ($i * 28800);
+            
+            $vitals[] = [
+                'id' => uniqid(),
+                'case_id' => $case_id,
+                'recorded_by' => rand(1, 3),
+                'recorded_date' => date('Y-m-d H:i:s', $time),
+                'heart_rate' => round(90 + rand(-10, 15)),
+                'blood_pressure_systolic' => round(125 + rand(-15, 10)),
+                'blood_pressure_diastolic' => round(75 + rand(-10, 10)),
+                'weight' => 32.1,
+                'temperature' => round((38.1 + rand(-3, 3) * 0.1) * 10) / 10,
+                'respiratory_rate' => round(20 + rand(-5, 8)),
+                'notes' => 'Recovery phase, multimodal pain management effective'
+            ];
+        }
+        
+        update_post_meta($case_id, '_terpedia_case_vitals', $vitals);
+        
+        // Emergency interventions
+        $interventions = [
+            [
+                'id' => uniqid(),
+                'case_id' => $case_id,
+                'recorded_by' => 1,
+                'intervention_date' => date('Y-m-d H:i:s', strtotime('-2 days +2 hours')),
+                'intervention_type' => 'Emergency Triage and Stabilization',
+                'intervention_category' => 'procedure',
+                'description' => 'Immediate assessment of MVA victim. Primary survey revealed pneumothorax, shock, and multiple trauma.',
+                'outcome' => 'Patient stabilized for further evaluation and treatment',
+                'follow_up_required' => true,
+                'follow_up_date' => date('Y-m-d H:i:s', strtotime('-2 days +3 hours')),
+                'status' => 'completed',
+                'metadata' => null
+            ],
+            [
+                'id' => uniqid(),
+                'case_id' => $case_id,
+                'recorded_by' => 2,
+                'intervention_date' => date('Y-m-d H:i:s', strtotime('-2 days +2 hours +15 minutes')),
+                'intervention_type' => 'Thoracostomy Tube Placement',
+                'intervention_category' => 'procedure',
+                'description' => 'Emergency thoracostomy tube placed for right-sided pneumothorax. Immediate evacuation of air with significant improvement.',
+                'outcome' => 'Successful resolution of pneumothorax, improved breathing',
+                'follow_up_required' => true,
+                'follow_up_date' => date('Y-m-d', strtotime('-1 day')),
+                'status' => 'completed',
+                'metadata' => null
+            ],
+            [
+                'id' => uniqid(),
+                'case_id' => $case_id,
+                'recorded_by' => 3,
+                'intervention_date' => date('Y-m-d H:i:s', strtotime('-2 days +2 hours +30 minutes')),
+                'intervention_type' => 'β-Caryophyllene Emergency Protocol',
+                'intervention_category' => 'treatment',
+                'description' => 'Initiated β-caryophyllene at 4mg/kg q8h for multimodal pain management and anti-inflammatory support.',
+                'outcome' => 'Good initial response, pain score reduction noted',
+                'follow_up_required' => true,
+                'follow_up_date' => date('Y-m-d H:i:s', strtotime('-2 days +10 hours')),
+                'status' => 'active',
+                'metadata' => null
+            ],
+            [
+                'id' => uniqid(),
+                'case_id' => $case_id,
+                'recorded_by' => 1,
+                'intervention_date' => date('Y-m-d H:i:s', strtotime('-2 days +4 hours')),
+                'intervention_type' => 'Linalool Anxiolytic Support',
+                'intervention_category' => 'treatment',
+                'description' => 'Added linalool 3mg/kg q12h for anxiolytic and muscle relaxant effects during critical care period.',
+                'outcome' => 'Notable reduction in stress behaviors and muscle tension',
+                'follow_up_required' => true,
+                'follow_up_date' => date('Y-m-d H:i:s', strtotime('-1 day')),
+                'status' => 'active',
+                'metadata' => null
+            ],
+            [
+                'id' => uniqid(),
+                'case_id' => $case_id,
+                'recorded_by' => 1,
+                'intervention_date' => date('Y-m-d H:i:s', strtotime('-1 day +8 hours')),
+                'intervention_type' => 'Pain Assessment and Adjustment',
+                'intervention_category' => 'treatment',
+                'description' => 'Formal pain scoring using Glasgow Composite Pain Scale. Score improved from 8/10 to 5/10 with terpene protocol.',
+                'outcome' => 'Effective pain control achieved, patient comfort improved',
+                'follow_up_required' => true,
+                'follow_up_date' => date('Y-m-d H:i:s', strtotime('+1 day')),
+                'status' => 'active',
+                'metadata' => null
+            ],
+            [
+                'id' => uniqid(),
+                'case_id' => $case_id,
+                'recorded_by' => 1,
+                'intervention_date' => date('Y-m-d H:i:s', strtotime('-6 hours')),
+                'intervention_type' => 'Nutritional Support Initiation',
+                'intervention_category' => 'treatment',
+                'description' => 'Encouraged voluntary eating with high-calorie, easily digestible food. First solid food intake since accident.',
+                'outcome' => 'Successful food intake, normal digestion restored',
+                'follow_up_required' => true,
+                'follow_up_date' => date('Y-m-d', strtotime('+3 days')),
+                'status' => 'active',
+                'metadata' => null
+            ]
+        ];
+        
+        update_post_meta($case_id, '_terpedia_case_interventions', $interventions);
+        
+        return $case_id;
     }
 }
 

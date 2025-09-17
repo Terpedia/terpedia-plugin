@@ -1,0 +1,34 @@
+{
+    "1069": {
+        "ID": 1069,
+        "post_type": "terpedia_case",
+        "post_title": "Case #001: Bella - Seizure Management",
+        "post_content": "Bella is a 4-year-old spayed female Golden Retriever presenting with a 6-month history of generalized tonic-clonic seizures. Initial presentation showed seizures occurring 2-3 times weekly, lasting 45-90 seconds each. Pre-ictal behavior includes restlessness and excessive panting. Post-ictal confusion lasts approximately 15 minutes.\n\nCurrent management includes phenobarbital 2.5mg\/kg BID with therapeutic levels maintained at 25-30 \u03bcg\/mL. We have implemented a novel terpene protocol incorporating linalool (5mg\/kg daily) and \u03b2-caryophyllene (3mg\/kg daily) based on recent research showing neuroprotective effects and seizure threshold elevation in canine epilepsy models.\n\nOwner reports significant improvement in seizure frequency and severity since initiation of terpene therapy. Bella's quality of life has markedly improved with increased activity levels and better appetite.",
+        "post_status": "publish",
+        "post_author": 1
+    },
+    "8664": {
+        "ID": 8664,
+        "post_type": "terpedia_case",
+        "post_title": "Case #002: Thunder - Performance Anxiety Protocol",
+        "post_content": "Thunder is an 8-year-old Thoroughbred gelding competing in eventing who has developed significant performance anxiety over the past 4 months. Symptoms include excessive sweating, elevated heart rate pre-competition, reluctance to load in trailer, and decreased performance scores.\n\nInitial behavioral assessment revealed no physical abnormalities contributing to anxiety. Stress-related behaviors began following a minor trailer accident 5 months ago. Traditional anxiolytic medications were ineffective and caused sedation affecting athletic performance.\n\nImplemented novel terpene-based protocol using limonene (8mg\/kg daily) for its anxiolytic D-limonene effects and myrcene (6mg\/kg daily) for muscle relaxation. Both terpenes selected for absence of prohibited substances in equine competition.",
+        "post_status": "publish",
+        "post_author": 1
+    },
+    "6841": {
+        "ID": 6841,
+        "post_type": "terpedia_case",
+        "post_title": "Case #003: Whiskers - Feline Lymphoma Support Care",
+        "post_content": "Whiskers is a 12-year-old neutered male Maine Coon diagnosed with intermediate-grade alimentary lymphoma 6 weeks ago. Initial presentation included weight loss, intermittent vomiting, and decreased appetite. Family opted for palliative care approach rather than aggressive chemotherapy.\n\nTreatment goals focus on comfort, appetite stimulation, and maintaining dignity throughout end-of-life care. Initiated supportive care protocol including geraniol (2mg\/kg BID) for anti-inflammatory effects, and \u03b2-caryophyllene (1.5mg\/kg BID) for pain management and appetite stimulation through CB2 receptor activation.",
+        "post_status": "publish",
+        "post_author": 1
+    },
+    "7377": {
+        "ID": 7377,
+        "post_type": "terpedia_case",
+        "post_title": "Case #004: Emergency - Multi-trauma Critical Care",
+        "post_content": "Emergency presentation of 3-year-old mixed breed dog following motor vehicle accident. Patient arrived in hypovolemic shock with multiple injuries including pneumothorax, pelvic fractures, and significant soft tissue trauma.\n\nInitial stabilization required immediate thoracostomy tube placement, aggressive fluid resuscitation, and multimodal pain management. Implemented emergency terpene protocol incorporating \u03b2-caryophyllene (4mg\/kg q8h) for analgesic effects, and linalool (3mg\/kg q12h) for anxiolytic properties during critical care period.",
+        "post_status": "publish",
+        "post_author": 1
+    }
+}

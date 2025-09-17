@@ -1,0 +1,472 @@
+{
+    "1069": {
+        "patient_name": "Bella",
+        "species": "Canine",
+        "breed": "Golden Retriever",
+        "age": "4 years",
+        "weight": "28.5 kg",
+        "owner_name": "Sarah & Mark Johnson",
+        "owner_contact": "Phone: (555) 123-4567\nEmail: sarah.johnson@email.com\nAddress: 123 Oak Street, Springfield, IL 62701",
+        "case_status": "active",
+        "_terpedia_case_messages": [
+            {
+                "id": "68ca9381911c1",
+                "user_id": 1,
+                "user_type": "human",
+                "message": "Bella came in for her 2-week follow-up since starting the linalool protocol. Owner reports only 1 seizure this week compared to 3 seizures the previous week.",
+                "timestamp": "2025-09-09 10:54:57",
+                "message_type": "chat",
+                "metadata": null
+            },
+            {
+                "id": "68ca9381911d8",
+                "user_id": 2,
+                "user_type": "human",
+                "message": "That's encouraging progress! Have we checked her phenobarbital levels recently? Want to make sure we're not seeing interaction effects.",
+                "timestamp": "2025-09-09 11:09:57",
+                "message_type": "chat",
+                "metadata": null
+            },
+            {
+                "id": "68ca9381911db",
+                "user_id": 0,
+                "user_type": "ai",
+                "message": "The linalool-phenobarbital combination shows promising results. Linalool's GABA-ergic effects may potentiate anticonvulsant activity while potentially allowing for lower phenobarbital doses long-term. Consider monitoring hepatic function closely given the dual pathway metabolism.",
+                "timestamp": "2025-09-09 11:24:57",
+                "message_type": "chat",
+                "metadata": null
+            },
+            {
+                "id": "68ca9381911de",
+                "user_id": 1,
+                "user_type": "human",
+                "message": "Blood work scheduled for tomorrow. Owner is very happy with Bella's improvement - she's been more playful and alert between episodes.",
+                "timestamp": "2025-09-10 10:54:57",
+                "message_type": "chat",
+                "metadata": null
+            },
+            {
+                "id": "68ca9381911df",
+                "user_id": 3,
+                "user_type": "human",
+                "message": "Lab results in: Phenobarbital level at 28 \u03bcg\/mL (therapeutic), ALT slightly elevated at 95 U\/L but within acceptable range for phenobarbital therapy.",
+                "timestamp": "2025-09-11 10:54:57",
+                "message_type": "chat",
+                "metadata": null
+            },
+            {
+                "id": "68ca9381911e1",
+                "user_id": 2,
+                "user_type": "human",
+                "message": "Should we consider adding \u03b2-caryophyllene to the protocol? The CB2 receptor activation might provide additional neuroprotective benefits.",
+                "timestamp": "2025-09-12 10:54:57",
+                "message_type": "chat",
+                "metadata": null
+            },
+            {
+                "id": "68ca9381911e2",
+                "user_id": 0,
+                "user_type": "ai",
+                "message": "\u03b2-caryophyllene addition is well-supported by current research. Start with 3mg\/kg daily divided BID. Its CB2 agonist activity provides anti-inflammatory neuroprotection without psychoactive effects. Monitor for any changes in seizure frequency or duration.",
+                "timestamp": "2025-09-12 11:14:57",
+                "message_type": "chat",
+                "metadata": null
+            },
+            {
+                "id": "68ca9381911e4",
+                "user_id": 1,
+                "user_type": "human",
+                "message": "Owner approved \u03b2-caryophyllene addition. Starting today with morning and evening dosing mixed with food.",
+                "timestamp": "2025-09-13 10:54:57",
+                "message_type": "chat",
+                "metadata": null
+            },
+            {
+                "id": "68ca9381911e5",
+                "user_id": 1,
+                "user_type": "human",
+                "message": "Bella had a mild seizure yesterday evening - about 30 seconds duration, much shorter than typical. Recovery time was also reduced to about 8 minutes.",
+                "timestamp": "2025-09-15 10:54:57",
+                "message_type": "chat",
+                "metadata": null
+            },
+            {
+                "id": "68ca9381911e6",
+                "user_id": 1,
+                "user_type": "human",
+                "message": "Owner scheduling follow-up appointment for next week. Wants to continue current protocol. Bella is doing great overall!",
+                "timestamp": "2025-09-16 10:54:57",
+                "message_type": "chat",
+                "metadata": null
+            }
+        ],
+        "_terpedia_case_vitals": [
+            {
+                "id": "68ca9381914a9",
+                "case_id": 1069,
+                "recorded_by": 3,
+                "recorded_date": "2025-08-31 02:25:04",
+                "heart_rate": 107,
+                "blood_pressure_systolic": 159,
+                "blood_pressure_diastolic": 86,
+                "weight": 28.6,
+                "temperature": 38.7,
+                "respiratory_rate": 26,
+                "notes": "Pre-seizure monitoring"
+            },
+            {
+                "id": "68ca9381914cc",
+                "case_id": 1069,
+                "recorded_by": 2,
+                "recorded_date": "2025-09-01 03:05:59",
+                "heart_rate": 94,
+                "blood_pressure_systolic": 137,
+                "blood_pressure_diastolic": 83,
+                "weight": 28.7,
+                "temperature": 39.2,
+                "respiratory_rate": 21,
+                "notes": "Pre-seizure monitoring"
+            },
+            {
+                "id": "68ca9381914ce",
+                "case_id": 1069,
+                "recorded_by": 3,
+                "recorded_date": "2025-09-01 22:50:19",
+                "heart_rate": 98,
+                "blood_pressure_systolic": 126,
+                "blood_pressure_diastolic": 88,
+                "weight": 28.4,
+                "temperature": 38.8,
+                "respiratory_rate": 26,
+                "notes": "Pre-seizure monitoring"
+            },
+            {
+                "id": "68ca9381914d0",
+                "case_id": 1069,
+                "recorded_by": 1,
+                "recorded_date": "2025-09-02 21:47:49",
+                "heart_rate": 85,
+                "blood_pressure_systolic": 156,
+                "blood_pressure_diastolic": 85,
+                "weight": 28.8,
+                "temperature": 38.2,
+                "respiratory_rate": 19,
+                "notes": "Pre-seizure monitoring"
+            },
+            {
+                "id": "68ca9381914d1",
+                "case_id": 1069,
+                "recorded_by": 3,
+                "recorded_date": "2025-09-04 00:54:20",
+                "heart_rate": 83,
+                "blood_pressure_systolic": 128,
+                "blood_pressure_diastolic": 91,
+                "weight": 28.8,
+                "temperature": 38.8,
+                "respiratory_rate": 17,
+                "notes": "Pre-seizure monitoring"
+            },
+            {
+                "id": "68ca9381914d2",
+                "case_id": 1069,
+                "recorded_by": 2,
+                "recorded_date": "2025-09-04 21:33:51",
+                "heart_rate": 105,
+                "blood_pressure_systolic": 135,
+                "blood_pressure_diastolic": 90,
+                "weight": 28.5,
+                "temperature": 38.8,
+                "respiratory_rate": 28,
+                "notes": "Linalool protocol initiated"
+            },
+            {
+                "id": "68ca9381914d3",
+                "case_id": 1069,
+                "recorded_by": 3,
+                "recorded_date": "2025-09-06 04:03:38",
+                "heart_rate": 88,
+                "blood_pressure_systolic": 135,
+                "blood_pressure_diastolic": 98,
+                "weight": 28.8,
+                "temperature": 38.3,
+                "respiratory_rate": 25,
+                "notes": "Linalool protocol initiated"
+            },
+            {
+                "id": "68ca9381914d4",
+                "case_id": 1069,
+                "recorded_by": 2,
+                "recorded_date": "2025-09-07 03:54:26",
+                "heart_rate": 103,
+                "blood_pressure_systolic": 157,
+                "blood_pressure_diastolic": 94,
+                "weight": 28.7,
+                "temperature": 38.8,
+                "respiratory_rate": 20,
+                "notes": "Linalool protocol initiated"
+            },
+            {
+                "id": "68ca9381914d6",
+                "case_id": 1069,
+                "recorded_by": 2,
+                "recorded_date": "2025-09-08 04:25:48",
+                "heart_rate": 102,
+                "blood_pressure_systolic": 148,
+                "blood_pressure_diastolic": 90,
+                "weight": 28.5,
+                "temperature": 39.2,
+                "respiratory_rate": 26,
+                "notes": "Linalool protocol initiated"
+            },
+            {
+                "id": "68ca9381914d7",
+                "case_id": 1069,
+                "recorded_by": 1,
+                "recorded_date": "2025-09-09 02:17:46",
+                "heart_rate": 88,
+                "blood_pressure_systolic": 147,
+                "blood_pressure_diastolic": 90,
+                "weight": 28.4,
+                "temperature": 38.9,
+                "respiratory_rate": 23,
+                "notes": "Linalool protocol initiated"
+            },
+            {
+                "id": "68ca9381914d8",
+                "case_id": 1069,
+                "recorded_by": 1,
+                "recorded_date": "2025-09-09 19:46:02",
+                "heart_rate": 95,
+                "blood_pressure_systolic": 129,
+                "blood_pressure_diastolic": 93,
+                "weight": 28.8,
+                "temperature": 38.2,
+                "respiratory_rate": 16,
+                "notes": "Combined terpene therapy, good response"
+            },
+            {
+                "id": "68ca9381914d9",
+                "case_id": 1069,
+                "recorded_by": 2,
+                "recorded_date": "2025-09-10 19:39:01",
+                "heart_rate": 90,
+                "blood_pressure_systolic": 151,
+                "blood_pressure_diastolic": 88,
+                "weight": 28.7,
+                "temperature": 38.6,
+                "respiratory_rate": 18,
+                "notes": "Combined terpene therapy, good response"
+            },
+            {
+                "id": "68ca9381914da",
+                "case_id": 1069,
+                "recorded_by": 3,
+                "recorded_date": "2025-09-11 19:59:26",
+                "heart_rate": 89,
+                "blood_pressure_systolic": 142,
+                "blood_pressure_diastolic": 96,
+                "weight": 28.7,
+                "temperature": 38.3,
+                "respiratory_rate": 25,
+                "notes": "Combined terpene therapy, good response"
+            },
+            {
+                "id": "68ca9381914db",
+                "case_id": 1069,
+                "recorded_by": 3,
+                "recorded_date": "2025-09-13 03:13:46",
+                "heart_rate": 93,
+                "blood_pressure_systolic": 136,
+                "blood_pressure_diastolic": 96,
+                "weight": 28.4,
+                "temperature": 39.2,
+                "respiratory_rate": 16,
+                "notes": "Combined terpene therapy, good response"
+            },
+            {
+                "id": "68ca9381914dc",
+                "case_id": 1069,
+                "recorded_by": 2,
+                "recorded_date": "2025-09-13 20:31:10",
+                "heart_rate": 101,
+                "blood_pressure_systolic": 129,
+                "blood_pressure_diastolic": 91,
+                "weight": 28.8,
+                "temperature": 38.6,
+                "respiratory_rate": 14,
+                "notes": "Combined terpene therapy, good response"
+            },
+            {
+                "id": "68ca9381914de",
+                "case_id": 1069,
+                "recorded_by": 2,
+                "recorded_date": "2025-09-15 04:24:28",
+                "heart_rate": 98,
+                "blood_pressure_systolic": 143,
+                "blood_pressure_diastolic": 79,
+                "weight": 28.5,
+                "temperature": 38.8,
+                "respiratory_rate": 27,
+                "notes": "Combined terpene therapy, good response"
+            }
+        ],
+        "_terpedia_case_interventions": [
+            {
+                "id": "68ca93819488b",
+                "case_id": 1069,
+                "recorded_by": 1,
+                "intervention_date": "2025-08-30 10:54:57",
+                "intervention_type": "Initial Neurological Assessment",
+                "intervention_category": "diagnosis",
+                "description": "Complete neurological examination performed. Cranial nerves II-XII normal. No focal neurological deficits noted. Reflexes appropriate and symmetrical.",
+                "outcome": "MRI scheduled, phenobarbital therapy initiated at 2.5mg\/kg BID",
+                "follow_up_required": true,
+                "follow_up_date": "2025-09-03",
+                "status": "completed",
+                "metadata": null
+            },
+            {
+                "id": "68ca93819489b",
+                "case_id": 1069,
+                "recorded_by": 1,
+                "intervention_date": "2025-09-05 10:54:57",
+                "intervention_type": "Linalool Therapy Initiation",
+                "intervention_category": "treatment",
+                "description": "Started linalool supplementation at 5mg\/kg daily based on recent research showing GABAergic effects and seizure threshold elevation in canine models.",
+                "outcome": "Owner compliant with therapy, initial tolerance good",
+                "follow_up_required": true,
+                "follow_up_date": "2025-09-10",
+                "status": "active",
+                "metadata": null
+            },
+            {
+                "id": "68ca9381948a0",
+                "case_id": 1069,
+                "recorded_by": 2,
+                "intervention_date": "2025-09-09 10:54:57",
+                "intervention_type": "Blood Chemistry Panel",
+                "intervention_category": "diagnosis",
+                "description": "Complete blood chemistry panel including phenobarbital level, hepatic function panel, and electrolytes.",
+                "outcome": "Phenobarbital level therapeutic at 28 \u03bcg\/mL, mild ALT elevation acceptable",
+                "follow_up_required": true,
+                "follow_up_date": "2025-10-17",
+                "status": "completed",
+                "metadata": null
+            },
+            {
+                "id": "68ca9381948a7",
+                "case_id": 1069,
+                "recorded_by": 2,
+                "intervention_date": "2025-09-12 10:54:57",
+                "intervention_type": "\u03b2-Caryophyllene Addition",
+                "intervention_category": "treatment",
+                "description": "Added \u03b2-caryophyllene at 3mg\/kg daily divided BID to existing protocol. CB2 receptor agonist providing neuroprotective effects.",
+                "outcome": "Well tolerated, no adverse effects noted",
+                "follow_up_required": true,
+                "follow_up_date": "2025-09-24",
+                "status": "active",
+                "metadata": null
+            },
+            {
+                "id": "68ca9381948aa",
+                "case_id": 1069,
+                "recorded_by": 1,
+                "intervention_date": "2025-09-14 10:54:57",
+                "intervention_type": "Seizure Response Assessment",
+                "intervention_category": "treatment",
+                "description": "Evaluated seizure characteristics post-terpene therapy. Seizure duration reduced from 60-90 seconds to 30-45 seconds.",
+                "outcome": "Significant clinical improvement in seizure severity and recovery",
+                "follow_up_required": true,
+                "follow_up_date": "2025-10-01",
+                "status": "active",
+                "metadata": null
+            }
+        ]
+    },
+    "8664": {
+        "patient_name": "Thunder",
+        "species": "Equine",
+        "breed": "Thoroughbred",
+        "age": "8 years",
+        "weight": "545 kg",
+        "owner_name": "Riverside Equestrian Center - Amanda Sterling",
+        "owner_contact": "Phone: (555) 234-5678\nEmail: amanda@riversideequestrian.com\nAddress: 456 County Road 12, Lexington, KY 40511",
+        "case_status": "active",
+        "_terpedia_case_messages": [
+            {
+                "id": "68ca93819a6f1",
+                "user_id": 1,
+                "user_type": "human",
+                "message": "Thunder arrived for pre-competition assessment. Heart rate at rest is 48 BPM but jumps to 85+ when trailer is mentioned. Clear anxiety response.",
+                "timestamp": "2025-09-07 10:54:57",
+                "message_type": "chat",
+                "metadata": null
+            },
+            {
+                "id": "68ca93819a702",
+                "user_id": 2,
+                "user_type": "human",
+                "message": "Classic post-traumatic stress response. The limonene protocol should help with the limbic system regulation.",
+                "timestamp": "2025-09-07 11:14:57",
+                "message_type": "chat",
+                "metadata": null
+            },
+            {
+                "id": "68ca93819a706",
+                "user_id": 0,
+                "user_type": "ai",
+                "message": "Limonene and myrcene are both naturally occurring terpenes providing anxiolytic effects through 5-HT1A receptor modulation and GABA potentiation without performance-impairing sedation.",
+                "timestamp": "2025-09-07 11:29:57",
+                "message_type": "chat",
+                "metadata": null
+            },
+            {
+                "id": "68ca93819a708",
+                "user_id": 1,
+                "user_type": "human",
+                "message": "Started Thunder on limonene 8mg\/kg daily this morning. Owner reports he was noticeably calmer during routine handling this afternoon.",
+                "timestamp": "2025-09-09 10:54:57",
+                "message_type": "chat",
+                "metadata": null
+            },
+            {
+                "id": "68ca93819a70a",
+                "user_id": 2,
+                "user_type": "human",
+                "message": "Excellent progress report from Amanda. Thunder loaded into the trailer voluntarily yesterday for the first time in months!",
+                "timestamp": "2025-09-12 10:54:57",
+                "message_type": "chat",
+                "metadata": null
+            },
+            {
+                "id": "68ca93819a70b",
+                "user_id": 1,
+                "user_type": "human",
+                "message": "Just got word - Thunder placed 3rd in his division! First podium finish since the accident. Amanda is thrilled with the results.",
+                "timestamp": "2025-09-16 10:54:57",
+                "message_type": "chat",
+                "metadata": null
+            }
+        ]
+    },
+    "6841": {
+        "patient_name": "Whiskers",
+        "species": "Feline",
+        "breed": "Maine Coon",
+        "age": "12 years",
+        "weight": "5.2 kg",
+        "owner_name": "Eleanor and Robert Chen",
+        "owner_contact": "Phone: (555) 345-6789\nEmail: eleanor.chen@email.com\nAddress: 789 Maple Avenue, Portland, OR 97205",
+        "case_status": "critical"
+    },
+    "7377": {
+        "patient_name": "Rocky (Emergency #E2024-089)",
+        "species": "Canine",
+        "breed": "Mixed Breed (Shepherd\/Lab)",
+        "age": "3 years",
+        "weight": "32.1 kg",
+        "owner_name": "Michael Rodriguez (Emergency Contact)",
+        "owner_contact": "Phone: (555) 789-0123\nEmergency: (555) 789-0124\nEmail: m.rodriguez.emergency@email.com",
+        "case_status": "critical"
+    }
+}

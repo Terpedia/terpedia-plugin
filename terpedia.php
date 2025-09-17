@@ -53,8 +53,24 @@ if (isset($_SERVER['REQUEST_URI'])) {
                 exit;
             }
             function get_posts($args) { 
-                // Mock implementation - return some sample cases for demo
+                // Read from actual case data files
                 if (isset($args['post_type']) && $args['post_type'] === 'terpedia_case') {
+                    $posts_file = 'case_posts.json';
+                    if (file_exists($posts_file)) {
+                        $posts = json_decode(file_get_contents($posts_file), true);
+                        $result = [];
+                        foreach ($posts as $post) {
+                            $result[] = (object) array(
+                                'ID' => $post['ID'],
+                                'post_title' => $post['post_title'],
+                                'post_content' => $post['post_content'],
+                                'post_date' => date('Y-m-d H:i:s'),
+                                'post_type' => $post['post_type']
+                            );
+                        }
+                        return $result;
+                    }
+                    // Fallback to sample cases
                     return array(
                         (object) array(
                             'ID' => 1,
@@ -74,6 +90,20 @@ if (isset($_SERVER['REQUEST_URI'])) {
             }
             function get_post($id) { 
                 if ($id) {
+                    $posts_file = 'case_posts.json';
+                    if (file_exists($posts_file)) {
+                        $posts = json_decode(file_get_contents($posts_file), true);
+                        if (isset($posts[$id])) {
+                            return (object) array(
+                                'ID' => $posts[$id]['ID'],
+                                'post_title' => $posts[$id]['post_title'],
+                                'post_content' => $posts[$id]['post_content'],
+                                'post_type' => $posts[$id]['post_type'],
+                                'post_date' => date('Y-m-d H:i:s')
+                            );
+                        }
+                    }
+                    // Fallback
                     return (object) array(
                         'ID' => $id,
                         'post_title' => 'Sample Case ' . $id,
@@ -85,6 +115,15 @@ if (isset($_SERVER['REQUEST_URI'])) {
                 return null; 
             }
             function get_post_meta($id, $key, $single = false) { 
+                $meta_file = 'case_meta.json';
+                if (file_exists($meta_file)) {
+                    $meta = json_decode(file_get_contents($meta_file), true);
+                    if (isset($meta[$id]) && isset($meta[$id][$key])) {
+                        return $single ? $meta[$id][$key] : array($meta[$id][$key]);
+                    }
+                }
+                
+                // Fallback defaults
                 $defaults = array(
                     'patient_name' => 'Sample Patient ' . $id,
                     'species' => 'Dog',
@@ -103,6 +142,22 @@ if (isset($_SERVER['REQUEST_URI'])) {
             function wp_die($message) { die($message); }
             function get_the_modified_date($format, $post = null) { return date($format); }
             function wp_count_posts($type) { return (object) array('publish' => 2); }
+            function get_file_data($file, $default_headers, $context = '') {
+                // Mock implementation to parse plugin header
+                if (file_exists($file)) {
+                    $content = file_get_contents($file);
+                    $result = array();
+                    foreach ($default_headers as $key => $header) {
+                        if (preg_match('/\* ' . preg_quote($header) . ':\s*(.+)/i', $content, $matches)) {
+                            $result[$key] = trim($matches[1]);
+                        } else {
+                            $result[$key] = '';
+                        }
+                    }
+                    return $result;
+                }
+                return array_fill_keys(array_keys($default_headers), '');
+            }
         }
         
         // Include the case management system file directly
@@ -420,6 +475,126 @@ if (isset($_SERVER['REQUEST_URI'])) {
         echo "<p><strong>Status:</strong> The Cyc Encyclopedia system has been successfully integrated with kb.terpedia.com knowledge base capabilities.</p>";
         echo "<p><em>Note: This is the standalone PHP interface. For full WordPress functionality, access through the admin dashboard.</em></p>";
         echo "</body></html>";
+        exit;
+    }
+}
+
+// Global mock WordPress functions for standalone PHP
+if (!function_exists('get_file_data')) {
+    function get_file_data($file, $default_headers, $context = '') {
+        // Mock implementation to parse plugin header
+        if (file_exists($file)) {
+            $content = file_get_contents($file);
+            $result = array();
+            foreach ($default_headers as $key => $header) {
+                if (preg_match('/\* ' . preg_quote($header) . ':\s*(.+)/i', $content, $matches)) {
+                    $result[$key] = trim($matches[1]);
+                } else {
+                    $result[$key] = '';
+                }
+            }
+            return $result;
+        }
+        return array_fill_keys(array_keys($default_headers), '');
+    }
+}
+
+if (!function_exists('plugin_dir_url')) {
+    function plugin_dir_url($file) {
+        return '/';
+    }
+}
+
+if (!function_exists('plugin_dir_path')) {
+    function plugin_dir_path($file) {
+        return dirname($file) . '/';
+    }
+}
+
+if (!function_exists('register_activation_hook')) {
+    function register_activation_hook($file, $callback) { /* Mock function */ }
+}
+
+if (!function_exists('register_deactivation_hook')) {
+    function register_deactivation_hook($file, $callback) { /* Mock function */ }
+}
+
+if (!function_exists('add_action')) {
+    function add_action($hook, $callback, $priority = 10, $accepted_args = 1) { /* Mock function */ }
+}
+
+if (!function_exists('add_filter')) {
+    function add_filter($hook, $callback, $priority = 10, $accepted_args = 1) { /* Mock function */ }
+}
+
+if (!function_exists('add_shortcode')) {
+    function add_shortcode($tag, $callback) { /* Mock function */ }
+}
+
+if (!function_exists('is_admin')) {
+    function is_admin() { return false; }
+}
+
+if (!function_exists('wp_enqueue_style')) {
+    function wp_enqueue_style() { /* Mock function */ }
+}
+
+if (!function_exists('wp_enqueue_script')) {
+    function wp_enqueue_script() { /* Mock function */ }
+}
+
+if (!function_exists('register_post_type')) {
+    function register_post_type($post_type, $args = array()) { /* Mock function */ }
+}
+
+if (!function_exists('add_meta_box')) {
+    function add_meta_box() { /* Mock function */ }
+}
+
+if (!function_exists('current_user_can')) {
+    function current_user_can($cap) { return true; }
+}
+
+if (!function_exists('get_current_user_id')) {
+    function get_current_user_id() { return 1; }
+}
+
+if (!function_exists('wp_verify_nonce')) {
+    function wp_verify_nonce($nonce, $action) { return true; }
+}
+
+if (!function_exists('wp_create_nonce')) {
+    function wp_create_nonce($action) { return 'mock_nonce'; }
+}
+
+if (!function_exists('sanitize_text_field')) {
+    function sanitize_text_field($str) { return strip_tags($str); }
+}
+
+if (!function_exists('get_option')) {
+    function get_option($option, $default = false) { return $default; }
+}
+
+if (!function_exists('update_option')) {
+    function update_option($option, $value) { return true; }
+}
+
+if (!function_exists('wp_die')) {
+    function wp_die($message) { die($message); }
+}
+
+if (!function_exists('wp_send_json_success')) {
+    function wp_send_json_success($data) { 
+        header('Content-Type: application/json');
+        echo json_encode(array('success' => true, 'data' => $data));
+        exit;
+    }
+}
+
+if (!function_exists('wp_send_json_error')) {
+    function wp_send_json_error($data) { 
+        header('Content-Type: application/json');
+        echo json_encode(array('success' => false, 'data' => $data));
         exit;
     }
 }
