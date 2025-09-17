@@ -12,8 +12,31 @@ class TerpediaOpenRouterHandler {
     
     private $api_key;
     private $api_base_url = 'https://openrouter.ai/api/v1';
-    private $default_model = 'openai/gpt-oss-120b:free';
+    private $default_model = 'openai/gpt-5';
     private $default_vision_model = 'meta-llama/llama-3.2-11b-vision-instruct:free';
+    
+    // Model fallback hierarchy for different use cases
+    private $model_hierarchy = array(
+        'reasoning' => array(
+            'openai/gpt-5',
+            'openai/gpt-5-mini', 
+            'openai/gpt-5-nano',
+            'openai/gpt-4o',
+            'openai/gpt-oss-120b:free'
+        ),
+        'standard' => array(
+            'openai/gpt-5-mini',
+            'openai/gpt-5-nano', 
+            'openai/gpt-5',
+            'openai/gpt-4o-mini',
+            'openai/gpt-oss-120b:free'
+        ),
+        'vision' => array(
+            'openai/gpt-5',
+            'openai/gpt-4o',
+            'meta-llama/llama-3.2-11b-vision-instruct:free'
+        )
+    );
     
     public function __construct() {
         $this->api_key = $_ENV['OPENROUTER_API_KEY'] ?? get_option('terpedia_openrouter_api_key', '');
@@ -61,7 +84,7 @@ class TerpediaOpenRouterHandler {
     }
     
     /**
-     * Generate chat completion using OpenRouter
+     * Generate chat completion using OpenRouter with intelligent model fallback
      */
     public function chat_completion($messages, $options = array()) {
         if (empty($this->api_key)) {
@@ -74,13 +97,19 @@ class TerpediaOpenRouterHandler {
             'temperature' => 0.7,
             'top_p' => 1.0,
             'frequency_penalty' => 0.0,
-            'presence_penalty' => 0.0
+            'presence_penalty' => 0.0,
+            'use_case' => 'reasoning', // reasoning, standard, vision
+            'reasoning_effort' => 'medium', // minimal, low, medium, high (for GPT-5)
+            'verbosity' => 'medium' // low, medium, high (for GPT-5)
         );
         
         $options = wp_parse_args($options, $default_options);
         
+        // Select model based on use case and fallback if needed
+        $selected_model = $this->select_model_with_fallback($options['model'], $options['use_case']);
+        
         $request_data = array(
-            'model' => $options['model'],
+            'model' => $selected_model,
             'messages' => $messages,
             'max_tokens' => intval($options['max_tokens']),
             'temperature' => floatval($options['temperature']),
@@ -88,6 +117,14 @@ class TerpediaOpenRouterHandler {
             'frequency_penalty' => floatval($options['frequency_penalty']),
             'presence_penalty' => floatval($options['presence_penalty'])
         );
+        
+        // Add GPT-5 specific parameters if using GPT-5 models
+        if (strpos($selected_model, 'gpt-5') !== false) {
+            $request_data['extra_body'] = array(
+                'reasoning_effort' => $options['reasoning_effort'],
+                'verbosity' => $options['verbosity']
+            );
+        }
         
         $response = $this->make_api_request('POST', '/chat/completions', $request_data);
         
@@ -134,6 +171,125 @@ class TerpediaOpenRouterHandler {
         }
         
         return $default_response;
+    }
+    
+    /**
+     * Select model with intelligent fallback
+     */
+    private function select_model_with_fallback($requested_model, $use_case = 'reasoning') {
+        // If specific model requested, try it first
+        if ($requested_model !== $this->default_model) {
+            return $requested_model;
+        }
+        
+        // Otherwise use hierarchy based on use case
+        $hierarchy = isset($this->model_hierarchy[$use_case]) ? 
+            $this->model_hierarchy[$use_case] : 
+            $this->model_hierarchy['reasoning'];
+            
+        // For now, return the first model in hierarchy
+        // In production, you might want to check model availability/rate limits
+        return $hierarchy[0];
+    }
+    
+    /**
+     * Enhanced terport generation with GPT-5 reasoning
+     */
+    public function generate_terport_content($research_questions, $research_data, $options = array()) {
+        $default_options = array(
+            'model' => 'openai/gpt-5',
+            'max_tokens' => 4000,
+            'temperature' => 0.2, // Lower for more consistent academic content
+            'use_case' => 'reasoning',
+            'reasoning_effort' => 'high', // Use high reasoning for research content
+            'verbosity' => 'high'
+        );
+        
+        $options = wp_parse_args($options, $default_options);
+        
+        $system_prompt = $this->build_terport_system_prompt();
+        $user_prompt = $this->build_terport_user_prompt($research_questions, $research_data);
+        
+        $messages = array(
+            array(
+                'role' => 'system',
+                'content' => $system_prompt
+            ),
+            array(
+                'role' => 'user',
+                'content' => $user_prompt
+            )
+        );
+        
+        return $this->chat_completion($messages, $options);
+    }
+    
+    /**
+     * Build specialized system prompt for terport generation
+     */
+    private function build_terport_system_prompt() {
+        $prompt = "You are an expert veterinary research analyst and scientific writer specializing in terpene research for animal health. Your role is to synthesize complex veterinary research data into comprehensive, evidence-based reports called 'terports'.\n\n";
+        
+        $prompt .= "EXPERTISE AREAS:\n";
+        $prompt .= "- Veterinary pharmacology and toxicology\n";
+        $prompt .= "- Terpene biochemistry and metabolism\n";
+        $prompt .= "- Species-specific physiological responses (dogs, cats, horses)\n";
+        $prompt .= "- Evidence-based veterinary medicine\n";
+        $prompt .= "- Clinical research methodology\n\n";
+        
+        $prompt .= "TERPORT WRITING GUIDELINES:\n";
+        $prompt .= "- Think hard about synthesizing research data into actionable clinical insights\n";
+        $prompt .= "- Create comprehensive, well-structured veterinary research reports\n";
+        $prompt .= "- Focus on practical applications for veterinary practitioners\n";
+        $prompt .= "- Include specific dosing guidelines, safety parameters, and contraindications\n";
+        $prompt .= "- Address species-specific considerations (dogs vs cats vs horses)\n";
+        $prompt .= "- Maintain scientific rigor while being accessible to veterinary professionals\n";
+        $prompt .= "- Structure content with clear sections: Summary, Research Findings, Clinical Applications, Safety Considerations, Recommendations\n\n";
+        
+        $prompt .= "CITATION REQUIREMENTS:\n";
+        $prompt .= "- DO NOT include inline citations, reference numbers, or bibliography sections\n";
+        $prompt .= "- Academic citations are automatically generated from SPARQL database sources\n";
+        $prompt .= "- Focus on evidence-based content without citation formatting\n";
+        $prompt .= "- Reference research findings clearly without numerical citations\n";
+        $prompt .= "- Sources include UniProt, Gene Ontology, Wikidata, MeSH, PubMed, and kb.terpedia.com\n\n";
+        
+        $prompt .= "RESPONSE FORMAT:\n";
+        $prompt .= "- Generate 2000-4000 words of comprehensive content\n";
+        $prompt .= "- Use professional veterinary terminology appropriately\n";
+        $prompt .= "- Include specific numerical data when available (doses, concentrations, timelines)\n";
+        $prompt .= "- Provide actionable recommendations for veterinary practice\n";
+        
+        return $prompt;
+    }
+    
+    /**
+     * Build user prompt for terport generation
+     */
+    private function build_terport_user_prompt($research_questions, $research_data) {
+        $prompt = "Generate a comprehensive veterinary terport based on the following research parameters:\n\n";
+        
+        $prompt .= "RESEARCH QUESTIONS TO ADDRESS:\n";
+        foreach ($research_questions as $i => $question) {
+            $prompt .= ($i + 1) . ". {$question}\n";
+        }
+        
+        $prompt .= "\nAVAILABLE RESEARCH DATA:\n";
+        if (is_array($research_data)) {
+            foreach ($research_data as $source => $data) {
+                $prompt .= "\n[{$source}]:\n";
+                if (is_array($data) && isset($data['results'])) {
+                    $prompt .= "Results: " . (is_array($data['results']) ? json_encode($data['results']) : $data['results']) . "\n";
+                } else {
+                    $prompt .= (is_array($data) ? json_encode($data) : $data) . "\n";
+                }
+            }
+        } else {
+            $prompt .= $research_data . "\n";
+        }
+        
+        $prompt .= "\nPlease think hard about this research and generate a comprehensive veterinary terport that synthesizes this information into actionable clinical guidance for veterinary professionals. Focus on practical applications, safety considerations, and species-specific recommendations.";
+        
+        return $prompt;
     }
     
     /**

@@ -32,6 +32,7 @@ if (isset($_SERVER['REQUEST_URI'])) {
             function plugin_dir_url($file) { return '/'; }
             function wp_enqueue_style() { /* Mock function */ }
             function wp_enqueue_script() { /* Mock function */ }
+            function admin_url($path = '') { return '/admin/' . ltrim($path, '/'); }
         }
         
         // Include the CPT Archive System file directly
@@ -88,6 +89,7 @@ if (isset($_SERVER['REQUEST_URI'])) {
             function wp_insert_post($args) { return 1; }
             function update_post_meta($post_id, $key, $value) { return true; }
             function get_post_meta($post_id, $key, $single = false) { return ''; }
+            function admin_url($path = '') { return '/admin/' . ltrim($path, '/'); }
             class WP_Error {
                 private $errors = array();
                 public function __construct($code, $message) {

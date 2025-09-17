@@ -20,9 +20,12 @@ class Terpedia_CPT_Archive_System {
         add_action('init', array($this, 'add_archive_rewrite_rules'), 25);
         add_filter('query_vars', array($this, 'add_archive_query_vars'));
         
-        // Flush rewrites on activation
-        register_activation_hook(__FILE__, array($this, 'flush_rewrite_rules'));
+        // Flush rewrites on activation with production support
+        register_activation_hook(__FILE__, array($this, 'force_refresh_production'));
         register_deactivation_hook(__FILE__, array($this, 'flush_rewrite_rules'));
+        
+        // Add action for manual refresh
+        add_action('wp_ajax_terpedia_refresh_cpt_archives', array($this, 'ajax_refresh_archives'));
     }
     
     public function init() {
@@ -109,10 +112,35 @@ class Terpedia_CPT_Archive_System {
     }
     
     /**
-     * Flush rewrite rules
+     * Flush rewrite rules with production compatibility
      */
     public function flush_rewrite_rules() {
-        flush_rewrite_rules();
+        if (function_exists('flush_rewrite_rules')) {
+            flush_rewrite_rules();
+        }
+        
+        // Log rewrite rule flush for debugging
+        if (function_exists('error_log')) {
+            error_log('Terpedia: Rewrite rules flushed for CPT archives');
+        }
+    }
+    
+    /**
+     * Force refresh of CPT archives on production
+     */
+    public function force_refresh_production() {
+        // Re-add rewrite rules
+        $this->add_archive_rewrite_rules();
+        
+        // Flush rules
+        $this->flush_rewrite_rules();
+        
+        // Clear any object cache
+        if (function_exists('wp_cache_flush')) {
+            wp_cache_flush();
+        }
+        
+        return true;
     }
     
     /**
@@ -563,11 +591,16 @@ class Terpedia_CPT_Archive_System {
     }
     
     /**
-     * Render terports archive - Standalone version for non-WordPress environment
+     * Render terports archive - Enhanced version with real database integration
      */
     private function render_terports_archive() {
-        // Get sample terport data
-        $terports = $this->get_sample_terports();
+        // Try to get real terports from database first
+        $terports = $this->get_real_terports();
+        
+        // Fallback to sample data if no real terports exist
+        if (empty($terports)) {
+            $terports = $this->get_sample_terports();
+        }
         
         // Output HTML with embedded CSS
         echo '<!DOCTYPE html>
@@ -802,7 +835,7 @@ class Terpedia_CPT_Archive_System {
                     </div>
                     
                     <div class="terport-content">
-                        <h3><a href="/terport/' . $terport['id'] . '">' . htmlspecialchars($terport['title']) . '</a></h3>
+                        <h3><a href="' . $this->get_terport_url($terport) . '">' . htmlspecialchars($terport['title']) . '</a></h3>
                         <div class="terport-meta">
                             <span class="date">' . $terport['date'] . '</span>
                             <span class="terport-type">' . htmlspecialchars($terport['type']) . '</span>
@@ -828,7 +861,7 @@ class Terpedia_CPT_Archive_System {
                     <div class="empty-icon">📚</div>
                     <h3>No Terports Yet</h3>
                     <p>No terport reports have been published yet. The AI system is generating comprehensive veterinary terpene research reports.</p>
-                    <a href="/admin" class="cta-button">Generate Terports</a>
+                    <a href="' . (function_exists('admin_url') ? admin_url('admin.php?page=terpedia-auto-generator') : '/admin') . '" class="cta-button">Generate Terports</a>
                 </div>
             </div>';
         }
@@ -839,6 +872,135 @@ class Terpedia_CPT_Archive_System {
 </html>';
         
         exit;
+    }
+    
+    /**
+     * Get real terports from WordPress database
+     */
+    private function get_real_terports() {
+        // Short-circuit if WordPress isn't available
+        if (!isset($GLOBALS['wpdb']) || !is_object($GLOBALS['wpdb'])) {
+            return array();
+        }
+        
+        global $wpdb;
+        
+        // First try WordPress posts if available
+        if (function_exists('get_posts')) {
+            $posts = get_posts(array(
+                'post_type' => 'terpedia_terport',
+                'post_status' => 'publish',
+                'posts_per_page' => 12,
+                'orderby' => 'date',
+                'order' => 'DESC'
+            ));
+            
+            if (!empty($posts)) {
+                $terports = array();
+                foreach ($posts as $post) {
+                    $terports[] = array(
+                        'id' => $post->ID,
+                        'title' => $post->post_title,
+                        'type' => get_post_meta($post->ID, '_terport_type', true) ?: 'Research Report',
+                        'date' => get_the_date('F j, Y', $post->ID),
+                        'excerpt' => wp_trim_words($post->post_content, 25),
+                        'tags' => $this->get_terport_tags($post->ID),
+                        'url' => get_permalink($post->ID)
+                    );
+                }
+                return $terports;
+            }
+        }
+        
+        // Fallback to direct database query for standalone environments
+        $table_name = $wpdb->prefix . 'terpedia_terports';
+        
+        // Check if table exists
+        if ($wpdb->get_var("SHOW TABLES LIKE '$table_name'") != $table_name) {
+            return array(); // Table doesn't exist, return empty
+        }
+        
+        $results = $wpdb->get_results(
+            "SELECT * FROM $table_name WHERE status = 'published' ORDER BY created_at DESC LIMIT 12",
+            ARRAY_A
+        );
+        
+        if (empty($results)) {
+            return array();
+        }
+        
+        $terports = array();
+        foreach ($results as $row) {
+            $terports[] = array(
+                'id' => $row['id'],
+                'title' => $row['title'],
+                'type' => $row['research_topic'] ?: 'Research Report',
+                'date' => date('F j, Y', strtotime($row['created_at'])),
+                'excerpt' => wp_trim_words($row['content'] ?? '', 25),
+                'tags' => explode(',', $row['tags'] ?? ''),
+                'url' => '/terport/' . $row['id']
+            );
+        }
+        
+        return $terports;
+    }
+    
+    /**
+     * Get terport tags for a post
+     */
+    private function get_terport_tags($post_id) {
+        if (function_exists('get_the_terms')) {
+            $terms = get_the_terms($post_id, 'terport_category');
+            if ($terms && !is_wp_error($terms)) {
+                return array_map(function($term) { return $term->name; }, $terms);
+            }
+        }
+        
+        // Default tags based on post meta
+        $type = get_post_meta($post_id, '_terport_type', true);
+        $research_focus = get_post_meta($post_id, '_research_focus', true);
+        
+        $tags = array('Terpenes', 'Research');
+        if ($type) $tags[] = $type;
+        if ($research_focus) $tags[] = $research_focus;
+        
+        return $tags;
+    }
+    
+    /**
+     * Get terport URL based on environment
+     */
+    private function get_terport_url($terport) {
+        if (isset($terport['url'])) {
+            return $terport['url'];
+        }
+        
+        // Use WordPress permalink if available
+        if (function_exists('get_permalink') && isset($terport['post_id'])) {
+            return get_permalink($terport['post_id']);
+        }
+        
+        // Fallback to manual URL construction
+        $base_url = $this->get_base_url();
+        return $base_url . '/terport/' . $terport['id'];
+    }
+    
+    /**
+     * Get base URL for different environments
+     */
+    private function get_base_url() {
+        if (function_exists('home_url')) {
+            return home_url();
+        }
+        
+        // Production environment detection
+        $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
+        if (strpos($host, 'terpedia.com') !== false) {
+            return 'https://terpedia.com';
+        }
+        
+        // Development fallback
+        return 'http://localhost:5000';
     }
     
     /**
@@ -907,6 +1069,30 @@ class Terpedia_CPT_Archive_System {
             $items .= $cpt_menu;
         }
         return $items;
+    }
+    
+    /**
+     * AJAX handler for refreshing CPT archives
+     */
+    public function ajax_refresh_archives() {
+        if (!current_user_can('manage_options')) {
+            wp_send_json_error('Insufficient permissions');
+        }
+        
+        if (!wp_verify_nonce($_POST['nonce'] ?? '', 'terpedia_admin_nonce')) {
+            wp_send_json_error('Invalid nonce');
+        }
+        
+        $result = $this->force_refresh_production();
+        
+        if ($result) {
+            wp_send_json_success(array(
+                'message' => 'CPT archives refreshed successfully',
+                'timestamp' => current_time('mysql')
+            ));
+        } else {
+            wp_send_json_error('Failed to refresh CPT archives');
+        }
     }
     
     /**
