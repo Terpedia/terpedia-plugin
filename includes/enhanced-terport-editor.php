@@ -46,7 +46,7 @@ class Terpedia_Enhanced_Terport_Editor {
      */
     public function register_terport_cpt() {
         // Register Terport post type
-        register_post_type('terport', array(
+        register_post_type('terpedia_terport', array(
             'labels' => array(
                 'name' => 'Terports',
                 'singular_name' => 'Terport',
@@ -68,7 +68,7 @@ class Terpedia_Enhanced_Terport_Editor {
             'menu_icon' => 'dashicons-analytics',
             'supports' => array('title', 'editor', 'excerpt', 'thumbnail', 'custom-fields', 'author'),
             'has_archive' => true,
-            'rewrite' => array('slug' => 'terports'),
+            'rewrite' => array('slug' => 'terpedia-terports'),
             'show_in_rest' => true,
             'capability_type' => 'post',
             'map_meta_cap' => true
@@ -781,7 +781,7 @@ class Terpedia_Enhanced_Terport_Editor {
     public function enqueue_admin_scripts($hook) {
         global $post_type;
         
-        if ($post_type === 'terport' && in_array($hook, array('post.php', 'post-new.php'))) {
+        if ($post_type === 'terpedia_terport' && in_array($hook, array('post.php', 'post-new.php'))) {
             wp_enqueue_script('terpedia-terport-editor', plugin_dir_url(__FILE__) . '../assets/js/terport-editor.js', array('jquery'), '1.0.0', true);
             wp_enqueue_style('terpedia-terport-editor', plugin_dir_url(__FILE__) . '../assets/css/terport-editor.css', array(), '1.0.0');
             
@@ -1048,7 +1048,7 @@ class Terpedia_Enhanced_Terport_Editor {
             'post_title' => $title,
             'post_content' => $description ? '<p>' . $description . '</p>' : '',
             'post_status' => 'private',
-            'post_type' => 'terport',
+            'post_type' => 'terpedia_terport',
             'post_author' => get_current_user_id(),
             'meta_input' => array(
                 '_terpedia_terport_type' => $type,
