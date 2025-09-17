@@ -67,6 +67,11 @@ class Terpedia_CPT_Archive_System {
                 'has_archive' => true,
                 'public' => true,
                 'rewrite' => array('slug' => 'terports')
+            ),
+            'terpedia_case' => array(
+                'has_archive' => true,
+                'public' => true,
+                'rewrite' => array('slug' => 'cases')
             )
         );
         
@@ -98,6 +103,13 @@ class Terpedia_CPT_Archive_System {
         // Terport routes (frontend only - no chat)
         add_rewrite_rule('^terport/([0-9]+)/?$', 'index.php?post_type=terpedia_terport&p=$matches[1]', 'top');
         add_rewrite_rule('^terports/?$', 'index.php?post_type=terpedia_terport', 'top');
+        
+        // Case management routes
+        add_rewrite_rule('^cases/?$', 'index.php?post_type=terpedia_case', 'top');
+        add_rewrite_rule('^case/([0-9]+)/?$', 'index.php?post_type=terpedia_case&p=$matches[1]', 'top');
+        add_rewrite_rule('^case/([0-9]+)/chat/?$', 'index.php?case_id=$matches[1]&case_view=chat', 'top');
+        add_rewrite_rule('^case/([0-9]+)/vitals/?$', 'index.php?case_id=$matches[1]&case_view=vitals', 'top');
+        add_rewrite_rule('^case/([0-9]+)/interventions/?$', 'index.php?case_id=$matches[1]&case_view=interventions', 'top');
     }
     
     /**
@@ -108,6 +120,8 @@ class Terpedia_CPT_Archive_System {
         $vars[] = 'terproduct_category';
         $vars[] = 'podcast_category';
         $vars[] = 'rx_category';
+        $vars[] = 'case_id';
+        $vars[] = 'case_view';
         return $vars;
     }
     

@@ -17,10 +17,157 @@ if (!defined('ABSPATH')) {
     define('ABSPATH', dirname(__FILE__) . '/');
 }
 
-// STANDALONE PHP ROUTING - Handle /terports and /cyc routes directly
+// STANDALONE PHP ROUTING - Handle /terports, /cyc, and /cases routes directly
 if (isset($_SERVER['REQUEST_URI'])) {
     $request_uri = $_SERVER['REQUEST_URI'];
     $path = trim(parse_url($request_uri, PHP_URL_PATH), '/');
+    
+    // Handle /cases route for case management
+    if ($path === 'cases' || $path === 'cases/' || preg_match('/^case\/\d+/', $path)) {
+        // Define mock WordPress functions to avoid errors
+        if (!function_exists('add_action')) {
+            function add_action($hook, $callback, $priority = 10, $accepted_args = 1) { /* Mock function */ }
+            function add_filter($hook, $callback, $priority = 10, $accepted_args = 1) { /* Mock function */ }
+            function register_activation_hook($file, $callback) { /* Mock function */ }
+            function register_deactivation_hook($file, $callback) { /* Mock function */ }
+            function plugin_dir_url($file) { return '/'; }
+            function wp_enqueue_style() { /* Mock function */ }
+            function wp_enqueue_script() { /* Mock function */ }
+            function admin_url($path = '') { return '/admin/' . ltrim($path, '/'); }
+            function get_option($option, $default = false) { return $default; }
+            function current_user_can($cap) { return true; }
+            function get_current_user_id() { return 1; }
+            function current_time($type) { return date('Y-m-d H:i:s'); }
+            function wp_create_nonce($action) { return 'mock_nonce'; }
+            function check_ajax_referer($action, $query_arg = false) { return true; }
+            function sanitize_text_field($str) { return strip_tags($str); }
+            function sanitize_textarea_field($str) { return strip_tags($str); }
+            function wp_send_json_success($data) { 
+                header('Content-Type: application/json');
+                echo json_encode(array('success' => true, 'data' => $data));
+                exit;
+            }
+            function wp_send_json_error($data) { 
+                header('Content-Type: application/json');
+                echo json_encode(array('success' => false, 'data' => $data));
+                exit;
+            }
+            function get_posts($args) { 
+                // Mock implementation - return some sample cases for demo
+                if (isset($args['post_type']) && $args['post_type'] === 'terpedia_case') {
+                    return array(
+                        (object) array(
+                            'ID' => 1,
+                            'post_title' => 'Sample Case 1',
+                            'post_content' => 'Sample case content',
+                            'post_date' => date('Y-m-d H:i:s')
+                        ),
+                        (object) array(
+                            'ID' => 2,
+                            'post_title' => 'Sample Case 2',
+                            'post_content' => 'Another sample case',
+                            'post_date' => date('Y-m-d H:i:s')
+                        )
+                    );
+                }
+                return array(); 
+            }
+            function get_post($id) { 
+                if ($id) {
+                    return (object) array(
+                        'ID' => $id,
+                        'post_title' => 'Sample Case ' . $id,
+                        'post_content' => 'Sample case content for case ' . $id,
+                        'post_type' => 'terpedia_case',
+                        'post_date' => date('Y-m-d H:i:s')
+                    );
+                }
+                return null; 
+            }
+            function get_post_meta($id, $key, $single = false) { 
+                $defaults = array(
+                    'patient_name' => 'Sample Patient ' . $id,
+                    'species' => 'Dog',
+                    'breed' => 'Golden Retriever',
+                    'age' => '5 years',
+                    'weight' => '65 lbs',
+                    'owner_name' => 'John Doe',
+                    'owner_contact' => 'john@example.com',
+                    'case_status' => 'active'
+                );
+                return $single ? ($defaults[$key] ?? '') : array($defaults[$key] ?? ''); 
+            }
+            function update_post_meta($id, $key, $value) { return true; }
+            function wp_update_post($args) { return true; }
+            function wp_insert_post($args) { return 1; }
+            function wp_die($message) { die($message); }
+            function get_the_modified_date($format, $post = null) { return date($format); }
+            function wp_count_posts($type) { return (object) array('publish' => 2); }
+        }
+        
+        // Include the case management system file directly
+        $case_file = dirname(__FILE__) . '/includes/case-management-system.php';
+        if (file_exists($case_file)) {
+            require_once $case_file;
+            
+            // Instantiate and handle case management routing
+            if (class_exists('Terpedia_Case_Management_System')) {
+                try {
+                    $case_system = new Terpedia_Case_Management_System();
+                    
+                    // Parse the path to determine what to render
+                    if ($path === 'cases' || $path === 'cases/') {
+                        // Render cases archive
+                        $method = new ReflectionMethod($case_system, 'render_cases_archive');
+                        $method->setAccessible(true);
+                        $method->invoke($case_system);
+                        exit;
+                    } elseif (preg_match('/^case\/(\d+)$/', $path, $matches)) {
+                        // Render single case
+                        $GLOBALS['post'] = get_post(intval($matches[1]));
+                        $method = new ReflectionMethod($case_system, 'render_single_case');
+                        $method->setAccessible(true);
+                        $method->invoke($case_system);
+                        exit;
+                    } elseif (preg_match('/^case\/(\d+)\/chat$/', $path, $matches)) {
+                        // Render case chat
+                        $case_id = intval($matches[1]);
+                        $method = new ReflectionMethod($case_system, 'render_case_chat');
+                        $method->setAccessible(true);
+                        $method->invoke($case_system, $case_id);
+                        exit;
+                    } elseif (preg_match('/^case\/(\d+)\/vitals$/', $path, $matches)) {
+                        // Render case vitals
+                        $case_id = intval($matches[1]);
+                        $method = new ReflectionMethod($case_system, 'render_case_vitals');
+                        $method->setAccessible(true);
+                        $method->invoke($case_system, $case_id);
+                        exit;
+                    } elseif (preg_match('/^case\/(\d+)\/interventions$/', $path, $matches)) {
+                        // Render case interventions
+                        $case_id = intval($matches[1]);
+                        $method = new ReflectionMethod($case_system, 'render_case_interventions');
+                        $method->setAccessible(true);
+                        $method->invoke($case_system, $case_id);
+                        exit;
+                    }
+                } catch (Exception $e) {
+                    // Simple fallback: output error and continue
+                    echo "<!DOCTYPE html><html><head><title>Error</title></head><body>";
+                    echo "<h1>Error rendering case management page</h1>";
+                    echo "<p>Error: " . htmlspecialchars($e->getMessage()) . "</p>";
+                    echo "</body></html>";
+                    exit;
+                }
+            }
+        }
+        // If we reach here, show a basic case management page
+        echo "<!DOCTYPE html><html><head><title>Case Management</title></head><body>";
+        echo "<h1>🏥 Case Management System - Coming Soon</h1>";
+        echo "<p>The case management system is being initialized...</p>";
+        echo "</body></html>";
+        exit;
+    }
     
     if ($path === 'terports' || $path === 'terports/') {
         // Define mock WordPress functions to avoid errors
@@ -378,6 +525,7 @@ class TerpediaAI {
         $includes = array(
             'includes/tulip-system.php',
             'includes/cpt-archive-system.php',
+            'includes/case-management-system.php',
             'includes/terport-openrouter-integration.php',
             'includes/terport-sparql-integration.php',
             'includes/enhanced-terport-editor.php',
