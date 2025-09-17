@@ -56,3 +56,4 @@ if (isset($submenu['terpedia-main'])) {
 } else {
     echo "<p style='color: red;'>❌ No Terpedia submenu found</p>";
 }
+

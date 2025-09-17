@@ -207,3 +207,4 @@ jobs:
           echo "❌ Site diagnostics failed"
           echo "📅 Diagnostics failed at: $(date)"
         fi
+

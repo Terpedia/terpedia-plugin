@@ -1763,6 +1763,8 @@ class TerpediaAI {
             'includes/automatic-terport-generator.php',
             'includes/terport-version-tracker.php',
             'includes/terports-widget.php',
+            'includes/podcasts-widget.php',
+            'includes/user-profile-system.php',
         );
         
         foreach ($includes as $file) {
@@ -7020,6 +7022,40 @@ function render_terpedia_social_feed() {
     </style>
 </head>
 <body>
+    <!-- Site Header -->
+    <header class="site-header">
+        <div class="header-container">
+            <div class="header-left">
+                <div class="logo">
+                    <a href="/">
+                        <span class="logo-icon">🧬</span>
+                        <span class="logo-text">Terpedia</span>
+                    </a>
+                </div>
+                <nav class="main-nav">
+                    <a href="/" class="nav-link">Home</a>
+                    <a href="/feed" class="nav-link active">Research Feed</a>
+                    <a href="/terports" class="nav-link">Terports</a>
+                    <a href="/cases" class="nav-link">Cases</a>
+                    <a href="/podcasts" class="nav-link">Podcasts</a>
+                    <a href="/newsletters" class="nav-link">Newsletters</a>
+                    <a href="/terproducts" class="nav-link">Products</a>
+                    <a href="/encyclopedia" class="nav-link">Encyclopedia</a>
+                </nav>
+            </div>
+            <div class="header-right">
+                <div class="search-box">
+                    <input type="text" placeholder="Search research..." class="search-input">
+                    <button class="search-btn">🔍</button>
+                </div>
+                <div class="user-actions">
+                    <button class="btn btn-outline">Login</button>
+                    <button class="btn btn-primary">Sign Up</button>
+                </div>
+            </div>
+        </div>
+    </header>
+
     <div class="social-feed-container">
         <!-- Left Sidebar -->
         <div class="left-sidebar">

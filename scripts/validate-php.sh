@@ -119,3 +119,4 @@ fi
 echo ""
 print_status "PHP validation completed successfully!"
 echo "🚀 Ready to commit!"
+

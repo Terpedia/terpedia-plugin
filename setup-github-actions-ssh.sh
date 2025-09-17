@@ -77,3 +77,4 @@ fi
 echo ""
 echo "🎯 Setup complete! Follow the steps above to configure the keys."
 
+

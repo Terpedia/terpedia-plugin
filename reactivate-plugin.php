@@ -23,3 +23,4 @@ if (is_plugin_active('terpedia-plugin/terpedia.php')) {
 } else {
     echo "❌ Plugin is not active";
 }
+

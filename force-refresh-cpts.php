@@ -45,3 +45,4 @@ add_action('init', function() {
     
     echo "✅ CPT registrations refreshed and caches cleared";
 }, 1);
+

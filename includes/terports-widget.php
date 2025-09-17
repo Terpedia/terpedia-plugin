@@ -376,3 +376,4 @@ function register_terpedia_terports_widget() {
     register_widget('Terpedia_Terports_Widget');
 }
 add_action('widgets_init', 'register_terpedia_terports_widget');
+
