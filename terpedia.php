@@ -86,6 +86,9 @@ class TerpediaAI {
         // Create veterinary research report as Terport
         $this->create_veterinary_research_terport();
         
+        // Trigger automatic terport generation
+        do_action('terpedia_plugin_activated');
+        
         // Force flush rewrite rules immediately
         flush_rewrite_rules();
         add_option('terpedia_ai_flush_rewrite_rules', true);
@@ -126,6 +129,8 @@ class TerpediaAI {
             'includes/veterinary-terpene-templates.php',
             'includes/version-endpoint.php',
             'includes/force-cpt-refresh.php',
+            'includes/automatic-terport-generator.php',
+            'includes/terport-version-tracker.php',
         );
         
         foreach ($includes as $file) {
@@ -138,6 +143,16 @@ class TerpediaAI {
         // Initialize CPT Archive System
         if (class_exists('Terpedia_CPT_Archive_System')) {
             new Terpedia_CPT_Archive_System();
+        }
+        
+        // CRITICAL FIX: Initialize automatic terport generation system
+        if (class_exists('Terpedia_Automatic_Terport_Generator')) {
+            new Terpedia_Automatic_Terport_Generator();
+        }
+        
+        // Initialize version tracking system
+        if (class_exists('Terpedia_Terport_Version_Tracker')) {
+            new Terpedia_Terport_Version_Tracker();
         }
         
         // Include BuddyPress messaging and agent systems (safely)
