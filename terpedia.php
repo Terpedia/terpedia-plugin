@@ -70,19 +70,35 @@ if (isset($_SERVER['REQUEST_URI'])) {
                         }
                         return $result;
                     }
-                    // Fallback to sample cases
+                    // Fallback to embedded demo cases
                     return array(
                         (object) array(
-                            'ID' => 1,
-                            'post_title' => 'Sample Case 1',
-                            'post_content' => 'Sample case content',
-                            'post_date' => date('Y-m-d H:i:s')
+                            'ID' => 1069,
+                            'post_title' => 'Case #001: Bella - Seizure Management',
+                            'post_content' => 'Bella is a 4-year-old spayed female Golden Retriever presenting with a 6-month history of generalized tonic-clonic seizures. Initial presentation showed seizures occurring 2-3 times weekly, lasting 45-90 seconds each. Pre-ictal behavior includes restlessness and excessive panting. Post-ictal confusion lasts approximately 15 minutes.\n\nCurrent management includes phenobarbital 2.5mg/kg BID with therapeutic levels maintained at 25-30 μg/mL. We have implemented a novel terpene protocol incorporating linalool (5mg/kg daily) and β-caryophyllene (3mg/kg daily) based on recent research showing neuroprotective effects and seizure threshold elevation in canine epilepsy models.\n\nOwner reports significant improvement in seizure frequency and severity since initiation of terpene therapy. Bella\'s quality of life has markedly improved with increased activity levels and better appetite.',
+                            'post_date' => date('Y-m-d H:i:s'),
+                            'post_type' => 'terpedia_case'
                         ),
                         (object) array(
-                            'ID' => 2,
-                            'post_title' => 'Sample Case 2',
-                            'post_content' => 'Another sample case',
-                            'post_date' => date('Y-m-d H:i:s')
+                            'ID' => 8664,
+                            'post_title' => 'Case #002: Thunder - Performance Anxiety Protocol',
+                            'post_content' => 'Thunder is an 8-year-old Thoroughbred gelding competing in eventing who has developed significant performance anxiety over the past 4 months. Symptoms include excessive sweating, elevated heart rate pre-competition, reluctance to load in trailer, and decreased performance scores.\n\nInitial behavioral assessment revealed no physical abnormalities contributing to anxiety. Stress-related behaviors began following a minor trailer accident 5 months ago. Traditional anxiolytic medications were ineffective and caused sedation affecting athletic performance.\n\nImplemented novel terpene-based protocol using limonene (8mg/kg daily) for its anxiolytic D-limonene effects and myrcene (6mg/kg daily) for muscle relaxation. Both terpenes selected for absence of prohibited substances in equine competition.',
+                            'post_date' => date('Y-m-d H:i:s'),
+                            'post_type' => 'terpedia_case'
+                        ),
+                        (object) array(
+                            'ID' => 6841,
+                            'post_title' => 'Case #003: Whiskers - Feline Lymphoma Support Care',
+                            'post_content' => 'Whiskers is a 12-year-old neutered male Maine Coon diagnosed with intermediate-grade alimentary lymphoma 6 weeks ago. Initial presentation included weight loss, intermittent vomiting, and decreased appetite. Family opted for palliative care approach rather than aggressive chemotherapy.\n\nTreatment goals focus on comfort, appetite stimulation, and maintaining dignity throughout end-of-life care. Initiated supportive care protocol including geraniol (2mg/kg BID) for anti-inflammatory effects, and β-caryophyllene (1.5mg/kg BID) for pain management and appetite stimulation through CB2 receptor activation.',
+                            'post_date' => date('Y-m-d H:i:s'),
+                            'post_type' => 'terpedia_case'
+                        ),
+                        (object) array(
+                            'ID' => 7377,
+                            'post_title' => 'Case #004: Emergency - Multi-trauma Critical Care',
+                            'post_content' => 'Emergency presentation of 3-year-old mixed breed dog following motor vehicle accident. Patient arrived in hypovolemic shock with multiple injuries including pneumothorax, pelvic fractures, and significant soft tissue trauma.\n\nInitial stabilization required immediate thoracostomy tube placement, aggressive fluid resuscitation, and multimodal pain management. Implemented emergency terpene protocol incorporating β-caryophyllene (4mg/kg q8h) for analgesic effects, and linalool (3mg/kg q12h) for anxiolytic properties during critical care period.',
+                            'post_date' => date('Y-m-d H:i:s'),
+                            'post_type' => 'terpedia_case'
                         )
                     );
                 }
@@ -103,7 +119,45 @@ if (isset($_SERVER['REQUEST_URI'])) {
                             );
                         }
                     }
-                    // Fallback
+                    // Fallback with embedded demo case data
+                    $embedded_cases = array(
+                        1069 => array(
+                            'ID' => 1069,
+                            'post_title' => 'Case #001: Bella - Seizure Management',
+                            'post_content' => 'Bella is a 4-year-old spayed female Golden Retriever presenting with a 6-month history of generalized tonic-clonic seizures. Initial presentation showed seizures occurring 2-3 times weekly, lasting 45-90 seconds each. Pre-ictal behavior includes restlessness and excessive panting. Post-ictal confusion lasts approximately 15 minutes.\n\nCurrent management includes phenobarbital 2.5mg/kg BID with therapeutic levels maintained at 25-30 μg/mL. We have implemented a novel terpene protocol incorporating linalool (5mg/kg daily) and β-caryophyllene (3mg/kg daily) based on recent research showing neuroprotective effects and seizure threshold elevation in canine epilepsy models.\n\nOwner reports significant improvement in seizure frequency and severity since initiation of terpene therapy. Bella\'s quality of life has markedly improved with increased activity levels and better appetite.',
+                            'post_type' => 'terpedia_case'
+                        ),
+                        8664 => array(
+                            'ID' => 8664,
+                            'post_title' => 'Case #002: Thunder - Performance Anxiety Protocol',
+                            'post_content' => 'Thunder is an 8-year-old Thoroughbred gelding competing in eventing who has developed significant performance anxiety over the past 4 months. Symptoms include excessive sweating, elevated heart rate pre-competition, reluctance to load in trailer, and decreased performance scores.\n\nInitial behavioral assessment revealed no physical abnormalities contributing to anxiety. Stress-related behaviors began following a minor trailer accident 5 months ago. Traditional anxiolytic medications were ineffective and caused sedation affecting athletic performance.\n\nImplemented novel terpene-based protocol using limonene (8mg/kg daily) for its anxiolytic D-limonene effects and myrcene (6mg/kg daily) for muscle relaxation. Both terpenes selected for absence of prohibited substances in equine competition.',
+                            'post_type' => 'terpedia_case'
+                        ),
+                        6841 => array(
+                            'ID' => 6841,
+                            'post_title' => 'Case #003: Whiskers - Feline Lymphoma Support Care',
+                            'post_content' => 'Whiskers is a 12-year-old neutered male Maine Coon diagnosed with intermediate-grade alimentary lymphoma 6 weeks ago. Initial presentation included weight loss, intermittent vomiting, and decreased appetite. Family opted for palliative care approach rather than aggressive chemotherapy.\n\nTreatment goals focus on comfort, appetite stimulation, and maintaining dignity throughout end-of-life care. Initiated supportive care protocol including geraniol (2mg/kg BID) for anti-inflammatory effects, and β-caryophyllene (1.5mg/kg BID) for pain management and appetite stimulation through CB2 receptor activation.',
+                            'post_type' => 'terpedia_case'
+                        ),
+                        7377 => array(
+                            'ID' => 7377,
+                            'post_title' => 'Case #004: Emergency - Multi-trauma Critical Care',
+                            'post_content' => 'Emergency presentation of 3-year-old mixed breed dog following motor vehicle accident. Patient arrived in hypovolemic shock with multiple injuries including pneumothorax, pelvic fractures, and significant soft tissue trauma.\n\nInitial stabilization required immediate thoracostomy tube placement, aggressive fluid resuscitation, and multimodal pain management. Implemented emergency terpene protocol incorporating β-caryophyllene (4mg/kg q8h) for analgesic effects, and linalool (3mg/kg q12h) for anxiolytic properties during critical care period.',
+                            'post_type' => 'terpedia_case'
+                        )
+                    );
+                    
+                    if (isset($embedded_cases[$id])) {
+                        return (object) array(
+                            'ID' => $embedded_cases[$id]['ID'],
+                            'post_title' => $embedded_cases[$id]['post_title'],
+                            'post_content' => $embedded_cases[$id]['post_content'],
+                            'post_type' => $embedded_cases[$id]['post_type'],
+                            'post_date' => date('Y-m-d H:i:s')
+                        );
+                    }
+                    
+                    // Final fallback for unknown IDs
                     return (object) array(
                         'ID' => $id,
                         'post_title' => 'Sample Case ' . $id,
@@ -123,7 +177,55 @@ if (isset($_SERVER['REQUEST_URI'])) {
                     }
                 }
                 
-                // Fallback defaults
+                // Fallback with embedded demo case metadata
+                $embedded_meta = array(
+                    1069 => array(
+                        'patient_name' => 'Bella',
+                        'species' => 'Canine', 
+                        'breed' => 'Golden Retriever',
+                        'age' => '4 years',
+                        'weight' => '28.5 kg',
+                        'owner_name' => 'Sarah & Mark Johnson',
+                        'owner_contact' => 'Phone: (555) 123-4567\nEmail: sarah.johnson@email.com\nAddress: 123 Oak Street, Springfield, IL 62701',
+                        'case_status' => 'active'
+                    ),
+                    8664 => array(
+                        'patient_name' => 'Thunder',
+                        'species' => 'Equine',
+                        'breed' => 'Thoroughbred', 
+                        'age' => '8 years',
+                        'weight' => '545 kg',
+                        'owner_name' => 'Riverside Equestrian Center - Amanda Sterling',
+                        'owner_contact' => 'Phone: (555) 234-5678\nEmail: amanda@riversideequestrian.com\nAddress: 456 County Road 12, Lexington, KY 40511',
+                        'case_status' => 'active'
+                    ),
+                    6841 => array(
+                        'patient_name' => 'Whiskers',
+                        'species' => 'Feline',
+                        'breed' => 'Maine Coon',
+                        'age' => '12 years', 
+                        'weight' => '5.2 kg',
+                        'owner_name' => 'Eleanor and Robert Chen',
+                        'owner_contact' => 'Phone: (555) 345-6789\nEmail: eleanor.chen@email.com\nAddress: 789 Maple Avenue, Portland, OR 97205',
+                        'case_status' => 'critical'
+                    ),
+                    7377 => array(
+                        'patient_name' => 'Rocky (Emergency #E2024-089)',
+                        'species' => 'Canine',
+                        'breed' => 'Mixed Breed (Shepherd/Lab)',
+                        'age' => '3 years',
+                        'weight' => '32.1 kg', 
+                        'owner_name' => 'Michael Rodriguez (Emergency Contact)',
+                        'owner_contact' => 'Phone: (555) 789-0123\nEmergency: (555) 789-0124\nEmail: m.rodriguez.emergency@email.com',
+                        'case_status' => 'critical'
+                    )
+                );
+                
+                if (isset($embedded_meta[$id]) && isset($embedded_meta[$id][$key])) {
+                    return $single ? $embedded_meta[$id][$key] : array($embedded_meta[$id][$key]);
+                }
+                
+                // Final fallback defaults for unknown cases or keys
                 $defaults = array(
                     'patient_name' => 'Sample Patient ' . $id,
                     'species' => 'Dog',
