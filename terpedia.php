@@ -171,10 +171,10 @@ if (isset($_SERVER['REQUEST_URI'])) {
         }
         
         // Log route matching for debugging
-        error_log('Terpedia: Matched root route (/) for activity feed dashboard');
+        error_log('Terpedia: Matched root route (/) - redirecting to social feed');
         
-        // Render the activity feed dashboard
-        render_terpedia_activity_feed();
+        // Render the social media research feed (same as /feed)
+        render_terpedia_social_feed();
         exit;
     }
     
