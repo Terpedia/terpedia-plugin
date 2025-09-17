@@ -1762,6 +1762,7 @@ class TerpediaAI {
             'includes/force-cpt-refresh.php',
             'includes/automatic-terport-generator.php',
             'includes/terport-version-tracker.php',
+            'includes/terports-widget.php',
         );
         
         foreach ($includes as $file) {
