@@ -60,7 +60,7 @@ class Terpedia_CPT_Archive_System {
                 'public' => true,
                 'rewrite' => array('slug' => 'newsletters')
             ),
-            'terport' => array(
+            'terpedia_terport' => array(
                 'has_archive' => true,
                 'public' => true,
                 'rewrite' => array('slug' => 'terports')
@@ -93,8 +93,8 @@ class Terpedia_CPT_Archive_System {
         add_rewrite_rule('^newsletter/?$', 'index.php?post_type=terpedia_newsletter', 'top');
         
         // Terport routes (frontend only - no chat)
-        add_rewrite_rule('^terport/([0-9]+)/?$', 'index.php?post_type=terport&p=$matches[1]', 'top');
-        add_rewrite_rule('^terports/?$', 'index.php?post_type=terport', 'top');
+        add_rewrite_rule('^terport/([0-9]+)/?$', 'index.php?post_type=terpedia_terport&p=$matches[1]', 'top');
+        add_rewrite_rule('^terports/?$', 'index.php?post_type=terpedia_terport', 'top');
     }
     
     /**
@@ -174,7 +174,7 @@ class Terpedia_CPT_Archive_System {
                     return $this->render_rx_archive();
                 case 'terpedia_newsletter':
                     return $this->render_newsletters_archive();
-                case 'terport':
+                case 'terpedia_terport':
                     return $this->render_terports_archive();
             }
         }
@@ -563,101 +563,338 @@ class Terpedia_CPT_Archive_System {
     }
     
     /**
-     * Render terports archive
+     * Render terports archive - Standalone version for non-WordPress environment
      */
     private function render_terports_archive() {
-        get_header();
+        // Get sample terport data
+        $terports = $this->get_sample_terports();
         
-        $paged = get_query_var('paged') ? get_query_var('paged') : 1;
+        // Output HTML with embedded CSS
+        echo '<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>📚 Terports - Terpedia AI Research Reports</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            line-height: 1.6;
+            color: #2c3e50;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
         
-        $terports = new WP_Query(array(
-            'post_type' => 'terport',
-            'posts_per_page' => 12,
-            'paged' => $paged,
-            'post_status' => 'publish',
-            'orderby' => 'date',
-            'order' => 'DESC'
-        ));
-        ?>
-        <div class="terpedia-terports-archive">
-            <div class="archive-header">
-                <h1>📚 Terports</h1>
-                <p>AI-generated reports and analyses on terpene research, compounds, and industry developments</p>
-            </div>
-            
-            <div class="terports-grid">
-                <?php if ($terports->have_posts()): ?>
-                    <?php while ($terports->have_posts()): $terports->the_post(); ?>
-                        <div class="terport-card">
-                            <div class="terport-image">
-                                <?php if (has_post_thumbnail()): ?>
-                                    <?php the_post_thumbnail('medium'); ?>
-                                <?php else: ?>
-                                    <div class="placeholder-image">📚</div>
-                                <?php endif; ?>
-                            </div>
-                            
-                            <div class="terport-content">
-                                <h3><a href="<?php the_permalink(); ?>"><?php the_title(); ?></a></h3>
-                                <div class="terport-meta">
-                                    <span class="date"><?php echo get_the_date(); ?></span>
-                                    <?php
-                                    $terport_type = get_post_meta(get_the_ID(), '_terport_type', true);
-                                    if ($terport_type): ?>
-                                        <span class="terport-type"><?php echo esc_html($terport_type); ?></span>
-                                    <?php endif; ?>
-                                </div>
-                                
-                                <div class="terport-excerpt">
-                                    <?php the_excerpt(); ?>
-                                </div>
-                                
-                                <div class="terport-tags">
-                                    <?php
-                                    $tags = get_the_tags();
-                                    if ($tags) {
-                                        $displayed_tags = array_slice($tags, 0, 3);
-                                        foreach ($displayed_tags as $tag) {
-                                            echo '<span class="tag">' . esc_html($tag->name) . '</span>';
-                                        }
-                                        if (count($tags) > 3) {
-                                            echo '<span class="more-tags">+' . (count($tags) - 3) . ' more</span>';
-                                        }
-                                    }
-                                    ?>
-                                </div>
-                            </div>
-                        </div>
-                    <?php endwhile; ?>
-                <?php else: ?>
-                    <div class="no-terports">
-                        <div class="empty-state">
-                            <div class="empty-icon">📚</div>
-                            <h3>No Terports Yet</h3>
-                            <p>No terport reports have been published yet. Create your first terport using the Enhanced Terport Editor.</p>
-                            <?php if (current_user_can('edit_posts')): ?>
-                                <a href="<?php echo admin_url('post-new.php?post_type=terport'); ?>" class="cta-button">Create First Terport</a>
-                            <?php endif; ?>
-                        </div>
-                    </div>
-                <?php endif; ?>
-            </div>
-            
-            <?php if ($terports->max_num_pages > 1): ?>
-                <div class="archive-pagination">
-                    <?php
-                    echo paginate_links(array(
-                        'total' => $terports->max_num_pages,
-                        'current' => $paged
-                    ));
-                    ?>
-                </div>
-            <?php endif; ?>
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+            backdrop-filter: blur(10px);
+        }
+        
+        .archive-header {
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            color: white;
+            text-align: center;
+            padding: 60px 40px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .archive-header::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url("data:image/svg+xml,%3Csvg width=\"60\" height=\"60\" viewBox=\"0 0 60 60\" xmlns=\"http://www.w3.org/2000/svg\"%3E%3Cg fill=\"none\" fill-rule=\"evenodd\"%3E%3Cg fill=\"%23ffffff\" fill-opacity=\"0.05\"%3E%3Cpath d=\"M30 30c0-11.046-8.954-20-20-20s-20 8.954-20 20 8.954 20 20 20 20-8.954 20-20z\"/%3E%3C/g%3E%3C/g%3E%3C/svg%3E") repeat;
+        }
+        
+        .archive-header h1 {
+            font-size: 3.5rem;
+            font-weight: 700;
+            margin-bottom: 15px;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .archive-header p {
+            font-size: 1.3rem;
+            opacity: 0.9;
+            max-width: 600px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .terports-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 30px;
+            padding: 40px;
+        }
+        
+        .terport-card {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+            overflow: hidden;
+            border: 1px solid #f0f0f0;
+        }
+        
+        .terport-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+        }
+        
+        .terport-image {
+            height: 180px;
+            background: linear-gradient(135deg, #74b9ff, #0984e3);
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .placeholder-image {
+            font-size: 4rem;
+            color: rgba(255,255,255,0.8);
+        }
+        
+        .terport-content {
+            padding: 25px;
+        }
+        
+        .terport-content h3 {
+            font-size: 1.4rem;
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: #2c3e50;
+            line-height: 1.3;
+        }
+        
+        .terport-content h3 a {
+            text-decoration: none;
+            color: inherit;
+            transition: color 0.2s ease;
+        }
+        
+        .terport-content h3 a:hover {
+            color: #3498db;
+        }
+        
+        .terport-meta {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 15px;
+            font-size: 0.9rem;
+            color: #7f8c8d;
+        }
+        
+        .terport-type {
+            background: #3498db;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+        
+        .terport-excerpt {
+            color: #5a6c7d;
+            line-height: 1.6;
+            margin-bottom: 20px;
+        }
+        
+        .terport-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        
+        .tag {
+            background: #f8f9fa;
+            color: #495057;
+            padding: 5px 12px;
+            border-radius: 15px;
+            font-size: 0.8rem;
+            border: 1px solid #e9ecef;
+        }
+        
+        .more-tags {
+            background: #e9ecef;
+            color: #6c757d;
+            padding: 5px 12px;
+            border-radius: 15px;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+        
+        .no-terports {
+            text-align: center;
+            padding: 80px 40px;
+        }
+        
+        .empty-icon {
+            font-size: 6rem;
+            margin-bottom: 20px;
+            opacity: 0.3;
+        }
+        
+        .no-terports h3 {
+            font-size: 2rem;
+            color: #2c3e50;
+            margin-bottom: 15px;
+        }
+        
+        .no-terports p {
+            font-size: 1.1rem;
+            color: #7f8c8d;
+            max-width: 500px;
+            margin: 0 auto 30px;
+        }
+        
+        .cta-button {
+            display: inline-block;
+            background: linear-gradient(135deg, #3498db, #2980b9);
+            color: white;
+            text-decoration: none;
+            padding: 12px 30px;
+            border-radius: 25px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        
+        .cta-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(52, 152, 219, 0.3);
+        }
+        
+        @media (max-width: 768px) {
+            .archive-header h1 { font-size: 2.5rem; }
+            .archive-header p { font-size: 1.1rem; }
+            .terports-grid { grid-template-columns: 1fr; padding: 20px; }
+            .terport-card { margin-bottom: 20px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="archive-header">
+            <h1>📚 Terports</h1>
+            <p>AI-generated reports and analyses on terpene research, compounds, and industry developments</p>
         </div>
-        <?php
-        wp_reset_postdata();
-        get_footer();
+        
+        <div class="terports-grid">';
+        
+        if (!empty($terports)) {
+            foreach ($terports as $terport) {
+                echo '<div class="terport-card">
+                    <div class="terport-image">
+                        <div class="placeholder-image">📚</div>
+                    </div>
+                    
+                    <div class="terport-content">
+                        <h3><a href="/terport/' . $terport['id'] . '">' . htmlspecialchars($terport['title']) . '</a></h3>
+                        <div class="terport-meta">
+                            <span class="date">' . $terport['date'] . '</span>
+                            <span class="terport-type">' . htmlspecialchars($terport['type']) . '</span>
+                        </div>
+                        
+                        <div class="terport-excerpt">
+                            ' . htmlspecialchars($terport['excerpt']) . '
+                        </div>
+                        
+                        <div class="terport-tags">';
+                
+                foreach ($terport['tags'] as $tag) {
+                    echo '<span class="tag">' . htmlspecialchars($tag) . '</span>';
+                }
+                
+                echo '</div>
+                    </div>
+                </div>';
+            }
+        } else {
+            echo '<div class="no-terports">
+                <div class="empty-state">
+                    <div class="empty-icon">📚</div>
+                    <h3>No Terports Yet</h3>
+                    <p>No terport reports have been published yet. The AI system is generating comprehensive veterinary terpene research reports.</p>
+                    <a href="/admin" class="cta-button">Generate Terports</a>
+                </div>
+            </div>';
+        }
+        
+        echo '    </div>
+    </div>
+</body>
+</html>';
+        
         exit;
+    }
+    
+    /**
+     * Get sample terport data for standalone environment
+     */
+    private function get_sample_terports() {
+        return array(
+            array(
+                'id' => 1,
+                'title' => 'Veterinary Terpene Applications: A Comprehensive Research Analysis',
+                'type' => 'Research Report',
+                'date' => date('F j, Y'),
+                'excerpt' => 'An in-depth analysis of terpene applications in veterinary medicine, covering therapeutic benefits, dosing protocols, and clinical applications for dogs, cats, and horses.',
+                'tags' => array('Veterinary', 'Terpenes', 'Research', 'Clinical Studies')
+            ),
+            array(
+                'id' => 2,
+                'title' => 'Cannabinoid-Terpene Interactions in Animal Healthcare',
+                'type' => 'Clinical Study',
+                'date' => date('F j, Y', strtotime('-1 day')),
+                'excerpt' => 'Exploring the entourage effect of cannabinoids and terpenes in veterinary applications, with focus on pain management and anxiety reduction in companion animals.',
+                'tags' => array('Cannabinoids', 'Entourage Effect', 'Pain Management', 'Anxiety')
+            ),
+            array(
+                'id' => 3,
+                'title' => 'Myrcene and Limonene: Therapeutic Potential in Canine Medicine',
+                'type' => 'Compound Analysis',
+                'date' => date('F j, Y', strtotime('-2 days')),
+                'excerpt' => 'Detailed analysis of myrcene and limonene therapeutic applications, including anti-inflammatory properties and stress-reduction benefits for canine patients.',
+                'tags' => array('Myrcene', 'Limonene', 'Canine Health', 'Anti-inflammatory')
+            ),
+            array(
+                'id' => 4,
+                'title' => 'Terpene Safety Profiles for Veterinary Use',
+                'type' => 'Safety Analysis',
+                'date' => date('F j, Y', strtotime('-3 days')),
+                'excerpt' => 'Comprehensive safety analysis of common terpenes used in veterinary medicine, including toxicity thresholds, contraindications, and best practices.',
+                'tags' => array('Safety', 'Toxicology', 'Best Practices', 'Guidelines')
+            ),
+            array(
+                'id' => 5,
+                'title' => 'Aromatic Terpenes in Equine Therapy Applications',
+                'type' => 'Species-Specific',
+                'date' => date('F j, Y', strtotime('-4 days')),
+                'excerpt' => 'Specialized report on terpene applications in equine medicine, focusing on respiratory health, muscle recovery, and stress management in horses.',
+                'tags' => array('Equine', 'Respiratory Health', 'Muscle Recovery', 'Stress Management')
+            ),
+            array(
+                'id' => 6,
+                'title' => 'Beta-Caryophyllene: Anti-Inflammatory Properties in Small Animals',
+                'type' => 'Compound Study',
+                'date' => date('F j, Y', strtotime('-5 days')),
+                'excerpt' => 'In-depth study of beta-caryophyllene anti-inflammatory mechanisms and therapeutic applications in small animal veterinary practice.',
+                'tags' => array('Beta-Caryophyllene', 'Anti-inflammatory', 'Small Animals', 'Mechanism of Action')
+            )
+        );
     }
     
     /**

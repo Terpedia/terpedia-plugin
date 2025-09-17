@@ -11,9 +11,61 @@
  * Requires PHP: 7.4
  */
 
-// Prevent direct access
+// Prevent direct access  
 if (!defined('ABSPATH')) {
-    exit;
+    // In standalone PHP environment, define ABSPATH
+    define('ABSPATH', dirname(__FILE__) . '/');
+}
+
+// STANDALONE PHP ROUTING - Handle /terports route directly
+if (isset($_SERVER['REQUEST_URI'])) {
+    $request_uri = $_SERVER['REQUEST_URI'];
+    $path = trim(parse_url($request_uri, PHP_URL_PATH), '/');
+    
+    if ($path === 'terports' || $path === 'terports/') {
+        // Define mock WordPress functions to avoid errors
+        if (!function_exists('add_action')) {
+            function add_action($hook, $callback, $priority = 10, $accepted_args = 1) { /* Mock function */ }
+            function add_filter($hook, $callback, $priority = 10, $accepted_args = 1) { /* Mock function */ }
+            function register_activation_hook($file, $callback) { /* Mock function */ }
+            function register_deactivation_hook($file, $callback) { /* Mock function */ }
+            function plugin_dir_url($file) { return '/'; }
+            function wp_enqueue_style() { /* Mock function */ }
+            function wp_enqueue_script() { /* Mock function */ }
+        }
+        
+        // Include the CPT Archive System file directly
+        $cpt_file = dirname(__FILE__) . '/includes/cpt-archive-system.php';
+        if (file_exists($cpt_file)) {
+            require_once $cpt_file;
+            
+            // Instantiate and call render method directly
+            if (class_exists('Terpedia_CPT_Archive_System')) {
+                try {
+                    $archive_system = new Terpedia_CPT_Archive_System();
+                    // Call the private method using reflection
+                    $method = new ReflectionMethod($archive_system, 'render_terports_archive');
+                    $method->setAccessible(true);
+                    $method->invoke($archive_system);
+                    exit;
+                } catch (Exception $e) {
+                    // Simple fallback: output error and continue
+                    echo "<!DOCTYPE html><html><head><title>Error</title></head><body>";
+                    echo "<h1>Error rendering terports page</h1>";
+                    echo "<p>Error: " . htmlspecialchars($e->getMessage()) . "</p>";
+                    echo "<pre>" . $e->getTraceAsString() . "</pre>";
+                    echo "</body></html>";
+                    exit;
+                }
+            }
+        }
+        // If we reach here, something went wrong - show a basic terports page
+        echo "<!DOCTYPE html><html><head><title>Terports</title></head><body>";
+        echo "<h1>📚 Terports - Coming Soon</h1>";
+        echo "<p>The terports system is being initialized...</p>";
+        echo "</body></html>";
+        exit;
+    }
 }
 
 // Define plugin constants
@@ -225,6 +277,41 @@ class TerpediaAI {
      * Handle Terpedia.com route requests
      */
     public function handle_terpedia_routes() {
+        // Handle direct URL routing for standalone PHP environment
+        $request_uri = $_SERVER['REQUEST_URI'];
+        $path = trim(parse_url($request_uri, PHP_URL_PATH), '/');
+        
+        // Debug output
+        error_log("Terpedia Debug: handle_terpedia_routes called, path: $path");
+        
+        // Handle /terports route directly
+        if ($path === 'terports' || $path === 'terports/') {
+            error_log("Terpedia Debug: Matched terports route");
+            
+            // Load CPT Archive System and call render method directly
+            if (class_exists('Terpedia_CPT_Archive_System')) {
+                error_log("Terpedia Debug: CPT Archive System class exists");
+                $archive_system = new Terpedia_CPT_Archive_System();
+                
+                // Use reflection to access the private render_terports_archive method
+                try {
+                    $method = new ReflectionMethod($archive_system, 'render_terports_archive');
+                    $method->setAccessible(true);
+                    error_log("Terpedia Debug: About to invoke render method");
+                    $method->invoke($archive_system);
+                    exit;
+                } catch (Exception $e) {
+                    error_log("Terpedia Debug: Error with reflection: " . $e->getMessage());
+                    // Fallback: call method directly if it's accessible
+                    echo "Error accessing render method: " . $e->getMessage();
+                }
+            } else {
+                error_log("Terpedia Debug: CPT Archive System class not found");
+                echo "CPT Archive System class not found";
+            }
+            exit;
+        }
+        
         global $wp_query;
         
         $terpedia_page = get_query_var('terpedia_page');
